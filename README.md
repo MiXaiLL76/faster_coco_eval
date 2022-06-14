@@ -53,8 +53,9 @@ For usage, look at the original `COCOEval` [class documentation.](https://github
 - [x] Remove detectron2 dependencies
 - [x] Remove torch dependencies
 - [x] Append unittest
-- [x] Append ROC / AUC curves
-- [ ] Check if it works on windows
+- [x] Append ROC / AUC curves  
+- [ ] Check if it works on windows  
+- [ ] Append fp fn error analysis  
 
 # License
 The original module was licensed with apache 2, I will continue with the same license.
