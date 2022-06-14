@@ -5,7 +5,7 @@ import copy
 import logging
 import numpy as np
 import time
-from pycocotools.cocoeval import COCOeval
+from .cocoeval import COCOeval
 
 from faster_coco_eval import _C
 
@@ -32,8 +32,9 @@ class COCOeval_faster(COCOeval):
         # add backward compatibility if useSegm is specified in params
         if p.useSegm is not None:
             p.iouType = "segm" if p.useSegm == 1 else "bbox"
+
         logger.info("Evaluate annotation type *{}*".format(p.iouType))
-        print("Evaluate annotation type *{}*".format(p.iouType))
+
         p.imgIds = list(np.unique(p.imgIds))
         if p.useCats:
             p.catIds = list(np.unique(p.catIds))
@@ -103,10 +104,7 @@ class COCOeval_faster(COCOeval):
         toc = time.time()
         logger.info(
             "COCOeval_opt.evaluate() finished in {:0.2f} seconds.".format(toc - tic))
-        print(
-            "COCOeval_opt.evaluate() finished in {:0.2f} seconds.".format(toc - tic))
-        # >>>> End of code differences with original COCO API
-
+    
     def accumulate(self):
         """
         Accumulate per image evaluation results and store the result in self.eval.  Does not
