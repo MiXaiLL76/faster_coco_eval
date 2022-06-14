@@ -31,8 +31,9 @@ This package contains a faster implementation of the
 [pycocotools](https://github.com/cocodataset/cocoapi/tree/master/PythonAPI/pycocotools) `COCOEval` class.  
 To import and use `COCOeval_faster` type:
 
-````python
-from faster_coco_eval import COCOeval_faster
+````python  
+from faster_coco_eval import COCO, COCOeval_faster
+....
 ````
 
 For usage, look at the original `COCOEval` [class documentation.](https://github.com/cocodataset/cocoapi)
@@ -48,6 +49,8 @@ For usage, look at the original `COCOEval` [class documentation.](https://github
 - [x] Add COCOEval class wraper
 - [x] Remove detectron2 dependencies
 - [x] Remove torch dependencies
+- [x] Append unittest
+- [x] Append ROC / AUC curves
 - [ ] Check if it works on windows
 
 # License
