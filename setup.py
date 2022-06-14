@@ -35,10 +35,10 @@ setup(
     cmdclass={"build_ext": build_ext},
     long_description=long_description,
     long_description_content_type="text/markdown",
-    # install_requires=[
-    #     'numpy',
-    #     'testresources',
-    #     'pybind11',
-    #     'pycocotools'
-    # ],
+    install_requires=[
+        'numpy',
+        'testresources',
+        'pybind11',
+        'pycocotools'
+    ],
 )
