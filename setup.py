@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
+
 import setuptools
 from setuptools import setup
 from pybind11.setup_helpers import Pybind11Extension, build_ext
@@ -22,7 +23,7 @@ def get_extensions():
     return ext_modules
 
 setup(
-    name="fast-coco-eval",
+    name="faster-coco-eval",
     version=__version__,
     author="MiXaiLL76",
     python_requires=">=3.6",

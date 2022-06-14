@@ -7,12 +7,12 @@ import numpy as np
 import time
 from pycocotools.cocoeval import COCOeval
 
-from fast_coco_eval import _C
+from faster_coco_eval import _C
 
 logger = logging.getLogger(__name__)
 
 
-class COCOeval_fast(COCOeval):
+class COCOeval_faster(COCOeval):
     """
     This is a slightly modified version of the original COCO API, where the functions evaluateImg()
     and accumulate() are implemented in C++ to speedup evaluation
