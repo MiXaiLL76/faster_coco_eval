@@ -28,12 +28,10 @@ Available packages for download will be generated later
 ## Usage
 
 This package contains a faster implementation of the 
-[pycocotools](https://github.com/cocodataset/cocoapi/tree/master/PythonAPI/pycocotools) `COCOEval` class. 
-Due to torch being used to compile and access the C++ code, it needs to be imported before using the package. 
+[pycocotools](https://github.com/cocodataset/cocoapi/tree/master/PythonAPI/pycocotools) `COCOEval` class.  
 To import and use `COCOeval_fast` type:
 
 ````python
-import torch
 from fast_coco_eval import COCOeval_fast
 ````
 
