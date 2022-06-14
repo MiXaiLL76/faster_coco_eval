@@ -5,9 +5,9 @@ import copy
 import logging
 import numpy as np
 import time
-from .cocoeval import COCOeval
 
-from faster_coco_eval import _C
+from faster_coco_eval.cocoeval import COCOeval
+import faster_coco_eval.faster_eval_api_cpp as _C
 
 logger = logging.getLogger(__name__)
 

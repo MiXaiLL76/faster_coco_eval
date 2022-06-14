@@ -4,7 +4,7 @@ import numpy as np
 import datetime
 import time
 from collections import defaultdict
-from . import mask as maskUtils
+from faster_coco_eval import mask as maskUtils
 import copy
 
 import logging
@@ -477,30 +477,35 @@ class COCOeval:
                 mean_s = -1
             else:
                 mean_s = np.mean(s[s > -1])
-            logger.info(iStr.format(titleStr, typeStr, iouStr, areaRng, maxDets, mean_s))
+            logger.info(iStr.format(titleStr, typeStr,
+                        iouStr, areaRng, maxDets, mean_s))
             return mean_s
 
         def _summarizeDets():
             stats = np.zeros((12,))
-            stats[0] = _summarize(1)
-            stats[1] = _summarize(1, iouThr=.5, maxDets=self.params.maxDets[2])
+            stats[0] = _summarize(1, maxDets=self.params.maxDets[-1]) # AP_all
+            stats[1] = _summarize(1, iouThr=.5, maxDets=self.params.maxDets[-1]) # AP_50
             stats[2] = _summarize(
-                1, iouThr=.75, maxDets=self.params.maxDets[2])
+                1, iouThr=.75, maxDets=self.params.maxDets[-1])  # AP_75
             stats[3] = _summarize(1, areaRng='small',
-                                  maxDets=self.params.maxDets[2])
+                                  maxDets=self.params.maxDets[-1])  # AP_small
             stats[4] = _summarize(1, areaRng='medium',
-                                  maxDets=self.params.maxDets[2])
+                                  maxDets=self.params.maxDets[-1]) # AP_medium
             stats[5] = _summarize(1, areaRng='large',
-                                  maxDets=self.params.maxDets[2])
-            stats[6] = _summarize(0, maxDets=self.params.maxDets[0])
-            stats[7] = _summarize(0, maxDets=self.params.maxDets[1])
-            stats[8] = _summarize(0, maxDets=self.params.maxDets[2])
+                                  maxDets=self.params.maxDets[-1]) # AP_large
+            
+            stats[6] = _summarize(0, maxDets=self.params.maxDets[0]) # AR_first or AR_all
+            if len(self.params.maxDets) >= 2:
+                stats[7] = _summarize(0, maxDets=self.params.maxDets[1]) # AR_second
+            if len(self.params.maxDets) >= 3: 
+                stats[8] = _summarize(0, maxDets=self.params.maxDets[2]) # AR_third
+
             stats[9] = _summarize(0, areaRng='small',
-                                  maxDets=self.params.maxDets[2])
+                                  maxDets=self.params.maxDets[-1]) # AR_small
             stats[10] = _summarize(0, areaRng='medium',
-                                   maxDets=self.params.maxDets[2])
+                                   maxDets=self.params.maxDets[-1]) # AR_medium
             stats[11] = _summarize(
-                0, areaRng='large', maxDets=self.params.maxDets[2])
+                0, areaRng='large', maxDets=self.params.maxDets[-1]) # AR_large
             return stats
 
         def _summarizeKps():
@@ -516,6 +521,7 @@ class COCOeval:
             stats[8] = _summarize(0, maxDets=20, areaRng='medium')
             stats[9] = _summarize(0, maxDets=20, areaRng='large')
             return stats
+        
         if not self.eval:
             raise Exception('Please run accumulate() first')
         iouType = self.params.iouType
@@ -527,7 +533,29 @@ class COCOeval:
 
     def __str__(self):
         self.summarize()
+    
+    @property
+    def stats_as_dict(self):
+        iouType = self.params.iouType
+        assert (iouType == 'segm' or iouType == 'bbox'), f'{iouType=} not supported'
 
+        labels = [
+            "AP_all", "AP_50", "AP_75", 
+            "AP_small", "AP_medium", "AP_large", 
+            "AR_all", "AR_second", "AR_third",
+            "AR_small", "AR_medium", "AR_large"]
+        
+        maxDets = self.params.maxDets
+        if len(maxDets) != 0:
+            labels[6] = f'AR_{maxDets[0]}'
+
+        if len(maxDets) >= 2:
+            labels[7] = f'AR_{maxDets[1]}'
+            
+        if len(maxDets) >= 3:
+            labels[8] = f'AR_{maxDets[2]}'
+
+        return {_label : float(self.stats[i]) for i, _label in enumerate(labels)}
 
 class Params:
     '''
@@ -538,6 +566,7 @@ class Params:
         self.imgIds = []
         self.catIds = []
         # np.arange causes trouble.  the data point on arange is slightly larger than the true value
+        self.iouThr = [.5, .75]
         self.iouThrs = np.linspace(.5, 0.95, int(
             np.round((0.95 - .5) / .05)) + 1, endpoint=True)
         self.recThrs = np.linspace(.0, 1.00, int(

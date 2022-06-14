@@ -10,12 +10,15 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 def get_extensions():
-    sources = ["csrc/coco_eval/cocoeval.cpp", "csrc/vision.cpp"]
+    sources = [
+        "csrc/coco_eval/cocoeval.cpp", 
+        "csrc/faster_eval_api.cpp"
+    ]
     print(f"Sources: {sources}")
 
     ext_modules = [
         Pybind11Extension(
-            name="fast_coco_eval._C",
+            name="faster_coco_eval.faster_eval_api_cpp",
             sources=sources,
             define_macros=[('VERSION_INFO', __version__)],
         )
@@ -32,9 +35,10 @@ setup(
     cmdclass={"build_ext": build_ext},
     long_description=long_description,
     long_description_content_type="text/markdown",
-    install_requires=[
-        'numpy',
-        "pybind11",
-        "pycocotools"
-    ],
+    # install_requires=[
+    #     'numpy',
+    #     'testresources',
+    #     'pybind11',
+    #     'pycocotools'
+    # ],
 )
