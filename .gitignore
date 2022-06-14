@@ -2,3 +2,4 @@
 build
 dist
 faster_coco_eval.egg-info
+*.pyc
