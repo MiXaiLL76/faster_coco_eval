@@ -23,7 +23,10 @@ BBox eval FCE: 2 min
 # Getting started
 
 ### Install
-Available packages for download will be generated later
+Install form source  
+```bash  
+pip3 install git+https://github.com/MiXaiLL76/faster_coco_eval  
+```  
 
 ## Usage
 
