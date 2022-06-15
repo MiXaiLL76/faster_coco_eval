@@ -54,7 +54,7 @@ For usage, look at the original `COCOEval` [class documentation.](https://github
 - [x] Remove torch dependencies
 - [x] Append unittest
 - [x] Append ROC / AUC curves  
-- [ ] Check if it works on windows  
+- [x] Check if it works on windows
 - [ ] Append fp fn error analysis  
 
 # License
