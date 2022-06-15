@@ -482,7 +482,7 @@ class COCOeval:
             return mean_s
 
         def _summarizeDets():
-            stats = np.zeros((12,))
+            stats = np.zeros((14,))
             stats[0] = _summarize(1, maxDets=self.params.maxDets[-1]) # AP_all
             stats[1] = _summarize(1, iouThr=.5, maxDets=self.params.maxDets[-1]) # AP_50
             stats[2] = _summarize(
@@ -506,6 +506,9 @@ class COCOeval:
                                    maxDets=self.params.maxDets[-1]) # AR_medium
             stats[11] = _summarize(
                 0, areaRng='large', maxDets=self.params.maxDets[-1]) # AR_large
+            
+            stats[12] = _summarize(0, iouThr=.5, maxDets=self.params.maxDets[-1]) # AR_50
+            stats[13] = _summarize(0, iouThr=.75, maxDets=self.params.maxDets[-1])  # AR_75
             return stats
 
         def _summarizeKps():
@@ -543,10 +546,10 @@ class COCOeval:
             "AP_all", "AP_50", "AP_75", 
             "AP_small", "AP_medium", "AP_large", 
             "AR_all", "AR_second", "AR_third",
-            "AR_small", "AR_medium", "AR_large"]
+            "AR_small", "AR_medium", "AR_large", "AR_50", "AR_75"]
         
         maxDets = self.params.maxDets
-        if len(maxDets) != 0:
+        if len(maxDets) > 1:
             labels[6] = f'AR_{maxDets[0]}'
 
         if len(maxDets) >= 2:
