@@ -532,7 +532,9 @@ class COCOeval:
             summarize = _summarizeDets
         elif iouType == 'keypoints':
             summarize = _summarizeKps
-        self.stats = summarize()
+        
+        self.all_stats = summarize()
+        self.stats = self.all_stats[:12]
 
     def __str__(self):
         self.summarize()
@@ -558,7 +560,7 @@ class COCOeval:
         if len(maxDets) >= 3:
             labels[8] = f'AR_{maxDets[2]}'
 
-        return {_label : float(self.stats[i]) for i, _label in enumerate(labels)}
+        return {_label : float(self.all_stats[i]) for i, _label in enumerate(labels)}
 
 class Params:
     '''
