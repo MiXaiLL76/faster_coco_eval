@@ -12,7 +12,7 @@ with open("README.md", "r") as fh:
 def get_extensions():
     sources = [
         "csrc/coco_eval/cocoeval.cpp", 
-        "csrc/faster_eval_api.cpp"
+        "csrc/faster_eval_api.cpp",
     ]
     print(f"Sources: {sources}")
 
@@ -35,6 +35,7 @@ setup(
     cmdclass={"build_ext": build_ext},
     long_description=long_description,
     long_description_content_type="text/markdown",
+    package_data={'': ['csrc']},
     install_requires=[
         'pybind11>=2.9.2',
         'numpy>=1.18.0',
