@@ -37,9 +37,9 @@ setup(
     long_description_content_type="text/markdown",
     package_data={'': ['csrc']},
     install_requires=[
-        'pybind11>=2.9.2',
-        'numpy>=1.18.0',
-        'testresources==2.0.1',
-        'pycocotools>=2.0.0'
+        'pybind11',
+        'numpy',
+        'testresources',
+        'pycocotools'
     ],
 )
