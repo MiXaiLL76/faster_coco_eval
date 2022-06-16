@@ -10,19 +10,27 @@ for coco's AP metrics, especially when dealing with a high number of instances i
 
 ### Comparison
 
-For our use case with a test dataset of 1500 images that contains up to 2000 instances per image we saw up to a 100x faster 
-evaluation using faster-coco-eval (FCE) compared to the original pycocotools code.
-````
-Seg eval pycocotools 4 hours 
-Seg eval FCE: 2.5 min
+For our use case with a test dataset of 5000 images from the coco val dataset.
+Testing was carried out using the mmdetection framework and the eval_metric.py script. The indicators are presented below.
 
-BBox eval pycocotools: 4 hours 
-BBox eval FCE: 2 min
-````
+Visualization of testing **comparison.ipynb** available in directory [examples/comparison](./examples/comparison/comparison.ipynb)
+Tested with yolo3 model (bbox eval) and yoloact model (segm eval)
+
+Type | COCOeval | COCOeval_faster | Profit
+-----|----------|---------------- | ------
+bbox | 22.854 sec. | 8.714 sec.   | more than 2x 
+segm | 35.356 sec. | 18.403 sec.  | 2x
+
 
 # Getting started
 
-### Install
+## Local build
+Build from source
+```bash
+python3 setup.py sdist
+```
+
+## Install
 Install form source  
 ```bash  
 pip3 install git+https://github.com/MiXaiLL76/faster_coco_eval  
@@ -55,7 +63,7 @@ For usage, look at the original `COCOEval` [class documentation.](https://github
 - [x] Append unittest
 - [x] Append ROC / AUC curves  
 - [x] Check if it works on windows
-- [ ] Append fp fn error analysis  
+- [ ] Append fp fn error analysis
 
 # License
 The original module was licensed with apache 2, I will continue with the same license.
