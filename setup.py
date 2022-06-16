@@ -20,7 +20,6 @@ def get_extensions():
         Pybind11Extension(
             name="faster_coco_eval.faster_eval_api_cpp",
             sources=sources,
-            define_macros=[('VERSION_INFO', __version__)],
         )
     ]
     return ext_modules
@@ -29,6 +28,7 @@ setup(
     name="faster-coco-eval",
     version=__version__,
     author="MiXaiLL76",
+    description="Faster interpretation of the original COCOEval",
     python_requires=">=3.6",
     ext_modules=get_extensions(),
     packages=setuptools.find_packages(),
@@ -36,9 +36,9 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=[
-        'pybind11',
-        'numpy',
-        'testresources',
-        'pycocotools'
+        'pybind11>=2.9.2',
+        'numpy>=1.18.0',
+        'testresources==2.0.1',
+        'pycocotools>=2.0.0'
     ],
 )
