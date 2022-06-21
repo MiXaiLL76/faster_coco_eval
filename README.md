@@ -54,7 +54,7 @@ For usage, look at the original `COCOEval` [class documentation.](https://github
 - pybind11
 - numpy
 
-# TODOs
+# v1.1.0
 - [x] Wrap c++ code
 - [x] Get it to compile
 - [x] Add COCOEval class wraper
@@ -63,6 +63,14 @@ For usage, look at the original `COCOEval` [class documentation.](https://github
 - [x] Append unittest
 - [x] Append ROC / AUC curves  
 - [x] Check if it works on windows
+
+# v1.1.1
+- [x] Redesigned curves
+- [x] Reworked data preload
+- [x] Append csrc to setup
+- [x] Build sdist Package
+
+# TODOs
 - [ ] Append fp fn error analysis
 
 # License
