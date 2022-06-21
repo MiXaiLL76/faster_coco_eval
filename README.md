@@ -72,6 +72,8 @@ For usage, look at the original `COCOEval` [class documentation.](https://github
 
 # TODOs
 - [ ] Append fp fn error analysis
+- [ ] Append confusion matrix
+- [ ] Remove pycocotools dependencies
 
 # License
 The original module was licensed with apache 2, I will continue with the same license.
