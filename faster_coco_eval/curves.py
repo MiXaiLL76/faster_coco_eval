@@ -4,6 +4,8 @@ import numpy as np
 import copy
 import time
 import logging
+from tqdm import tqdm
+
 logger = logging.getLogger(__name__)
 
 class Curves():
@@ -19,23 +21,26 @@ class Curves():
 
         if type(annotation_file) is str:
             with open(annotation_file, 'r') as f:
-                self.dataset = json.load(f)
+                dataset = json.load(f)
         elif type(annotation_file) is dict:
-            self.dataset = annotation_file
+            dataset = annotation_file
         else:
-            self.dataset = None
+            dataset = None
 
         logger.debug('Done (t={:0.2f}s)'.format(time.time()- tic))
-        assert type(self.dataset)==dict, 'annotation file format {} not supported'.format(type(dataset))
-    
-    def select_anns(self, anns, image_id=0, category=None):
-        anns = [
-            dict(ann, **{'score': ann.get('score', 1)})
-        for ann in anns if (ann['image_id'] == image_id) and ((ann['category_id'] == category) or (category is None))]
-
-        anns.sort(key = lambda x : x.get('score'), reverse=True)
-        return anns
-
+        assert type(dataset)==dict, 'annotation file format {} not supported'.format(type(dataset))
+        
+        self.dataset = {
+            'annotations' : {},
+            'images' : dataset['images'],
+            'categories' : dataset['categories'],
+        }
+        for ann in dataset['annotations']:
+            if self.dataset['annotations'].get(ann['image_id']) is None:
+                self.dataset['annotations'][ann['image_id']] = []
+            
+            self.dataset['annotations'][ann['image_id']].append(ann)
+        
     def computeIoU(self, gt, dt):
         maxDets = len(gt)
         
@@ -82,7 +87,24 @@ class Curves():
         
         return np.array(find)
     
-    def match(self, result_annotations, categories_id=['all']):
+    def select_anns(self, anns, image_id=0, category=None):
+        anns = [
+            dict(ann, **{'score': ann.get('score', 1)})
+        for ann in anns if (ann['image_id'] == image_id) and ((ann['category_id'] == category) or (category is None))]
+
+        anns.sort(key = lambda x : x.get('score'), reverse=True)
+        return anns
+    
+    def load_result(self, result_annotations):
+        self.result_annotations = {}
+        
+        for ann in result_annotations:
+            if self.result_annotations.get(ann['image_id']) is None:
+                self.result_annotations[ann['image_id']] = []
+            
+            self.result_annotations[ann['image_id']].append(ann)
+        
+    def match(self, categories_id=['all']):
         if categories_id is None:
             categories_id = [None]
         
@@ -95,7 +117,7 @@ class Curves():
         
         match_results = {}
         
-        for image in self.dataset['images']:
+        for image in tqdm(self.dataset['images']):
             _image_id = image['id']
             for _category_id in categories_id:
                 if match_results.get(_category_id) is None:
@@ -104,18 +126,23 @@ class Curves():
                         "num_groundtruthbox" : 0,
                         "maxiou_confidence"  : []
                     }
+                
+                gt_anns = self.dataset['annotations'].get(_image_id, [])
+                dt_anns = self.result_annotations.get(_image_id, [])
+                
+                gt = self.select_anns(gt_anns, _image_id, _category_id)
+                dt = self.select_anns(dt_anns, _image_id, _category_id)
+                
+                match_results[_category_id]['num_groundtruthbox'] += len(gt)
+                match_results[_category_id]['num_detectedbox'] += len(dt)
+                
+                
+                if len(dt) > 0 and len(gt) > 0:
+                    iou, scores = self.computeIoU(gt, dt)
+                    pairs = self.find_pairs(iou, scores)
                     
-                gt = self.select_anns(self.dataset['annotations'].copy(), _image_id, _category_id)
-                dt = self.select_anns(result_annotations.copy(), _image_id, _category_id)
-                
-                iou, scores = self.computeIoU(gt, dt)
-                pairs = self.find_pairs(iou, scores)
-                
-                num_detectedbox, num_groundtruthbox = iou.shape[:2]
-                
-                match_results[_category_id]['num_detectedbox'] += num_detectedbox
-                match_results[_category_id]['num_groundtruthbox'] += num_groundtruthbox
-                match_results[_category_id]['maxiou_confidence'].append(pairs[:, 2:])
+                    if pairs.shape[0] > 0:
+                        match_results[_category_id]['maxiou_confidence'].append(pairs[:, 2:])
 
         for _category_id in categories_id:
             match_results[_category_id]['maxiou_confidence'] = np.vstack(match_results[_category_id]['maxiou_confidence'])
@@ -124,7 +151,7 @@ class Curves():
             match_results[_category_id]['maxiou_confidence'] = match_results[_category_id]['maxiou_confidence'][_ids][::-1]
             
         return match_results
-    
+
     def thres(self, maxiou_confidence, threshold = 0.5):
         maxious = maxiou_confidence[:, 0]
         confidences = maxiou_confidence[:, 1]
