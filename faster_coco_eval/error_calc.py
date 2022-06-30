@@ -138,9 +138,9 @@ class ErrorCalc(Curves):
     
             if self.iouType == 'segm':
                 for _segm in ann['segmentation']:
-                    draw.polygon(_segm, outline=(255, 0, 0, 255), fill=(255, 0, 0, 64))
+                    draw.polygon(_segm, outline=(0, 0, 255, 255), fill=(0, 0, 255, 64))
             else:
-                draw.rectangle([x1, y1, x2, y2], outline=(255, 0, 0, 255), fill=(255, 0, 0, 64))
+                draw.rectangle([x1, y1, x2, y2], outline=(0, 0, 255, 255), fill=(0, 0, 255, 64))
             
 
             print(image_fn)
