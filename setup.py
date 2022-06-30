@@ -4,7 +4,7 @@ import setuptools
 from setuptools import setup
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -40,6 +40,8 @@ setup(
         'pybind11',
         'numpy',
         'testresources',
-        'pycocotools'
+        'pycocotools',
+        'matplotlib',
+        'Pillow',
     ],
 )

@@ -1,7 +1,7 @@
 import pycocotools._mask as maskUtils
 import matplotlib.pyplot as plt
 import numpy as np
-import copy
+import json
 import time
 import logging
 from tqdm import tqdm
@@ -19,20 +19,11 @@ class Curves():
         logger.debug('loading annotations into memory...')
         tic = time.time()
 
-        if type(annotation_file) is str:
-            with open(annotation_file, 'r') as f:
-                dataset = json.load(f)
-        elif type(annotation_file) is dict:
-            dataset = annotation_file
-        else:
-            dataset = None
+        dataset = self.load_coco(annotation_file)
 
-        logger.debug('Done (t={:0.2f}s)'.format(time.time()- tic))
-        assert type(dataset)==dict, 'annotation file format {} not supported'.format(type(dataset))
-        
         self.dataset = {
             'annotations' : {},
-            'images' : dataset['images'],
+            'images' : {image['id'] : image for image in dataset['images']},
             'categories' : dataset['categories'],
         }
         for ann in dataset['annotations']:
@@ -40,7 +31,36 @@ class Curves():
                 self.dataset['annotations'][ann['image_id']] = []
             
             self.dataset['annotations'][ann['image_id']].append(ann)
+    
+    def load_result(self, result_annotations):
+        dataset = self.load_coco(result_annotations)
+
+        self.result_annotations = {}
+        ann_id = len(dataset) + 1
         
+        for ann in dataset:
+            if self.result_annotations.get(ann['image_id']) is None:
+                self.result_annotations[ann['image_id']] = []
+            
+            if ann.get('id') is None:
+                ann['id'] = ann_id
+                ann_id += 1
+            
+            self.result_annotations[ann['image_id']].append(ann)
+        
+    def load_coco(self, coco_data):
+        if type(coco_data) is str:
+            with open(coco_data, 'r') as io:
+                dataset = json.load(io)
+        elif type(coco_data) in [dict, list]:
+            dataset = coco_data
+        else:
+            dataset = None
+        
+        assert (type(dataset) is dict) or ((type(dataset) is list) and (len(dataset) > 0) and (type(dataset[0]) is dict)), 'annotation file format not supported'
+        
+        return dataset
+    
     def computeIoU(self, gt, dt):
         maxDets = len(gt)
         
@@ -64,7 +84,7 @@ class Curves():
         ious[ious < self.iou_tresh] = 0
         ious[ious == 0] = -1
 
-        return ious, scores[inds]
+        return ious, scores[inds], inds
     
     def find_pairs(self, iou, scores):
         used_gt = {}
@@ -85,7 +105,7 @@ class Curves():
         
         find.sort(key=lambda x: x[3], reverse=True)
         
-        return np.array(find)
+        return np.array(find).reshape(-1,4)
     
     def select_anns(self, anns, image_id=0, category=None):
         anns = [
@@ -95,15 +115,7 @@ class Curves():
         anns.sort(key = lambda x : x.get('score'), reverse=True)
         return anns
     
-    def load_result(self, result_annotations):
-        self.result_annotations = {}
-        
-        for ann in result_annotations:
-            if self.result_annotations.get(ann['image_id']) is None:
-                self.result_annotations[ann['image_id']] = []
-            
-            self.result_annotations[ann['image_id']].append(ann)
-        
+    
     def match(self, categories_id=['all']):
         if categories_id is None:
             categories_id = [None]
@@ -117,8 +129,7 @@ class Curves():
         
         match_results = {}
         
-        for image in tqdm(self.dataset['images']):
-            _image_id = image['id']
+        for _image_id in tqdm(self.dataset['images']):
             for _category_id in categories_id:
                 if match_results.get(_category_id) is None:
                     match_results[_category_id] = {
@@ -138,7 +149,7 @@ class Curves():
                 
                 
                 if len(dt) > 0 and len(gt) > 0:
-                    iou, scores = self.computeIoU(gt, dt)
+                    iou, scores, _ = self.computeIoU(gt, dt)
                     pairs = self.find_pairs(iou, scores)
                     
                     if pairs.shape[0] > 0:
@@ -161,9 +172,20 @@ class Curves():
         tf_confidence = tf_confidence[np.argsort(-tf_confidence[:, 1])]
         return tf_confidence
     
-    def plot_curve(self, match_results : dict, threshold_iou=0.5):
-        fig, axes = plt.subplots(ncols=2)
-        fig.set_size_inches(15, 7)
+    def plot_curve(self, match_results : dict, threshold_iou=0.5, plot_cols=True, plotly_backend=True):
+        if plot_cols:
+            fig, axes = plt.subplots(ncols=2)
+            fig.set_size_inches(15, 7)
+        else:
+            fig, axes = plt.subplots(nrows=2)
+            fig.set_size_inches(15, 14)
+        
+        if plotly_backend:
+            try:
+                from plotly.tools import mpl_to_plotly
+            except:
+                logger.warning('plotly not instaled...')
+                plotly_backend = False
         
         for category_id, _match in match_results.items():
             label = _match.get("label", "category_id")
@@ -213,5 +235,10 @@ class Curves():
             axes[1].plot(recall_list, precision_list, label = f'{label}mAP: {mAP:.3f}')
             axes[1].grid(True)
             axes[1].legend()
-
-        plt.show()
+        
+        
+        if plotly_backend:
+            pf = mpl_to_plotly(fig, resize=True)
+            pf.show()
+        else:
+            plt.show()

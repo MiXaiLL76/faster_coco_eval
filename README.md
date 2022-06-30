@@ -70,9 +70,12 @@ For usage, look at the original `COCOEval` [class documentation.](https://github
 - [x] Append csrc to setup
 - [x] Build sdist Package
 
+# v1.1.2
+- [x] Append fp fn error analysis
+- [x] Append confusion matrix
+- [x] Append plotly backend support for ROC / AUC
+
 # TODOs
-- [ ] Append fp fn error analysis
-- [ ] Append confusion matrix
 - [ ] Remove pycocotools dependencies
 
 # License

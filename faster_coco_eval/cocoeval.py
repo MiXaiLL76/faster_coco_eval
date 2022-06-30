@@ -69,7 +69,7 @@ class COCOeval:
         :return: None
         '''
         if not iouType:
-            logger.info('iouType not specified. use default iouType segm')
+            logger.debug('iouType not specified. use default iouType segm')
         self.cocoGt = cocoGt              # ground truth COCO API
         self.cocoDt = cocoDt              # detections COCO API
         # per-image per-category evaluation results [KxAxI] elements
@@ -131,14 +131,14 @@ class COCOeval:
         :return: None
         '''
         tic = time.time()
-        logger.info('Running per image evaluation...')
+        logger.debug('Running per image evaluation...')
         p = self.params
         # add backward compatibility if useSegm is specified in params
         if not p.useSegm is None:
             p.iouType = 'segm' if p.useSegm == 1 else 'bbox'
             logger.warning(
                 'useSegm (deprecated) is not None. Running {} evaluation'.format(p.iouType))
-        logger.info('Evaluate annotation type *{}*'.format(p.iouType))
+        logger.debug('Evaluate annotation type *{}*'.format(p.iouType))
         p.imgIds = list(np.unique(p.imgIds))
         if p.useCats:
             p.catIds = list(np.unique(p.catIds))
@@ -166,7 +166,7 @@ class COCOeval:
                          ]
         self._paramsEval = copy.deepcopy(self.params)
         toc = time.time()
-        logger.info('DONE (t={:0.2f}s).'.format(toc-tic))
+        logger.debug('DONE (t={:0.2f}s).'.format(toc-tic))
 
     def computeIoU(self, imgId, catId):
         p = self.params
@@ -334,10 +334,10 @@ class COCOeval:
         :param p: input params for evaluation
         :return: None
         '''
-        logger.info('Accumulating evaluation results...')
+        logger.debug('Accumulating evaluation results...')
         tic = time.time()
         if not self.evalImgs:
-            logger.info('Please run evaluate() first')
+            logger.debug('Please run evaluate() first')
         # allows input customized parameters
         if p is None:
             p = self.params
@@ -440,7 +440,7 @@ class COCOeval:
             'scores': scores,
         }
         toc = time.time()
-        logger.info('DONE (t={:0.2f}s).'.format(toc-tic))
+        logger.debug('DONE (t={:0.2f}s).'.format(toc-tic))
 
     def summarize(self):
         '''
@@ -477,7 +477,7 @@ class COCOeval:
                 mean_s = -1
             else:
                 mean_s = np.mean(s[s > -1])
-            logger.info(iStr.format(titleStr, typeStr,
+            logger.debug(iStr.format(titleStr, typeStr,
                         iouStr, areaRng, maxDets, mean_s))
             return mean_s
 
