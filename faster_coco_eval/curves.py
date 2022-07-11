@@ -30,7 +30,34 @@ class Curves():
             if self.dataset['annotations'].get(ann['image_id']) is None:
                 self.dataset['annotations'][ann['image_id']] = []
             
+            if self.iouType == 'segm':
+                ann = self.annToRLE(ann)
+            
             self.dataset['annotations'][ann['image_id']].append(ann)
+
+    def annToRLE(self, ann):
+        """
+        Convert annotation which can be polygons, uncompressed RLE to RLE.
+        :return: binary mask (numpy 2D array)
+        """
+        t = self.dataset['images'][ann['image_id']]
+        h, w = t['height'], t['width']
+        segm = ann['segmentation']
+        if type(segm) == list:
+            # polygon -- a single object might consist of multiple parts
+            # we merge all parts into one mask rle code
+            rles = maskUtils.frPyObjects(segm, h, w)
+            rle = maskUtils.merge(rles)
+        elif type(segm['counts']) == list:
+            # uncompressed RLE
+            rle = maskUtils.frPyObjects(segm, h, w)
+        else:
+            # rle
+            rle = ann['segmentation']
+
+        ann['rle'] = rle
+
+        return ann
     
     def load_result(self, result_annotations):
         dataset = self.load_coco(result_annotations)
@@ -45,6 +72,9 @@ class Curves():
             if ann.get('id') is None:
                 ann['id'] = ann_id
                 ann_id += 1
+            
+            if self.iouType == 'segm':
+                ann = self.annToRLE(ann)
             
             self.result_annotations[ann['image_id']].append(ann)
         
@@ -70,8 +100,8 @@ class Curves():
         dt = [dt[i] for i in inds]
 
         if self.iouType == 'segm':
-            g = [g['segmentation'] for g in gt]
-            d = [d['segmentation'] for d in dt]
+            g = [g['rle'] for g in gt]
+            d = [d['rle'] for d in dt]
         elif self.iouType == 'bbox':
             g = np.array([g['bbox'] for g in gt])
             d = np.array([d['bbox'] for d in dt])
