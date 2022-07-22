@@ -4,7 +4,7 @@ import setuptools
 from setuptools import setup
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 
-__version__ = "1.1.2"
+__version__='1.1.4'
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -37,7 +37,6 @@ setup(
     long_description_content_type="text/markdown",
     package_data={'': ['csrc']},
     install_requires=[
-        'pybind11',
         'numpy',
         'testresources',
         'pycocotools',
