@@ -1,10 +1,18 @@
 import pycocotools._mask as maskUtils
-import matplotlib.pyplot as plt
 import numpy as np
 import json
 import time
 import logging
 from tqdm import tqdm
+
+import matplotlib.pyplot as plt
+
+try:
+    from plotly.subplots import make_subplots
+    import plotly.graph_objects as go
+    plotly_available = True
+except:
+    plotly_available = False
 
 logger = logging.getLogger(__name__)
 
@@ -202,20 +210,18 @@ class Curves():
         tf_confidence = tf_confidence[np.argsort(-tf_confidence[:, 1])]
         return tf_confidence
     
-    def plot_curve(self, match_results : dict, threshold_iou=0.5, plot_cols=True, plotly_backend=True):
-        if plot_cols:
+    def plot_curve(self, match_results : dict, threshold_iou=0.5, plotly_backend=True):
+        use_plotly = False
+        if plotly_backend:
+            if plotly_available:
+                fig = make_subplots(rows=1, cols=2, subplot_titles=['ROC', 'Precision-Recall'])
+                use_plotly = True
+            else:
+                logger.warning('plotly not instaled...')
+        
+        if not use_plotly:
             fig, axes = plt.subplots(ncols=2)
             fig.set_size_inches(15, 7)
-        else:
-            fig, axes = plt.subplots(nrows=2)
-            fig.set_size_inches(15, 14)
-        
-        if plotly_backend:
-            try:
-                from plotly.tools import mpl_to_plotly
-            except:
-                logger.warning('plotly not instaled...')
-                plotly_backend = False
         
         for category_id, _match in match_results.items():
             label = _match.get("label", "category_id")
@@ -250,25 +256,51 @@ class Curves():
             auc = auc / len(fp_list)
             mAP = mAP * max(recall_list) / len(recall_list)
 
-            axes[0].set_title('ROC')
-            axes[0].set_xlabel('False Positives')
-            axes[0].set_ylabel('True Positive rate')
-            # plt.ylim(0, 1)
-            axes[0].plot(fp_list, recall_list, label = f'{label}AUC: {auc:.3f}')
-            axes[0].grid(True)
-            axes[0].legend()
+            if use_plotly:
+                fig.add_trace(
+                    go.Scatter(
+                        x=fp_list,
+                        y=recall_list,
+                        name=label,
+                        mode='lines',
+                        text=tf_confidence[:, 1],
+                        hovertemplate= 'Rec: %{y:.3f}<br>'+
+                            'FP: %{x}<br>'+
+                            'Score: %{text:.3f}',
+                    ),
+                    row=1, col=1
+                )
+            
+                fig.add_trace(
+                    go.Scatter(
+                        x=recall_list,
+                        y=precision_list,
+                        name=label,
+                        mode='lines',
+                        text=tf_confidence[:, 1],
+                        hovertemplate= 'Pre: %{y:.3f}<br>'+
+                            'Rec: %{x:.3f}<br>'+
+                            'Score: %{text:.3f}',
+                    ),
+                    row=1, col=2
+                )
+            else:
+                axes[0].set_title('ROC')
+                axes[0].set_xlabel('False Positives')
+                axes[0].set_ylabel('True Positive rate')
+                axes[0].plot(fp_list, recall_list, label = f'{label}AUC: {auc:.3f}')
+                axes[0].grid(True)
+                axes[0].legend()
 
-            axes[1].set_title('Precision-Recall')
-            axes[1].set_xlabel('Recall')
-            axes[1].set_ylabel('Precision')
-            # plt.axis([0, 1, 0, 1])
-            axes[1].plot(recall_list, precision_list, label = f'{label}mAP: {mAP:.3f}')
-            axes[1].grid(True)
-            axes[1].legend()
+                axes[1].set_title('Precision-Recall')
+                axes[1].set_xlabel('Recall')
+                axes[1].set_ylabel('Precision')
+                axes[1].plot(recall_list, precision_list, label = f'{label}mAP: {mAP:.3f}')
+                axes[1].grid(True)
+                axes[1].legend()
         
-        
-        if plotly_backend:
-            pf = mpl_to_plotly(fig, resize=True)
-            pf.show()
+        if use_plotly:
+            fig.update_layout(height=600, width=1200)
+            fig.show()
         else:
             plt.show()
