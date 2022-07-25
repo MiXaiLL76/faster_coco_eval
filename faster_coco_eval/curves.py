@@ -102,9 +102,13 @@ class Curves():
     def computeIoU(self, gt, dt):
         maxDets = len(gt)
         
-        scores = np.float16([d['score'] for d in dt if d['score'] >= self.min_score])
+        scores = np.float16([d['score'] for d in dt])
 
         inds = np.argsort(scores, kind='mergesort')
+        
+        if self.min_score > 0:
+            inds = inds[scores[inds] >= self.min_score]
+        
         dt = [dt[i] for i in inds]
 
         if self.iouType == 'segm':
@@ -210,6 +214,81 @@ class Curves():
         tf_confidence = tf_confidence[np.argsort(-tf_confidence[:, 1])]
         return tf_confidence
     
+    def plot_pre_rec(self, match_results : dict, threshold_iou=0.5, plotly_backend=True):
+        use_plotly = False
+        if plotly_backend:
+            if plotly_available:
+                fig = make_subplots(rows=1, cols=1, subplot_titles=['Precision-Recall'])
+                use_plotly = True
+            else:
+                logger.warning('plotly not instaled...')
+        
+        if not use_plotly:
+            fig, axes = plt.subplots(ncols=1)
+            fig.set_size_inches(15, 7)
+            axes = [axes]
+        
+        for category_id, _match in match_results.items():
+            label = _match.get("label", "category_id")
+            label = f"[{label}={category_id}] "
+            if category_id is None:
+                label = ""
+            
+            maxiou_confidence  = _match['maxiou_confidence']
+            num_detectedbox    = _match['num_detectedbox']
+            num_groundtruthbox = _match['num_groundtruthbox']
+            
+            tf_confidence = self.thres(maxiou_confidence, threshold_iou)
+
+            fp_list = []
+            recall_list = []
+            precision_list = []
+            auc = 0
+            mAP = 0
+            for num in range(len(tf_confidence)):
+                arr = tf_confidence[:(num + 1), 0] # 截取, 注意要加1
+                tp = np.sum(arr)
+                fp = np.sum(arr == 0)
+                recall = tp / num_groundtruthbox
+                precision = tp / (tp + fp)
+                auc = auc + recall
+                mAP = mAP + precision
+
+                fp_list.append(fp)
+                recall_list.append(recall)
+                precision_list.append(precision)
+
+            auc = auc / len(fp_list)
+            mAP = mAP * max(recall_list) / len(recall_list)
+
+            if use_plotly:
+                fig.add_trace(
+                    go.Scatter(
+                        x=recall_list,
+                        y=precision_list,
+                        name=label,
+                        mode='lines',
+                        text=tf_confidence[:, 1],
+                        hovertemplate= 'Pre: %{y:.3f}<br>'+
+                            'Rec: %{x:.3f}<br>'+
+                            'Score: %{text:.3f}',
+                    ),
+                    row=1, col=1
+                )
+            else:
+                axes[0].set_title('Precision-Recall')
+                axes[0].set_xlabel('Recall')
+                axes[0].set_ylabel('Precision')
+                axes[0].plot(recall_list, precision_list, label = f'{label}mAP: {mAP:.3f}')
+                axes[0].grid(True)
+                axes[0].legend()
+        
+        if use_plotly:
+            fig.update_layout(height=600, width=1200)
+            fig.show()
+        else:
+            plt.show()
+
     def plot_curve(self, match_results : dict, threshold_iou=0.5, plotly_backend=True):
         use_plotly = False
         if plotly_backend:
