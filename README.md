@@ -75,6 +75,15 @@ For usage, look at the original `COCOEval` [class documentation.](https://github
 - [x] Append confusion matrix
 - [x] Append plotly backend support for ROC / AUC
 
+# v1.1.3
+- Segm bug-fix
+
+# v1.1.4
+- rebuild plotly backend
+
+# v1.1.5
+- bug fix
+
 # TODOs
 - [ ] Remove pycocotools dependencies
 

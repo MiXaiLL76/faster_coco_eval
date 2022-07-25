@@ -4,7 +4,7 @@ import setuptools
 from setuptools import setup
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 
-__version__='1.1.4'
+__version__='1.1.5'
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
