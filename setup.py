@@ -4,14 +4,15 @@ import setuptools
 from setuptools import setup
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 
-__version__='1.1.5'
+__version__ = '1.1.5'
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+
 def get_extensions():
     sources = [
-        "csrc/coco_eval/cocoeval.cpp", 
+        "csrc/coco_eval/cocoeval.cpp",
         "csrc/faster_eval_api.cpp",
     ]
     print(f"Sources: {sources}")
@@ -23,6 +24,7 @@ def get_extensions():
         )
     ]
     return ext_modules
+
 
 setup(
     name="faster-coco-eval",

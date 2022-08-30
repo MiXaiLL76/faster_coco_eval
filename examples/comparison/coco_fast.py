@@ -18,6 +18,7 @@ from mmdet.datasets.builder import DATASETS
 from mmdet.datasets.coco import CocoDataset
 from faster_coco_eval import COCOeval_faster
 
+
 @DATASETS.register_module()
 class FasterCocoDataset(CocoDataset):
     def evaluate_det_segm(self,

@@ -104,7 +104,7 @@ class COCOeval_faster(COCOeval):
         toc = time.time()
         logger.info(
             "COCOeval_opt.evaluate() finished in {:0.2f} seconds.".format(toc - tic))
-    
+
     def accumulate(self):
         """
         Accumulate per image evaluation results and store the result in self.eval.  Does not

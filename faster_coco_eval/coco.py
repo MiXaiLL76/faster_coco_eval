@@ -64,6 +64,7 @@ logger = logging.getLogger(__name__)
 def _isArrayLike(obj):
     return hasattr(obj, '__iter__') and hasattr(obj, '__len__')
 
+
 class COCO:
     def __init__(self, annotation_file=None):
         """
@@ -417,9 +418,9 @@ class COCO:
         :return: annotations (python nested list)
         """
         logger.info('Converting ndarray to lists...')
-        assert(type(data) == np.ndarray)
+        assert (type(data) == np.ndarray)
         logger.info(data.shape)
-        assert(data.shape[1] == 7)
+        assert (data.shape[1] == 7)
         N = data.shape[0]
         ann = []
         for i in range(N):

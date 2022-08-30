@@ -9,6 +9,7 @@ from mmdet.utils import replace_cfg_vals, update_data_root
 import coco_fast
 import time
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Evaluate metric of the '
                                      'results saved in pkl format')
@@ -66,17 +67,17 @@ def main():
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
     cfg.data.test.test_mode = True
-    
+
     ts = time.time()
     dataset = build_dataset(cfg.data.test)
     outputs = mmcv.load(args.pkl_results)
     te = time.time()
     print(f"Data uploaded for {te - ts:.3f} sec.")
-    
+
     kwargs = {} if args.eval_options is None else args.eval_options
     if args.format_only:
         dataset.format_results(outputs, **kwargs)
-    
+
     if args.eval:
         ts = time.time()
         eval_kwargs = cfg.get('evaluation', {}).copy()
@@ -88,9 +89,10 @@ def main():
             eval_kwargs.pop(key, None)
         eval_kwargs.update(dict(metric=args.eval, **kwargs))
         print(dataset.evaluate(outputs, **eval_kwargs))
-        
+
         te = time.time()
         print(f"Data validate for {te - ts:.3f} sec.")
+
 
 if __name__ == '__main__':
     main()

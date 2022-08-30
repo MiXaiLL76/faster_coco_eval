@@ -176,20 +176,19 @@ def main():
                       'in `gpu_ids` now.')
     else:
         cfg.gpu_ids = [args.gpu_id]
-        
+
     if cfg.gpu_ids == [-1]:
         cfg.device = "cpu"
     else:
         cfg.device = get_device()
-    
+
     # init distributed env first, since logger depends on the dist info.
     if args.launcher == 'none':
         distributed = False
     else:
         distributed = True
         init_dist(args.launcher, **cfg.dist_params)
-    
-    
+
     test_dataloader_default_args = dict(
         samples_per_gpu=1, workers_per_gpu=2, dist=distributed, shuffle=False)
 
@@ -230,7 +229,7 @@ def main():
     if fp16_cfg is not None:
         print(f"{fp16_cfg=}")
         wrap_fp16_model(model)
-    
+
     checkpoint = load_checkpoint(model, args.checkpoint, map_location='cpu')
     if args.fuse_conv_bn:
         model = fuse_conv_bn(model)

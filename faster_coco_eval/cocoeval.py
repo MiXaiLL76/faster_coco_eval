@@ -478,37 +478,43 @@ class COCOeval:
             else:
                 mean_s = np.mean(s[s > -1])
             logger.debug(iStr.format(titleStr, typeStr,
-                        iouStr, areaRng, maxDets, mean_s))
+                                     iouStr, areaRng, maxDets, mean_s))
             return mean_s
 
         def _summarizeDets():
             stats = np.zeros((14,))
-            stats[0] = _summarize(1, maxDets=self.params.maxDets[-1]) # AP_all
-            stats[1] = _summarize(1, iouThr=.5, maxDets=self.params.maxDets[-1]) # AP_50
+            stats[0] = _summarize(1, maxDets=self.params.maxDets[-1])  # AP_all
+            stats[1] = _summarize(
+                1, iouThr=.5, maxDets=self.params.maxDets[-1])  # AP_50
             stats[2] = _summarize(
                 1, iouThr=.75, maxDets=self.params.maxDets[-1])  # AP_75
             stats[3] = _summarize(1, areaRng='small',
                                   maxDets=self.params.maxDets[-1])  # AP_small
             stats[4] = _summarize(1, areaRng='medium',
-                                  maxDets=self.params.maxDets[-1]) # AP_medium
+                                  maxDets=self.params.maxDets[-1])  # AP_medium
             stats[5] = _summarize(1, areaRng='large',
-                                  maxDets=self.params.maxDets[-1]) # AP_large
-            
-            stats[6] = _summarize(0, maxDets=self.params.maxDets[0]) # AR_first or AR_all
+                                  maxDets=self.params.maxDets[-1])  # AP_large
+
+            # AR_first or AR_all
+            stats[6] = _summarize(0, maxDets=self.params.maxDets[0])
             if len(self.params.maxDets) >= 2:
-                stats[7] = _summarize(0, maxDets=self.params.maxDets[1]) # AR_second
-            if len(self.params.maxDets) >= 3: 
-                stats[8] = _summarize(0, maxDets=self.params.maxDets[2]) # AR_third
+                stats[7] = _summarize(
+                    0, maxDets=self.params.maxDets[1])  # AR_second
+            if len(self.params.maxDets) >= 3:
+                stats[8] = _summarize(
+                    0, maxDets=self.params.maxDets[2])  # AR_third
 
             stats[9] = _summarize(0, areaRng='small',
-                                  maxDets=self.params.maxDets[-1]) # AR_small
+                                  maxDets=self.params.maxDets[-1])  # AR_small
             stats[10] = _summarize(0, areaRng='medium',
-                                   maxDets=self.params.maxDets[-1]) # AR_medium
+                                   maxDets=self.params.maxDets[-1])  # AR_medium
             stats[11] = _summarize(
-                0, areaRng='large', maxDets=self.params.maxDets[-1]) # AR_large
-            
-            stats[12] = _summarize(0, iouThr=.5, maxDets=self.params.maxDets[-1]) # AR_50
-            stats[13] = _summarize(0, iouThr=.75, maxDets=self.params.maxDets[-1])  # AR_75
+                0, areaRng='large', maxDets=self.params.maxDets[-1])  # AR_large
+
+            stats[12] = _summarize(
+                0, iouThr=.5, maxDets=self.params.maxDets[-1])  # AR_50
+            stats[13] = _summarize(
+                0, iouThr=.75, maxDets=self.params.maxDets[-1])  # AR_75
             return stats
 
         def _summarizeKps():
@@ -524,7 +530,7 @@ class COCOeval:
             stats[8] = _summarize(0, maxDets=20, areaRng='medium')
             stats[9] = _summarize(0, maxDets=20, areaRng='large')
             return stats
-        
+
         if not self.eval:
             raise Exception('Please run accumulate() first')
         iouType = self.params.iouType
@@ -532,35 +538,37 @@ class COCOeval:
             summarize = _summarizeDets
         elif iouType == 'keypoints':
             summarize = _summarizeKps
-        
+
         self.all_stats = summarize()
         self.stats = self.all_stats[:12]
 
     def __str__(self):
         self.summarize()
-    
+
     @property
     def stats_as_dict(self):
         iouType = self.params.iouType
-        assert (iouType == 'segm' or iouType == 'bbox'), f'{iouType=} not supported'
+        assert (iouType == 'segm' or iouType ==
+                'bbox'), f'{iouType=} not supported'
 
         labels = [
-            "AP_all", "AP_50", "AP_75", 
-            "AP_small", "AP_medium", "AP_large", 
+            "AP_all", "AP_50", "AP_75",
+            "AP_small", "AP_medium", "AP_large",
             "AR_all", "AR_second", "AR_third",
             "AR_small", "AR_medium", "AR_large", "AR_50", "AR_75"]
-        
+
         maxDets = self.params.maxDets
         if len(maxDets) > 1:
             labels[6] = f'AR_{maxDets[0]}'
 
         if len(maxDets) >= 2:
             labels[7] = f'AR_{maxDets[1]}'
-            
+
         if len(maxDets) >= 3:
             labels[8] = f'AR_{maxDets[2]}'
 
-        return {_label : float(self.all_stats[i]) for i, _label in enumerate(labels)}
+        return {_label: float(self.all_stats[i]) for i, _label in enumerate(labels)}
+
 
 class Params:
     '''
