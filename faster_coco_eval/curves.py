@@ -145,6 +145,9 @@ class Curves():
             iou_value = iou[dt_id, best_gt_id]
             score = scores[dt_id]
 
+            iou[:, best_gt_id] = -1
+            iou[dt_id, :] = -1
+
             find.append([best_gt_id, dt_id, iou_value, score])
 
         find.sort(key=lambda x: x[3], reverse=True)
@@ -219,6 +222,17 @@ class Curves():
         tf_confidence = tf_confidence[np.argsort(-tf_confidence[:, 1])]
         return tf_confidence
 
+    def calc_auc(self, recall_list, precision_list):
+        # https://towardsdatascience.com/how-to-efficiently-implement-area-under-precision-recall-curve-pr-auc-a85872fd7f14
+        mrec = np.concatenate(([0.], recall_list, [1.]))
+        mpre = np.concatenate(([0.], precision_list, [0.]))
+
+        for i in range(mpre.size - 1, 0, -1):
+            mpre[i - 1] = np.maximum(mpre[i - 1], mpre[i])
+
+        i = np.where(mrec[1:] != mrec[:-1])[0]
+        return np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
+
     def plot_pre_rec(self, match_results: dict, threshold_iou=0.5, plotly_backend=True):
         use_plotly = False
         if plotly_backend:
@@ -250,43 +264,42 @@ class Curves():
             num_groundtruthbox = _match['num_groundtruthbox']
 
             tf_confidence = self.thres(maxiou_confidence, threshold_iou)
-
+            scores = tf_confidence[:, 1]
             fp_list = []
             recall_list = []
             precision_list = []
-            auc = 0
-            mAP = 0
+
             for num in range(len(tf_confidence)):
                 arr = tf_confidence[:(num + 1), 0]
                 tp = np.sum(arr)
                 fp = np.sum(arr == 0)
+
                 recall = tp / num_groundtruthbox
                 precision = tp / (tp + fp)
-                auc = auc + recall
-                mAP = mAP + precision
 
                 fp_list.append(fp)
                 recall_list.append(recall)
                 precision_list.append(precision)
 
-            auc = auc / len(fp_list)
-            mAP = mAP * max(recall_list) / len(recall_list)
+            precision_list = np.array(precision_list)
+            recall_list = np.array(recall_list)
+
+            auc = self.calc_auc(recall_list, precision_list)
 
             output['auc'].append(auc)
-            output['mAP'].append(mAP)
 
             if use_plotly:
-                scores = tf_confidence[:, 1]
                 fig.add_trace(
                     go.Scatter(
                         x=recall_list,
                         y=precision_list,
-                        name=label,
+                        name=f'{label}auc: {auc:.3f}',
                         mode='lines',
                         text=scores,
                         hovertemplate='Pre: %{y:.3f}<br>' +
                         'Rec: %{x:.3f}<br>' +
-                        'Score: %{text:.3f}',
+                        'Score: %{text:.3f}<extra></extra>',
+                        showlegend=True,
                     ),
                     row=1, col=1
                 )
@@ -295,7 +308,7 @@ class Curves():
                 axes[0].set_xlabel('Recall')
                 axes[0].set_ylabel('Precision')
                 axes[0].plot(recall_list, precision_list,
-                             label=f'{label}mAP: {mAP:.3f}')
+                             label=f'{label}auc: {auc:.3f}')
                 axes[0].grid(True)
                 axes[0].legend()
 

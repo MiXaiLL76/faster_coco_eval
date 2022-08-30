@@ -189,11 +189,12 @@ class ErrorCalc(Curves):
                 # print(dt_anns)
 
                 # DETECT
-                dt_categories = np.int32([dt_anns[_i]['category_id']])
-                dt_real_idx = np.int32([dt_anns[_i]['id']])
+                dt_categories = np.int32(
+                    [dt_ann['category_id'] for dt_ann in dt_anns])
+                dt_real_idx = np.int32([dt_ann['id'] for dt_ann in dt_anns])
 
                 # COMPARE
-                scores = np.float16([dt_anns['score'] for d in dt])
+                scores = np.float16([dt_ann['score'] for dt_ann in dt_anns])
                 find = self.find_pairs(iou, scores)
 
                 # GT
