@@ -114,7 +114,7 @@ class Curves():
             type(dataset[0]) is dict)), 'annotation file format not supported'
 
         return dataset
-    
+
     def IoU(self, box, boxes):
         """Compute IoU between detect box and gt boxes
         Parameters:
@@ -148,28 +148,27 @@ class Curves():
         inter = w * h
         ovr = inter / (box_area + area - inter)
         return ovr
-    
+
     def slow_computeIoU(self, gt, dt):
         if self.iouType == 'bbox':
             gt_bboxes = np.array([g['bbox'] for g in gt])
             # xywh to x1y1x2y2
-            gt_bboxes[:, [2,3]] += gt_bboxes[:, [0,1]]
-            
-            det_bboxes   = np.array([d['bbox'] for d in dt])
+            gt_bboxes[:, [2, 3]] += gt_bboxes[:, [0, 1]]
+
+            det_bboxes = np.array([d['bbox'] for d in dt])
             # xywh to x1y1x2y2
-            det_bboxes[:, [2,3]] += det_bboxes[:, [0,1]]
-            
+            det_bboxes[:, [2, 3]] += det_bboxes[:, [0, 1]]
+
         else:
             raise Exception('unknown self.iouType for iou computation')
 
-            
         ious = np.zeros((len(det_bboxes), len(gt_bboxes)), dtype=np.float64)
-        
+
         for i, det_box in enumerate(det_bboxes):
             ious[i, :] = self.IoU(det_box, gt_bboxes)
-        
+
         return ious
-    
+
     def computeIoU(self, gt, dt):
         maxDets = len(gt)
 
@@ -196,18 +195,18 @@ class Curves():
         find = []
         for dt_id in range(dt_count):
             best_gt_id = iou[dt_id, :].argmax()
-            
+
             iou_value = iou[dt_id, best_gt_id]
             score = scores[dt_id]
-            
+
             iou[:, best_gt_id] = -1
             iou[dt_id, :] = -1
-            
+
             tp = (iou_value >= self.iou_tresh) and (score >= self.min_score)
             find.append([best_gt_id, dt_id, iou_value, score, tp])
 
         find.sort(key=lambda x: x[3], reverse=True)
-        
+
         return np.array(find).reshape(-1, 5)
 
     def select_anns(self, anns, image_id=0, category=None):
@@ -251,11 +250,11 @@ class Curves():
                 match_results[_category_id]['num_detectedbox'] += len(dt)
 
                 if len(dt) > 0 and len(gt) > 0:
-                    iou    = self.computeIoU(gt, dt)
+                    iou = self.computeIoU(gt, dt)
                     # iou    = self.slow_computeIoU(gt, dt)
                     scores = np.float64([d['score'] for d in dt])
-                    pairs  = self.find_pairs(iou, scores)
-                    
+                    pairs = self.find_pairs(iou, scores)
+
                     if pairs.shape[0] > 0:
                         match_results[_category_id]['maxiou_confidence'].append(
                             pairs[:, 2:])
@@ -315,32 +314,31 @@ class Curves():
             if category_id is None:
                 label = ""
 
-            maxiou_confidence = _match['maxiou_confidence'] # iou, score, tp
+            maxiou_confidence = _match['maxiou_confidence']  # iou, score, tp
             num_detectedbox = _match['num_detectedbox']
             num_groundtruthbox = _match['num_groundtruthbox']
-            
+
             scores = maxiou_confidence[:, 1]
-            
-            
+
             tp = maxiou_confidence[:, 2]
             fp = -1 * (tp - 1)
-            
+
             tp_list, fp_list = np.cumsum(tp), np.cumsum(fp)
-            
+
             precision_list = tp_list / (tp_list + fp_list)
-            recall_list    = tp_list / num_groundtruthbox
-            
+            recall_list = tp_list / num_groundtruthbox
+
             if interp:
                 x_line_vals = np.linspace(0, 1, 3000)
                 max_idx = np.argmin(np.abs(x_line_vals - np.max(recall_list)))
                 x_line_vals = x_line_vals[:max_idx + 1]
                 y_vals = np.interp(x_line_vals, recall_list, precision_list)
                 score_vals = np.interp(x_line_vals, recall_list, scores)
-            
+
                 scores = score_vals
                 recall_list = x_line_vals
                 precision_list = y_vals
-            
+
             auc = round(self.calc_auc(recall_list, precision_list), 4)
 
             output['auc'].append(auc)
