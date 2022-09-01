@@ -4,7 +4,13 @@ import setuptools
 from setuptools import setup
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 
-__version__ = '1.1.5'
+
+info_file = {}
+with open("faster_coco_eval/info.py") as fp:
+    exec(fp.read(), info_file)
+
+__version__ = info_file['__version__']
+__author__ = info_file['__author__']
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -29,7 +35,7 @@ def get_extensions():
 setup(
     name="faster-coco-eval",
     version=__version__,
-    author="MiXaiLL76",
+    author=__author__,
     description="Faster interpretation of the original COCOEval",
     python_requires=">=3.6",
     ext_modules=get_extensions(),

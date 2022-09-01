@@ -262,7 +262,7 @@ class Curves():
         for _category_id in categories_id:
             match_results[_category_id]['maxiou_confidence'] = np.vstack(
                 match_results[_category_id]['maxiou_confidence'])
-        
+
         return match_results
 
     def calc_auc(self, recall_list, precision_list):
