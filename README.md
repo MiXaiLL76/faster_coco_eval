@@ -96,6 +96,14 @@ For usage, look at the original `COCOEval` [class documentation.](https://github
 # v1.1.5
 - bug fix
 
+# v1.2.1
+- bug fix with pre-rec curve  
+- rework error calc (tp/fp/fn)  
+- change image plot to plotly   
+- append docker auto builder  
+- append native iou calc (slow but accurate)  
+- rework auc calc with [link](https://towardsdatascience.com/how-to-efficiently-implement-area-under-precision-recall-curve-pr-auc-a85872fd7f14)  
+
 # TODOs
 - [ ] Remove pycocotools dependencies
 
