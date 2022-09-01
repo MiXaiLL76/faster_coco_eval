@@ -1,9 +1,10 @@
 #!/bin/bash
 
-_dirs=$(ls | grep -wv storage)
+_dirs="./ "$(ls | grep -wv storage)
 
 # Удалил временные файлы python
 for _dir in "${_dirs[@]}"; do
+  echo ${_dir}
   sudo rm -rf $(find ${_dir} -name "*__pycache__")
   sudo rm -rf $(find ${_dir} -name "*ipynb_checkpoints")
   sudo rm -rf $(find ${_dir} -name "*.DS_Store")
