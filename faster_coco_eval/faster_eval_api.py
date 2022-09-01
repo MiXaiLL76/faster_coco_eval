@@ -33,7 +33,7 @@ class COCOeval_faster(COCOeval):
         if p.useSegm is not None:
             p.iouType = "segm" if p.useSegm == 1 else "bbox"
 
-        logger.info("Evaluate annotation type *{}*".format(p.iouType))
+        logger.debug("Evaluate annotation type *{}*".format(p.iouType))
 
         p.imgIds = list(np.unique(p.imgIds))
         if p.useCats:
@@ -102,7 +102,7 @@ class COCOeval_faster(COCOeval):
 
         self._paramsEval = copy.deepcopy(self.params)
         toc = time.time()
-        logger.info(
+        logger.debug(
             "COCOeval_opt.evaluate() finished in {:0.2f} seconds.".format(toc - tic))
 
     def accumulate(self):
@@ -110,7 +110,7 @@ class COCOeval_faster(COCOeval):
         Accumulate per image evaluation results and store the result in self.eval.  Does not
         support changing parameter settings from those used by self.evaluate()
         """
-        logger.info("Accumulating evaluation results...")
+        logger.debug("Accumulating evaluation results...")
         tic = time.time()
         assert hasattr(
             self, "_evalImgs_cpp"
@@ -130,5 +130,5 @@ class COCOeval_faster(COCOeval):
         self.eval["scores"] = np.array(
             self.eval["scores"]).reshape(self.eval["counts"])
         toc = time.time()
-        logger.info(
+        logger.debug(
             "COCOeval_opt.accumulate() finished in {:0.2f} seconds.".format(toc - tic))
