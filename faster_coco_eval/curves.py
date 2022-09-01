@@ -18,10 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 class Curves():
-    def __init__(self, annotation_file, iouType='bbox', min_score=0, iou_tresh=0.0):
+    def __init__(self, annotation_file, iouType='bbox', min_score=0, iou_tresh=0.0, use_native_iou_calc=False):
         self.iouType = iouType
         self.min_score = min_score
         self.iou_tresh = iou_tresh
+        self.use_native_iou_calc = use_native_iou_calc
 
         assert self.iouType in [
             'bbox', 'segm'], f"unknown {iouType} for iou computation"
@@ -36,12 +37,29 @@ class Curves():
             'images': {image['id']: image for image in dataset['images']},
             'categories': dataset['categories'],
         }
+
+        remap_id = False
+
+        dataset_ids = [ann.get('id') for ann in dataset['annotations']]
+        unique_count = len(set(dataset_ids))
+        if unique_count == len(dataset['annotations']):
+            ann_id = len(dataset) + 1
+        else:
+            ann_id = 1
+            logger.warning(
+                'dataset have not unique annotation ids. remaping...')
+            remap_id = True
+
         for ann in dataset['annotations']:
             if self.dataset['annotations'].get(ann['image_id']) is None:
                 self.dataset['annotations'][ann['image_id']] = []
 
             if self.iouType == 'segm':
                 ann = self.annToRLE(ann)
+
+            if ann.get('id') is None or remap_id:
+                ann['id'] = ann_id
+                ann_id += 1
 
             self.dataset['annotations'][ann['image_id']].append(ann)
 
@@ -79,18 +97,26 @@ class Curves():
         dataset = self.load_coco(result_annotations)
 
         self.result_annotations = {}
-        ann_id = len(dataset) + 1
+
+        remap_id = False
+
+        dataset_ids = [ann.get('id') for ann in dataset]
+        unique_count = len(set(dataset_ids))
+        if unique_count == len(dataset):
+            ann_id = len(dataset) + 1
+        else:
+            ann_id = 1
+            logger.warning(
+                'loaded result have not unique annotation ids. remaping...')
+            remap_id = True
 
         for ann in dataset:
             if self.result_annotations.get(ann['image_id']) is None:
                 self.result_annotations[ann['image_id']] = []
 
-            if ann.get('id') is None:
+            if ann.get('id') is None or remap_id:
                 ann['id'] = ann_id
                 ann_id += 1
-
-            if ann.get('score', 1) < self.min_score:
-                continue
 
             if self.iouType == 'segm':
                 # Поиск пустых сегментаций. не должно быть так, чтобы они были.
@@ -151,18 +177,18 @@ class Curves():
 
     def slow_computeIoU(self, gt, dt):
         if self.iouType == 'bbox':
-            gt_bboxes = np.array([g['bbox'] for g in gt])
+            gt_bboxes = np.float32([g['bbox'] for g in gt])
             # xywh to x1y1x2y2
-            gt_bboxes[:, [2, 3]] += gt_bboxes[:, [0, 1]]
+            gt_bboxes[:, 2:4] += gt_bboxes[:, :2] - 1
 
-            det_bboxes = np.array([d['bbox'] for d in dt])
+            det_bboxes = np.float32([d['bbox'] for d in dt])
             # xywh to x1y1x2y2
-            det_bboxes[:, [2, 3]] += det_bboxes[:, [0, 1]]
+            det_bboxes[:, 2:4] += det_bboxes[:, :2] - 1
 
         else:
             raise Exception('unknown self.iouType for iou computation')
 
-        ious = np.zeros((len(det_bboxes), len(gt_bboxes)), dtype=np.float64)
+        ious = np.zeros((len(det_bboxes), len(gt_bboxes)), dtype=np.float32)
 
         for i, det_box in enumerate(det_bboxes):
             ious[i, :] = self.IoU(det_box, gt_bboxes)
@@ -185,13 +211,14 @@ class Curves():
         iscrowd = [int(o['iscrowd']) for o in gt]
         ious = maskUtils.iou(d, g, iscrowd)
 
-        ious[ious < self.iou_tresh] = 0
+        # ious[ious < self.iou_tresh] = 0
 
         return ious
 
-    def find_pairs(self, iou, scores):
+    def find_pairs(self, iou, scores, dets):
         dt_count, gt_count = iou.shape
 
+        used_gt = {}
         find = []
         for dt_id in range(dt_count):
             best_gt_id = iou[dt_id, :].argmax()
@@ -199,15 +226,18 @@ class Curves():
             iou_value = iou[dt_id, best_gt_id]
             score = scores[dt_id]
 
-            iou[:, best_gt_id] = -1
-            iou[dt_id, :] = -1
+            tp = (iou_value >= self.iou_tresh) and not used_gt.get(
+                best_gt_id, False) and (score >= self.min_score)
 
-            tp = (iou_value >= self.iou_tresh) and (score >= self.min_score)
+            if tp:
+                used_gt[best_gt_id] = True
+
             find.append([best_gt_id, dt_id, iou_value, score, tp])
 
-        find.sort(key=lambda x: x[3], reverse=True)
+        fn_list = [gt_id for gt_id in range(
+            gt_count) if not used_gt.get(gt_id, False)]
 
-        return np.array(find).reshape(-1, 5)
+        return np.array(find).reshape(-1, 5), fn_list
 
     def select_anns(self, anns, image_id=0, category=None):
         anns = [
@@ -237,7 +267,10 @@ class Curves():
                     match_results[_category_id] = {
                         "num_detectedbox": 0,
                         "num_groundtruthbox": 0,
-                        "maxiou_confidence": []
+                        "maxiou_confidence": [],
+                        "fn_list": {},
+                        "fp_list": {},
+                        "tp_list": {},
                     }
 
                 gt_anns = self.dataset['annotations'].get(_image_id, [])
@@ -250,10 +283,34 @@ class Curves():
                 match_results[_category_id]['num_detectedbox'] += len(dt)
 
                 if len(dt) > 0 and len(gt) > 0:
-                    iou = self.computeIoU(gt, dt)
-                    # iou    = self.slow_computeIoU(gt, dt)
-                    scores = np.float64([d['score'] for d in dt])
-                    pairs = self.find_pairs(iou, scores)
+                    if self.use_native_iou_calc:
+                        iou = self.slow_computeIoU(gt, dt)
+                    else:
+                        iou = self.computeIoU(gt, dt)
+
+                    scores = np.float32([d['score'] for d in dt])
+                    pairs, fn_list = self.find_pairs(iou, scores, dt)
+
+                    if match_results[_category_id]['fn_list'].get(_image_id) is None:
+                        match_results[_category_id]['fn_list'][_image_id] = []
+                        match_results[_category_id]['fp_list'][_image_id] = []
+                        match_results[_category_id]['tp_list'][_image_id] = []
+
+                    # FN (false negatives), ложноотрицательные – все объекты, присутствующие
+                    # в истинной разметке данных, но не предсказанные моделью.
+                    match_results[_category_id]['fn_list'][_image_id] += [
+                        gt[_ann_i]['id'] for _ann_i in fn_list]
+
+                    # FP (false positives), ложноположительные – все предсказанные объекты,
+                    # не являющиеся истинно-положительными;
+                    match_results[_category_id]['fp_list'][_image_id] += [
+                        dt[int(row[1])]['id'] for row in pairs if not row[4]]
+
+                    # TP (true positives), истинно-положительные – когда предсказанная рамка объекта имеет IoU с \
+                    # истинной не ниже порогового значения IoU, а его класс предсказан
+                    # с уверенностью не ниже порогового значения уверенности;
+                    match_results[_category_id]['tp_list'][_image_id] += [
+                        {"dt": dt[int(row[1])]['id'], "gt": gt[int(row[0])]['id']} for row in pairs if row[4]]
 
                     if pairs.shape[0] > 0:
                         match_results[_category_id]['maxiou_confidence'].append(
@@ -262,7 +319,6 @@ class Curves():
         for _category_id in categories_id:
             match_results[_category_id]['maxiou_confidence'] = np.vstack(
                 match_results[_category_id]['maxiou_confidence'])
-
         return match_results
 
     def calc_auc(self, recall_list, precision_list):
@@ -309,7 +365,6 @@ class Curves():
 
             scores = maxiou_confidence[idx, 1]
             tp = maxiou_confidence[idx, 2]
-
             fp = -1 * (tp - 1)
 
             tp_list, fp_list = np.cumsum(tp), np.cumsum(fp)

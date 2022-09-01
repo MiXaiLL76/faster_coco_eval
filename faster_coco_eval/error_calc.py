@@ -6,11 +6,71 @@ import logging
 from tqdm import tqdm
 import os.path as osp
 
+try:
+    import plotly.express as px
+    plotly_available = True
+except:
+    plotly_available = False
+
+
 logger = logging.getLogger(__name__)
 
 
 class ErrorCalc(Curves):
-    def compute_confusion_matrix(self, y_true, y_pred, y_gt_all):
+    A = 128
+    DT_COLOR = (238, 130, 238, A)
+    GT_COLOR = (0, 255, 0,   A)
+
+    FN_COLOR = (0, 0, 255,   A)
+    FP_COLOR = (255, 0, 0,   A)
+
+    def plot_img(self, img, force_matplot=False, figsize=None, slider=False):
+        if plotly_available and not force_matplot:
+            if not slider:
+                fig = px.imshow(img)
+            else:
+                fig = px.imshow(img, animation_frame=0,
+                                labels=dict(animation_frame="enum"))
+
+            fig.update_layout(coloraxis_showscale=False)
+            fig.update_layout(height=600, width=1200)
+            # fig.update_xaxes(showticklabels=False)
+            # fig.update_yaxes(showticklabels=False)
+            fig.show()
+        else:
+            if figsize is not None:
+                plt.figure(figsize=figsize)
+            plt.imshow(img, interpolation='nearest')
+            plt.axis('off')
+            plt.show()
+
+    def print_colors_info(self, _print=False):
+        _print_func = logger.info
+        if _print:
+            _print_func = print
+
+        if logger.getEffectiveLevel() <= 20 or _print:
+            _print_func(f"DT_COLOR : {self.DT_COLOR}")
+            im = Image.new("RGBA", (64, 32), self.DT_COLOR)
+            self.plot_img(im, force_matplot=True, figsize=(1, 0.5))
+            _print_func("")
+
+            _print_func(f"GT_COLOR : {self.GT_COLOR}")
+            im = Image.new("RGBA", (64, 32), self.GT_COLOR)
+            self.plot_img(im, force_matplot=True, figsize=(1, 0.5))
+            _print_func("")
+
+            _print_func(f"FN_COLOR : {self.FN_COLOR}")
+            im = Image.new("RGBA", (64, 32), self.FN_COLOR)
+            self.plot_img(im, force_matplot=True, figsize=(1, 0.5))
+            _print_func("")
+
+            _print_func(f"FP_COLOR : {self.FP_COLOR}")
+            im = Image.new("RGBA", (64, 32), self.FP_COLOR)
+            self.plot_img(im, force_matplot=True, figsize=(1, 0.5))
+            _print_func("")
+
+    def _compute_confusion_matrix(self, y_true, y_pred, y_gt_all):
         categories = self.dataset['categories']
         K = len(categories)
 
@@ -27,6 +87,24 @@ class ErrorCalc(Curves):
             cm[val][K] = (y_gt_all == key).sum() - cm[val][:K].sum()
 
         return cm
+
+    def confusion_matrix(self, _match_results):
+        confusion_matrix = self._compute_confusion_matrix([], [], [])
+        for _category_id, _match in _match_results.items():
+            for image_id in list(_match['fn_list']):
+                y_true_dataset = {ann['id']: ann.get(
+                    'category_id') for ann in self.dataset['annotations'][image_id]}
+                y_pred_dataset = {ann['id']: ann.get(
+                    'category_id') for ann in self.result_annotations[image_id]}
+
+                matrix = np.array([[y_true_dataset[row['gt']], y_pred_dataset[row['dt']]]
+                                  for row in _match['tp_list'][image_id]])
+                y_true = matrix[:, 0].ravel()
+                y_pred = matrix[:, 0].ravel()
+
+                confusion_matrix += self._compute_confusion_matrix(
+                    y_true, y_pred, list(y_true_dataset.values()))
+        return confusion_matrix
 
     def display_matrix(self, conf_matrix, in_percent=True, figsize=(10, 10), fontsize=16):
         names = [category['name']
@@ -61,181 +139,82 @@ class ErrorCalc(Curves):
         plt.title(title, fontsize=fontsize)
         plt.show()
 
-    def display_fp(self, compute_result, top=5, margin=50, img_prefix=None):
-        fp_anns = []
-        for _image_id, annotation_ids in compute_result.items():
-            dt_anns = self.result_annotations.get(_image_id, [])
-            fp_anns += [ann for ann in dt_anns if ann['id']
-                        in compute_result[_image_id]['fp']]
-
-        fp_anns.sort(key=lambda ann: ann['score'], reverse=True)
-
-        for ann in fp_anns[:top]:
-            image_fn = self.dataset['images'][ann['image_id']]['file_name']
-            if type(img_prefix) is str:
-                image_fn = osp.join(img_prefix, image_fn)
-
-            img = Image.open(image_fn)
-            img_mask = Image.new("RGBA", img.size, (0, 0, 0, 0))
-            draw = ImageDraw.Draw(img_mask)
-
-            for gt_ann in self.dataset['annotations'].get(ann['image_id'], []):
-                if gt_ann['category_id'] == ann['category_id']:
-                    if self.iouType == 'segm':
-                        for _segm in gt_ann['segmentation']:
-                            draw.polygon(_segm, outline=(
-                                0, 255, 0, 255), fill=(0, 255, 0, 64))
-                    else:
-                        x1, y1, w, h = gt_ann['bbox']
-                        x2 = x1 + w
-                        y2 = y1 + h
-                        draw.rectangle([x1, y1, x2, y2], outline=(
-                            0, 255, 0, 255), fill=(0, 255, 0, 64))
-
+    def draw_ann(self, draw, ann, color, width=5):
+        if self.iouType == 'bbox':
             x1, y1, w, h = ann['bbox']
-            x2 = x1 + w
-            y2 = y1 + h
+            draw.rectangle([x1, y1, x1+w, y1+h], outline=color, width=width)
+        else:
+            for poly in ann['segmentation']:
+                if len(poly) > 3:
+                    draw.polygon(poly, outline=color, width=width)
 
-            if self.iouType == 'segm':
-                for _segm in ann['segmentation']:
-                    draw.polygon(_segm, outline=(255, 0, 0, 255),
-                                 fill=(255, 0, 0, 64))
-            else:
-                draw.rectangle([x1, y1, x2, y2], outline=(
-                    255, 0, 0, 255), fill=(255, 0, 0, 64))
+    def display_tp_fp_fn(self, _match_results,
+                         image_ids=['all'],
+                         line_width=7,
+                         display_fp=True,
+                         display_fn=True,
+                         display_tp=True,
+                         resize_out_image=None,
+                         ):
+        image_batch = []
+        for _category_id, _match in _match_results.items():
+            for image_id in _match['fp_list'].keys():
+                if (image_id in image_ids) or 'all' in image_ids:
+                    y_true_dataset = {
+                        ann['id']: ann for ann in self.dataset['annotations'][image_id]}
+                    y_pred_dataset = {
+                        ann['id']: ann for ann in self.result_annotations[image_id]}
 
-            print(image_fn)
-            print(ann['bbox'])
-
-            img.paste(img_mask, img_mask)
-
-            plt.imshow(img.crop((x1-margin, y1-margin, x2+margin, y2+margin)))
-            plt.show()
-
-    def display_fn(self, compute_result, top=5, margin=50, img_prefix=None):
-        fn_anns = []
-        for _image_id, annotation_ids in compute_result.items():
-            dt_anns = self.result_annotations.get(_image_id, [])
-            fn_anns += [ann for ann in dt_anns if ann['id']
-                        in compute_result[_image_id]['fn']]
-
-        for ann in fn_anns[:top]:
-            image_fn = self.dataset['images'][ann['image_id']]['file_name']
-            if type(img_prefix) is str:
-                image_fn = osp.join(img_prefix, image_fn)
-
-            img = Image.open(image_fn)
-            img_mask = Image.new("RGBA", img.size, (0, 0, 0, 0))
-            draw = ImageDraw.Draw(img_mask)
-
-            for dt_ann in self.result_annotations.get(ann['image_id'], []):
-                if dt_ann['category_id'] == ann['category_id']:
-                    if self.iouType == 'segm':
-                        for _segm in dt_ann['segmentation']:
-                            draw.polygon(_segm, outline=(
-                                0, 255, 0, 255), fill=(0, 255, 0, 64))
+                    image = self.dataset['images'][image_id]
+                    logger.info(f"{image=}")
+                    if osp.exists(image.get('file_name')):
+                        im = Image.open(image.get('file_name')).convert('RGB')
                     else:
-                        x1, y1, w, h = dt_ann['bbox']
-                        x2 = x1 + w
-                        y2 = y1 + h
-                        draw.rectangle([x1, y1, x2, y2], outline=(
-                            0, 255, 0, 255), fill=(0, 255, 0, 64))
+                        logger.warning(
+                            f"image {image.get('file_name')} not found in space. load zeros ({image['width']}x{image['height']})")
+                        im = Image.new(mode="RGB", size=(
+                            image['width'], image['height']))
 
-            x1, y1, w, h = ann['bbox']
-            x2 = x1 + w
-            y2 = y1 + h
+                    mask = Image.new("RGBA", im.size, (0, 0, 0, 0))
+                    draw = ImageDraw.Draw(mask)
 
-            if self.iouType == 'segm':
-                for _segm in ann['segmentation']:
-                    draw.polygon(_segm, outline=(0, 0, 255, 255),
-                                 fill=(0, 0, 255, 64))
-            else:
-                draw.rectangle([x1, y1, x2, y2], outline=(
-                    0, 0, 255, 255), fill=(0, 0, 255, 64))
+                    if display_fp:
+                        for fp_ann in _match['fp_list'][image_id]:
+                            ann = y_pred_dataset[fp_ann]
+                            self.draw_ann(
+                                draw, ann, color=self.FP_COLOR, width=line_width)
 
-            print(image_fn)
-            print(ann['bbox'])
+                    if display_fn:
+                        for fp_ann in _match['fn_list'][image_id]:
+                            ann = y_true_dataset[fp_ann]
+                            self.draw_ann(
+                                draw, ann, color=self.FN_COLOR, width=line_width)
 
-            img.paste(img_mask, img_mask)
+                    if display_tp:
+                        for row in _match['tp_list'][image_id]:
+                            gt_id = row['gt']
+                            dt_id = row['dt']
 
-            plt.imshow(img.crop((x1-margin, y1-margin, x2+margin, y2+margin)))
-            plt.show()
+                            ann = y_true_dataset[gt_id]
+                            self.draw_ann(
+                                draw, ann, color=self.GT_COLOR, width=line_width)
 
-    def compute_errors(self):
-        confusion_matrix = self.compute_confusion_matrix([], [], [])
+                            ann = y_pred_dataset[dt_id]
+                            self.draw_ann(
+                                draw, ann, color=self.DT_COLOR, width=line_width)
 
-        result_annotations = {}
-        for _image_id in tqdm(self.dataset['images']):
-            result_annotations[_image_id] = {
-                "tp": [],
-                "fn": [],
-                "fp": [],
-            }
+                    im.paste(mask, mask)
+                    if plotly_available:
+                        image_batch.append(im)
+                    else:
+                        self.plot_img(im)
 
-            gt_anns = self.dataset['annotations'].get(_image_id, [])
-            dt_anns = self.result_annotations.get(_image_id, [])
+        if len(image_batch) >= 1 and resize_out_image is None:
+            resize_out_image = image_batch[0].size
 
-            num_groundtruthbox = len(gt_anns)
-            num_detectedbox = len(dt_anns)
-
-            if num_groundtruthbox > 0 and num_detectedbox > 0:
-                iou = self.computeIoU(gt_anns, dt_anns)
-
-                # GT
-                gt_categories = np.int32(
-                    [ann['category_id'] for ann in gt_anns])
-                gt_real_idx = np.int32([ann['id'] for ann in gt_anns])
-
-                # print(dt_anns)
-
-                # DETECT
-                dt_categories = np.int32(
-                    [dt_ann['category_id'] for dt_ann in dt_anns])
-                dt_real_idx = np.int32([dt_ann['id'] for dt_ann in dt_anns])
-
-                # COMPARE
-                scores = np.float16([dt_ann['score'] for dt_ann in dt_anns])
-                find = self.find_pairs(iou, scores)
-
-                # GT
-                gt_filter_ids = find[:, 0].astype(np.int32)
-                filtred_gt_categories = gt_categories[gt_filter_ids]
-                filtred_gt_real_idx = gt_real_idx[gt_filter_ids]
-
-                # DETECT
-                dt_filter_ids = find[:, 1].astype(np.int32)
-                filtred_dt_categories = dt_categories[dt_filter_ids]
-                filtred_dt_real_idx = dt_real_idx[dt_filter_ids]
-
-                # TP (true positives), истинно-положительные – когда предсказанная рамка объекта имеет IoU с \
-                # истинной не ниже порогового значения IoU, а его класс предсказан
-                # с уверенностью не ниже порогового значения уверенности;
-                tp_mask = (filtred_gt_categories == filtred_dt_categories)
-                tp_ids = tp_mask.nonzero()[0]
-                # tp = len(tp_ids)
-
-                result_annotations[_image_id]['tp'] = filtred_gt_real_idx[tp_ids]
-
-                # FN (false negatives), ложноотрицательные – все объекты, присутствующие
-                # в истинной разметке данных, но не предсказанные моделью.
-
-                # fn = num_groundtruthbox - tp
-                fn_mask = np.in1d(
-                    gt_real_idx, result_annotations[_image_id]['tp'], invert=True)
-                result_annotations[_image_id]['fn'] = gt_real_idx[fn_mask]
-
-                # FP (false positives), ложноположительные – все предсказанные объекты,
-                # не являющиеся истинно-положительными;
-
-                # fp = len(dt_idx) - tp
-
-                tp_det = filtred_dt_real_idx[tp_ids]
-                fp_mask = np.in1d(dt_real_idx, tp_det, invert=True)
-                result_annotations[_image_id]['fp'] = dt_real_idx[fp_mask]
-
-                image_confusion_matrix = self.compute_confusion_matrix(
-                    filtred_gt_categories, filtred_dt_categories, gt_categories)
-
-                confusion_matrix += image_confusion_matrix
-
-        return confusion_matrix, result_annotations
+        if len(image_batch) == 1:
+            self.plot_img(image_batch[0].resize(resize_out_image))
+        elif len(image_batch) > 1:
+            image_batch = np.array([np.array(image.resize(resize_out_image))[
+                                   :, :, ::-1] for image in image_batch])
+            self.plot_img(image_batch, slider=True)
