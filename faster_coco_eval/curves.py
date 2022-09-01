@@ -262,21 +262,8 @@ class Curves():
         for _category_id in categories_id:
             match_results[_category_id]['maxiou_confidence'] = np.vstack(
                 match_results[_category_id]['maxiou_confidence'])
-            _ids = np.argsort(
-                match_results[_category_id]['maxiou_confidence'][:, 1], kind='mergesort')
-
-            match_results[_category_id]['maxiou_confidence'] = match_results[_category_id]['maxiou_confidence'][_ids][::-1]
-
+        
         return match_results
-
-    def thres(self, maxiou_confidence, threshold=0.5):
-        maxious = maxiou_confidence[:, 0]
-        confidences = maxiou_confidence[:, 1]
-        true_or_flase = (maxious > threshold)
-        tf_confidence = np.array([true_or_flase, confidences])
-        tf_confidence = tf_confidence.T
-        tf_confidence = tf_confidence[np.argsort(-tf_confidence[:, 1])]
-        return tf_confidence
 
     def calc_auc(self, recall_list, precision_list):
         # https://towardsdatascience.com/how-to-efficiently-implement-area-under-precision-recall-curve-pr-auc-a85872fd7f14
@@ -318,9 +305,11 @@ class Curves():
             num_detectedbox = _match['num_detectedbox']
             num_groundtruthbox = _match['num_groundtruthbox']
 
-            scores = maxiou_confidence[:, 1]
+            idx = (-maxiou_confidence[:, 1]).argsort(kind='mergesort')
 
-            tp = maxiou_confidence[:, 2]
+            scores = maxiou_confidence[idx, 1]
+            tp = maxiou_confidence[idx, 2]
+
             fp = -1 * (tp - 1)
 
             tp_list, fp_list = np.cumsum(tp), np.cumsum(fp)
