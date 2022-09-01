@@ -15,6 +15,10 @@ __author__ = info_file['__author__']
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+install_requires = []
+with open("requirements.txt", "r") as fh:
+    long_description = fh.read().split('\n')
+
 
 def get_extensions():
     sources = [
@@ -44,11 +48,5 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     package_data={'': ['csrc']},
-    install_requires=[
-        'numpy',
-        'testresources',
-        'pycocotools',
-        'matplotlib',
-        'Pillow',
-    ],
+    install_requires=install_requires,
 )

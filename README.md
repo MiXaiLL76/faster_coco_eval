@@ -35,6 +35,13 @@ Build wheel
 python3 setup.py bdist_wheel
 ```
 
+Build wheel from docker
+```bash
+export PYTHON3_VERSION=3.9.10
+docker build -f ./Dockerfile --build-arg PYTHON3_VERSION=${PYTHON3_VERSION} --tag faster_coco_eval:${PYTHON3_VERSION} .
+docker run -v $(pwd):/app/src faster_coco_eval:${PYTHON3_VERSION}
+```
+
 ## Install
 Install form source  
 ```bash  
