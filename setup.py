@@ -17,7 +17,7 @@ with open("README.md", "r") as fh:
 
 install_requires = []
 with open("requirements.txt", "r") as fh:
-    long_description = fh.read().split('\n')
+    install_requires = fh.read().split('\n')
 
 
 def get_extensions():
