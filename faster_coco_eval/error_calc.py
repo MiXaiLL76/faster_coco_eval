@@ -181,14 +181,16 @@ class ErrorCalc(Curves):
                     if display_fp:
                         for fp_ann in _match['fp_list'][image_id]:
                             ann = y_pred_dataset[fp_ann]
-                            self.draw_ann(
-                                draw, ann, color=self.FP_COLOR, width=line_width)
+                            if ann.get('score', 1) >= self.min_score:
+                                self.draw_ann(
+                                    draw, ann, color=self.FP_COLOR, width=line_width)
 
                     if display_fn:
                         for fp_ann in _match['fn_list'][image_id]:
                             ann = y_true_dataset[fp_ann]
-                            self.draw_ann(
-                                draw, ann, color=self.FN_COLOR, width=line_width)
+                            if ann.get('score', 1) >= self.min_score:
+                                self.draw_ann(
+                                    draw, ann, color=self.FN_COLOR, width=line_width)
 
                     if display_tp:
                         for row in _match['tp_list'][image_id]:
@@ -196,12 +198,14 @@ class ErrorCalc(Curves):
                             dt_id = row['dt']
 
                             ann = y_true_dataset[gt_id]
-                            self.draw_ann(
-                                draw, ann, color=self.GT_COLOR, width=line_width)
+                            if ann.get('score', 1) >= self.min_score:
+                                self.draw_ann(
+                                    draw, ann, color=self.GT_COLOR, width=line_width)
 
                             ann = y_pred_dataset[dt_id]
-                            self.draw_ann(
-                                draw, ann, color=self.DT_COLOR, width=line_width)
+                            if ann.get('score', 1) >= self.min_score:
+                                self.draw_ann(
+                                    draw, ann, color=self.DT_COLOR, width=line_width)
 
                     im.paste(mask, mask)
                     if plotly_available:
