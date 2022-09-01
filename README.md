@@ -30,6 +30,11 @@ Build from source
 python3 setup.py sdist
 ```
 
+Build wheel
+```bash
+python3 setup.py bdist_wheel
+```
+
 ## Install
 Install form source  
 ```bash  
