@@ -25,11 +25,6 @@ segm | 35.356 sec. | 18.403 sec.  | 2x
 # Getting started
 
 ## Local build
-Build from source
-```bash
-python3 setup.py sdist
-```
-
 Build wheel
 ```bash
 python3 setup.py bdist_wheel
