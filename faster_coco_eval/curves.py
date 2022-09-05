@@ -172,24 +172,34 @@ class Curves():
             for poly in ann['segmentation']:
                 if len(poly) > 3:
                     draw.polygon(poly, outline=color, width=width)
-
+    
     def plot_img(self, img, force_matplot=False, figsize=None, slider=False):
-        if plotly_available and not force_matplot:
-            if not slider:
-                fig = px.imshow(img)
-            else:
-                fig = px.imshow(img, animation_frame=0,
-                                labels=dict(animation_frame="enum"))
+        if plotly_available and not force_matplot and slider:
+            fig = px.imshow(img, animation_frame=0,
+                            labels=dict(animation_frame="enum"))
 
             fig.update_layout(coloraxis_showscale=False)
             fig.update_layout(height=600, width=1200)
             fig.show()
         else:
-            if figsize is not None:
-                plt.figure(figsize=figsize)
-            plt.imshow(img, interpolation='nearest')
-            plt.axis('off')
-            plt.show()
+            is_pillow = 'Image' in str(type(img))
+            if is_pillow:
+                img = [img]
+                count = 1
+            elif type(img) is list:
+                count = len(img)
+            else:
+                is_batch = len(img.shape) == 4
+                if not is_batch:
+                    img = np.array([img])
+                count = img.shape[0]
+
+            for img_i in range(count):
+                if figsize is not None:
+                    plt.figure(figsize=figsize)
+                plt.imshow(img[img_i], interpolation='nearest')
+                plt.axis('off')
+                plt.show()
 
     def print_colors_info(self, _print=False):
         _print_func = logger.info
@@ -236,12 +246,18 @@ class Curves():
                 else:
                     image_fn = image["file_name"]
 
-                im = Image.open(image_fn)
+                if osp.exists(image_fn):
+                    im = Image.open(image_fn).convert("RGB")
+                else:
+                    logger.warning(f'[{image_fn}] not found!\nLoading default empty image')
+                    
+                    im = Image.new("RGB", (image['width'], image['height']))
+                
                 mask = Image.new("RGBA", im.size, (0, 0, 0, 0))
                 draw = ImageDraw.Draw(mask)
 
                 gt_anns = {ann['id']: ann for ann in gt_anns}
-                if len(gt_anns) > 0:
+                if len(gt_anns) > 0 and display_fn:
                     for ann in gt_anns.values():
                         if ann.get('fn', False):
                             self.draw_ann(
@@ -253,13 +269,15 @@ class Curves():
                 if len(dt_anns) > 0:
                     for ann in dt_anns.values():
                         if ann.get('tp', False):
-                            self.draw_ann(
-                                draw, ann, color=self.DT_COLOR, width=line_width)
-                            self.draw_ann(
-                                draw, gt_anns[ann['gt_id']], color=self.GT_COLOR, width=line_width)
+                            if display_tp:
+                                self.draw_ann(
+                                    draw, ann, color=self.DT_COLOR, width=line_width)
+                                self.draw_ann(
+                                    draw, gt_anns[ann['gt_id']], color=self.GT_COLOR, width=line_width)
                         else:
-                            self.draw_ann(
-                                draw, ann, color=self.FP_COLOR, width=line_width)
+                            if display_fp:
+                                self.draw_ann(
+                                    draw, ann, color=self.FP_COLOR, width=line_width)
 
                 im.paste(mask, mask)
                 image_batch.append(im)
@@ -268,7 +286,7 @@ class Curves():
             resize_out_image = image_batch[0].size
 
         if len(image_batch) == 1:
-            self.plot_img(image_batch[0].resize(resize_out_image))
+            self.plot_img(np.array(image_batch[0].resize(resize_out_image))[:,:,::-1])
         elif len(image_batch) > 1:
             image_batch = np.array([np.array(image.resize(resize_out_image))[
                                    :, :, ::-1] for image in image_batch])
@@ -332,7 +350,7 @@ class Curves():
         cm = self._compute_confusion_matrix(y_true, y_pred, fp=fp, fn=fn)
         return cm
 
-    def display_matrix(self, conf_matrix=None, in_percent=True, figsize=(10, 10), fontsize=16):
+    def display_matrix(self, in_percent=False, conf_matrix=None, figsize=(10, 10), fontsize=16):
         if conf_matrix is None:
             conf_matrix = self.compute_confusion_matrix()
 

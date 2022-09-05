@@ -94,7 +94,7 @@ class COCOeval:
             # modify ann['segmentation'] by reference
             for ann in anns:
                 rle = coco.annToRLE(ann)
-                ann['segmentation'] = rle
+                ann['rle'] = rle
         p = self.params
         if p.useCats:
             gts = self.cocoGt.loadAnns(self.cocoGt.getAnnIds(
@@ -184,8 +184,8 @@ class COCOeval:
             dt = dt[0:p.maxDets[-1]]
 
         if p.iouType == 'segm':
-            g = [g['segmentation'] for g in gt]
-            d = [d['segmentation'] for d in dt]
+            g = [g['rle'] for g in gt]
+            d = [d['rle'] for d in dt]
         elif p.iouType == 'bbox':
             g = [g['bbox'] for g in gt]
             d = [d['bbox'] for d in dt]
