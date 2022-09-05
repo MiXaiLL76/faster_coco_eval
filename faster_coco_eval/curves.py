@@ -2,12 +2,8 @@ from .coco import COCO
 from .cocoeval import COCOeval
 
 from PIL import Image, ImageDraw
-import pycocotools._mask as maskUtils
 import numpy as np
-import json
-import time
 import logging
-from tqdm import tqdm
 import os.path as osp
 
 import matplotlib.pyplot as plt

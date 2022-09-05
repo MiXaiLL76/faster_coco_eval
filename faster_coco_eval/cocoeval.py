@@ -4,7 +4,7 @@ import numpy as np
 import datetime
 import time
 from collections import defaultdict
-from faster_coco_eval import mask as maskUtils
+from . import mask as maskUtils
 import copy
 
 import logging
