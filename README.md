@@ -16,10 +16,10 @@ Testing was carried out using the mmdetection framework and the eval_metric.py s
 Visualization of testing **comparison.ipynb** available in directory [examples/comparison](./examples/comparison/comparison.ipynb)
 Tested with yolo3 model (bbox eval) and yoloact model (segm eval)
 
-Type | COCOeval | COCOeval_faster | Profit
------|----------|---------------- | ------
-bbox | 22.854 sec. | 8.714 sec.   | more than 2x 
-segm | 35.356 sec. | 18.403 sec.  | 2x
+| Type | COCOeval    | COCOeval_faster | Profit       |
+| ---- | ----------- | --------------- | ------------ |
+| bbox | 22.854 sec. | 8.714 sec.      | more than 2x |
+| segm | 35.356 sec. | 18.403 sec.     | 2x           |
 
 
 # Getting started
