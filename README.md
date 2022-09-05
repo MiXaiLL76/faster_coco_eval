@@ -56,10 +56,64 @@ from faster_coco_eval import COCO, COCOeval_faster
 
 For usage, look at the original `COCOEval` [class documentation.](https://github.com/cocodataset/cocoapi)
 
-### Dependencies
-- pycocotools
-- pybind11
-- numpy
+# Usage plot curves
+````python  
+from faster_coco_eval import Curves, COCO
+
+cocoGt = COCO(....)
+cocoDt = cocoGt.loadRes(....)
+
+cur = Curves(cocoGt, cocoDt, iou_tresh=0.5, iouType='segm')
+cur.plot_pre_rec(plotly_backend=False)
+````
+
+### Build dependencies
+- setuptools>=42  
+- pybind11~=2.6.1  
+- numpy  
+- testresources  
+
+### Setup dependencies
+- numpy  
+- pycocotools  
+- matplotlib  
+- Pillow  
+- plotly (optional)  
+
+# v1.2.2
+- Removed own implementation of pre-rec  
+- Switched to the implementation of pre-rec calculation from COCO eval  
+- Lost backward compatibility  
+- Implemented output fp/fn/tp + gt to pictures  
+
+
+# v1.2.1 
+- bug fix with pre-rec curve  
+- rework error calc (tp/fp/fn)  
+- change image plot to plotly   
+- append docker auto builder  
+- append native iou calc (slow but accurate)  
+- rework auc calc with [link](https://towardsdatascience.com/how-to-efficiently-implement-area-under-precision-recall-curve-pr-auc-a85872fd7f14)  
+
+# v1.1.5
+- bug fix
+
+# v1.1.4
+- rebuild plotly backend
+
+# v1.1.3
+- Segm bug-fix
+
+# v1.1.2
+- [x] Append fp fn error analysis
+- [x] Append confusion matrix
+- [x] Append plotly backend support for ROC / AUC
+
+# v1.1.1
+- [x] Redesigned curves
+- [x] Reworked data preload
+- [x] Append csrc to setup
+- [x] Build sdist Package
 
 # v1.1.0
 - [x] Wrap c++ code
@@ -70,34 +124,6 @@ For usage, look at the original `COCOEval` [class documentation.](https://github
 - [x] Append unittest
 - [x] Append ROC / AUC curves  
 - [x] Check if it works on windows
-
-# v1.1.1
-- [x] Redesigned curves
-- [x] Reworked data preload
-- [x] Append csrc to setup
-- [x] Build sdist Package
-
-# v1.1.2
-- [x] Append fp fn error analysis
-- [x] Append confusion matrix
-- [x] Append plotly backend support for ROC / AUC
-
-# v1.1.3
-- Segm bug-fix
-
-# v1.1.4
-- rebuild plotly backend
-
-# v1.1.5
-- bug fix
-
-# v1.2.1
-- bug fix with pre-rec curve  
-- rework error calc (tp/fp/fn)  
-- change image plot to plotly   
-- append docker auto builder  
-- append native iou calc (slow but accurate)  
-- rework auc calc with [link](https://towardsdatascience.com/how-to-efficiently-implement-area-under-precision-recall-curve-pr-auc-a85872fd7f14)  
 
 # TODOs
 - [ ] Remove pycocotools dependencies
