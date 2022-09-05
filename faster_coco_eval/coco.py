@@ -76,8 +76,10 @@ class COCO:
         # load dataset
         self.dataset, self.anns, self.cats, self.imgs = dict(), dict(), dict(), dict()
         self.imgToAnns, self.catToImgs = defaultdict(list), defaultdict(list)
+        self.score_tresh: float = 0.0
+
         if not annotation_file == None:
-            logger.info('loading annotations into memory...')
+            logger.debug('loading annotations into memory...')
             tic = time.time()
             if type(annotation_file) is str:
                 with open(annotation_file, 'r') as f:
@@ -89,12 +91,12 @@ class COCO:
 
             assert type(self.dataset) == dict, 'annotation file format {} not supported'.format(
                 type(self.dataset))
-            logger.info('Done (t={:0.2f}s)'.format(time.time() - tic))
+            logger.debug('Done (t={:0.2f}s)'.format(time.time() - tic))
             self.createIndex()
 
     def createIndex(self):
         # create index
-        logger.info('creating index...')
+        logger.debug('creating index...')
         anns, cats, imgs = {}, {}, {}
         imgToAnns, catToImgs = defaultdict(list), defaultdict(list)
         if 'annotations' in self.dataset:
@@ -114,7 +116,7 @@ class COCO:
             for ann in self.dataset['annotations']:
                 catToImgs[ann['category_id']].append(ann['image_id'])
 
-        logger.info('index created!')
+        logger.debug('index created!')
 
         # create class members
         self.anns = anns
@@ -129,7 +131,7 @@ class COCO:
         :return:
         """
         for key, value in self.dataset['info'].items():
-            logger.info('{}: {}'.format(key, value))
+            logger.debug('{}: {}'.format(key, value))
 
     def getAnnIds(self, imgIds=[], catIds=[], areaRng=[], iscrowd=None):
         """
@@ -318,18 +320,19 @@ class COCO:
             ax.add_collection(p)
         elif datasetType == 'captions':
             for ann in anns:
-                logger.info(ann['caption'])
+                logger.debug(ann['caption'])
 
-    def loadRes(self, resFile):
+    def loadRes(self, resFile, min_score=0):
         """
         Load result file and return a result api object.
         :param   resFile (str)     : file name of result file
         :return: res (obj)         : result api object
         """
+        self.score_tresh = min_score
         res = COCO()
         res.dataset['images'] = [img for img in self.dataset['images']]
 
-        logger.info('Loading and preparing results...')
+        logger.debug('Loading and preparing results...')
         tic = time.time()
         if type(resFile) == str:
             anns = json.load(open(resFile))
@@ -338,6 +341,9 @@ class COCO:
         else:
             anns = resFile
         assert type(anns) == list, 'results in not an array of objects'
+
+        anns = [ann for ann in anns if ann.get('score', 1) >= self.score_tresh]
+
         annsImgIds = [ann['image_id'] for ann in anns]
         assert set(annsImgIds) == (set(annsImgIds) & set(self.getImgIds())), \
             'Results do not correspond to current coco set'
@@ -380,7 +386,7 @@ class COCO:
                 ann['area'] = (x1-x0)*(y1-y0)
                 ann['id'] = id + 1
                 ann['bbox'] = [x0, y0, x1-x0, y1-y0]
-        logger.info('DONE (t={:0.2f}s)'.format(time.time() - tic))
+        logger.debug('DONE (t={:0.2f}s)'.format(time.time() - tic))
 
         res.dataset['annotations'] = anns
         res.createIndex()
@@ -394,7 +400,7 @@ class COCO:
         :return:
         '''
         if tarDir is None:
-            logger.info('Please specify target directory')
+            logger.debug('Please specify target directory')
             return -1
         if len(imgIds) == 0:
             imgs = self.imgs.values()
@@ -408,7 +414,7 @@ class COCO:
             fname = os.path.join(tarDir, img['file_name'])
             if not os.path.exists(fname):
                 urlretrieve(img['coco_url'], fname)
-            logger.info(
+            logger.debug(
                 'downloaded {}/{} images (t={:0.1f}s)'.format(i, N, time.time() - tic))
 
     def loadNumpyAnnotations(self, data):
@@ -417,15 +423,15 @@ class COCO:
         :param  data (numpy.ndarray)
         :return: annotations (python nested list)
         """
-        logger.info('Converting ndarray to lists...')
+        logger.debug('Converting ndarray to lists...')
         assert (type(data) == np.ndarray)
-        logger.info(data.shape)
+        logger.debug(data.shape)
         assert (data.shape[1] == 7)
         N = data.shape[0]
         ann = []
         for i in range(N):
             if i % 1000000 == 0:
-                logger.info('{}/{}'.format(i, N))
+                logger.debug('{}/{}'.format(i, N))
             ann += [{
                 'image_id': int(data[i, 0]),
                 'bbox': [data[i, 1], data[i, 2], data[i, 3], data[i, 4]],

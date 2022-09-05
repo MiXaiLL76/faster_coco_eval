@@ -1,15 +1,17 @@
-import pycocotools._mask as maskUtils
+from .coco import COCO
+from .cocoeval import COCOeval
+
+from PIL import Image, ImageDraw
 import numpy as np
-import json
-import time
 import logging
-from tqdm import tqdm
+import os.path as osp
 
 import matplotlib.pyplot as plt
 
 try:
     from plotly.subplots import make_subplots
     import plotly.graph_objects as go
+    import plotly.express as px
     plotly_available = True
 except:
     plotly_available = False
@@ -18,313 +20,69 @@ logger = logging.getLogger(__name__)
 
 
 class Curves():
-    def __init__(self, annotation_file, iouType='bbox', min_score=0, iou_tresh=0.0, use_native_iou_calc=False):
+    A = 128
+    DT_COLOR = (238, 130, 238, A)
+    GT_COLOR = (0, 255, 0,   A)
+
+    FN_COLOR = (255, 0, 0,   A)
+    FP_COLOR = (0, 0, 255,   A)
+
+    def __init__(self,
+                 cocoGt: COCO = None,
+                 cocoDt: COCO = None,
+                 iouType: str = 'bbox',
+                 min_score: float = 0,
+                 iou_tresh: float = 0.0,
+                 recall_count: int = 100,
+                 useCats: bool = False,
+                 ):
         self.iouType = iouType
         self.min_score = min_score
         self.iou_tresh = iou_tresh
-        self.use_native_iou_calc = use_native_iou_calc
+        self.useCats = useCats
 
-        assert self.iouType in [
-            'bbox', 'segm'], f"unknown {iouType} for iou computation"
+        self.cocoGt = cocoGt
+        self.cocoDt = cocoDt
 
-        logger.debug('loading annotations into memory...')
-        tic = time.time()
+        cocoEval = COCOeval(self.cocoGt, self.cocoDt, iouType)
+        cocoEval.params.maxDets = [len(cocoGt.anns)]
 
-        dataset = self.load_coco(annotation_file)
+        cocoEval.params.iouThr = [0, 0.5]
+        cocoEval.params.iouThrs = [iou_tresh]
+        cocoEval.params.areaRng = [[0, 10000000000]]
+        self.recThrs = np.linspace(0, 1, recall_count + 1, endpoint=True)
+        cocoEval.params.recThrs = self.recThrs
 
-        self.dataset = {
-            'annotations': {},
-            'images': {image['id']: image for image in dataset['images']},
-            'categories': dataset['categories'],
-        }
+        cocoEval.params.useCats = int(self.useCats)  # Выключение labels
 
-        remap_id = False
+        cocoEval.evaluate()
+        cocoEval.accumulate()
 
-        dataset_ids = [ann.get('id') for ann in dataset['annotations']]
-        unique_count = len(set(dataset_ids))
-        if unique_count == len(dataset['annotations']):
-            ann_id = len(dataset) + 1
-        else:
-            ann_id = 1
-            logger.warning(
-                'dataset have not unique annotation ids. remaping...')
-            remap_id = True
+        self.eval = cocoEval.eval
+        self.math_matches()
 
-        for ann in dataset['annotations']:
-            if self.dataset['annotations'].get(ann['image_id']) is None:
-                self.dataset['annotations'][ann['image_id']] = []
+    def math_matches(self):
+        for gt_id, dt_id, is_tp in self.eval['matches']:
+            is_tp = bool(is_tp)
 
-            if self.iouType == 'segm':
-                ann = self.annToRLE(ann)
+            self.cocoDt.anns[dt_id]['tp'] = is_tp
 
-            if ann.get('id') is None or remap_id:
-                ann['id'] = ann_id
-                ann_id += 1
+            if is_tp:
+                self.cocoGt.anns[gt_id]['tp'] = is_tp
+                self.cocoGt.anns[gt_id]['dt_id'] = dt_id
+                #
+                self.cocoDt.anns[dt_id]['gt_id'] = gt_id
 
-            self.dataset['annotations'][ann['image_id']].append(ann)
-
-    def annToRLE(self, ann):
-        """
-        Convert annotation which can be polygons, uncompressed RLE to RLE.
-        :return: binary mask (numpy 2D array)
-        """
-        if ann.get('rle') is not None:
-            return ann
-
-        t = self.dataset['images'][ann['image_id']]
-        h, w = t['height'], t['width']
-        segm = ann['segmentation']
-        if type(segm) == list:
-            # polygon -- a single object might consist of multiple parts
-            # we merge all parts into one mask rle code
-            try:
-                rles = maskUtils.frPyObjects(segm, h, w)
-            except:
-                logger.error(f"{ann=}")
-                raise
-            rle = maskUtils.merge(rles)
-        elif type(segm['counts']) == list:
-            # uncompressed RLE
-            rle = maskUtils.frPyObjects(segm, h, w)
-        else:
-            rle = ann['segmentation']
-
-        ann['rle'] = rle
-
-        return ann
-
-    def load_result(self, result_annotations):
-        dataset = self.load_coco(result_annotations)
-
-        self.result_annotations = {}
-
-        remap_id = False
-
-        dataset_ids = [ann.get('id') for ann in dataset]
-        unique_count = len(set(dataset_ids))
-        if unique_count == len(dataset):
-            ann_id = len(dataset) + 1
-        else:
-            ann_id = 1
-            logger.warning(
-                'loaded result have not unique annotation ids. remaping...')
-            remap_id = True
-
-        for ann in dataset:
-            if self.result_annotations.get(ann['image_id']) is None:
-                self.result_annotations[ann['image_id']] = []
-
-            if ann.get('id') is None or remap_id:
-                ann['id'] = ann_id
-                ann_id += 1
-
-            if self.iouType == 'segm':
-                # Поиск пустых сегментаций. не должно быть так, чтобы они были.
-                if np.array(ann['segmentation']).ravel().shape[0] == 0:
-                    continue
-
-                ann = self.annToRLE(ann)
-
-            self.result_annotations[ann['image_id']].append(ann)
-
-    def load_coco(self, coco_data):
-        if type(coco_data) is str:
-            with open(coco_data, 'r') as io:
-                dataset = json.load(io)
-        elif type(coco_data) in [dict, list]:
-            dataset = coco_data
-        else:
-            dataset = None
-
-        assert (type(dataset) is dict) or ((type(dataset) is list) and (len(dataset) > 0) and (
-            type(dataset[0]) is dict)), 'annotation file format not supported'
-
-        return dataset
-
-    def IoU(self, box, boxes):
-        """Compute IoU between detect box and gt boxes
-        Parameters:
-        ----------
-        box: numpy array , shape (5, ): x1, y1, x2, y2, score
-            input box
-        boxes: numpy array, shape (n, 4): x1, y1, x2, y2
-            input ground truth boxes
-        Returns:
-        -------
-        ovr: numpy.array, shape (n, )
-            IoU
-        """
-        if len(boxes) == 0:
-            logger.error('gt bboxes are not found')
-            return np.array([0.])
-
-        box_area = (box[2] - box[0] + 1) * (box[3] - box[1] + 1)
-        area = (boxes[:, 2] - boxes[:, 0] + 1) * \
-            (boxes[:, 3] - boxes[:, 1] + 1)
-
-        xx1 = np.maximum(box[0], boxes[:, 0])
-        yy1 = np.maximum(box[1], boxes[:, 1])
-        xx2 = np.minimum(box[2], boxes[:, 2])
-        yy2 = np.minimum(box[3], boxes[:, 3])
-
-        # compute the width and height of the bounding box
-        w = np.maximum(0, xx2 - xx1 + 1)
-        h = np.maximum(0, yy2 - yy1 + 1)
-
-        inter = w * h
-        ovr = inter / (box_area + area - inter)
-        return ovr
-
-    def slow_computeIoU(self, gt, dt):
-        if self.iouType == 'bbox':
-            gt_bboxes = np.float32([g['bbox'] for g in gt])
-            # xywh to x1y1x2y2
-            gt_bboxes[:, 2:4] += gt_bboxes[:, :2] - 1
-
-            det_bboxes = np.float32([d['bbox'] for d in dt])
-            # xywh to x1y1x2y2
-            det_bboxes[:, 2:4] += det_bboxes[:, :2] - 1
-
-        else:
-            raise Exception('unknown self.iouType for iou computation')
-
-        ious = np.zeros((len(det_bboxes), len(gt_bboxes)), dtype=np.float32)
-
-        for i, det_box in enumerate(det_bboxes):
-            ious[i, :] = self.IoU(det_box, gt_bboxes)
-
-        return ious
-
-    def computeIoU(self, gt, dt):
-        maxDets = len(gt)
-
-        if self.iouType == 'segm':
-            g = [g['rle'] for g in gt]
-            d = [d['rle'] for d in dt]
-        elif self.iouType == 'bbox':
-            g = np.array([g['bbox'] for g in gt])
-            d = np.array([d['bbox'] for d in dt])
-        else:
-            raise Exception('unknown self.iouType for iou computation')
-
-        # compute iou between each dt and gt region
-        iscrowd = [int(o['iscrowd']) for o in gt]
-        ious = maskUtils.iou(d, g, iscrowd)
-
-        # ious[ious < self.iou_tresh] = 0
-
-        return ious
-
-    def find_pairs(self, iou, scores, dets):
-        dt_count, gt_count = iou.shape
-
-        used_gt = {}
-        find = []
-        for dt_id in range(dt_count):
-            best_gt_id = iou[dt_id, :].argmax()
-
-            iou_value = iou[dt_id, best_gt_id]
-            score = scores[dt_id]
-
-            tp = (iou_value >= self.iou_tresh) and not used_gt.get(
-                best_gt_id, False) and (score >= self.min_score)
-
-            if tp:
-                used_gt[best_gt_id] = True
-
-            find.append([best_gt_id, dt_id, iou_value, score, tp])
-
-        fn_list = [gt_id for gt_id in range(
-            gt_count) if not used_gt.get(gt_id, False)]
-
-        return np.array(find).reshape(-1, 5), fn_list
-
-    def select_anns(self, anns, image_id=0, category=None):
-        anns = [
-            dict(ann, **{'score': ann.get('score', 1)})
-            for ann in anns if (ann['image_id'] == image_id) and ((ann['category_id'] == category) or (category is None))]
-
-        anns.sort(key=lambda x: x.get('score'), reverse=True)
-        return anns
-
-    def match(self, categories_id=['all']):
-        if categories_id is None:
-            categories_id = [None]
-
-        assert type(categories_id) is list, f'{categories_id=} not supported'
-
-        categories = {category['id']: category['name']
-                      for category in self.dataset['categories']}
-
-        if 'all' in categories_id:
-            categories_id = list(categories)
-
-        match_results = {}
-
-        for _image_id in tqdm(self.dataset['images']):
-            for _category_id in categories_id:
-                if match_results.get(_category_id) is None:
-                    match_results[_category_id] = {
-                        "num_detectedbox": 0,
-                        "num_groundtruthbox": 0,
-                        "maxiou_confidence": [],
-                        "fn_list": {},
-                        "fp_list": {},
-                        "tp_list": {},
-                    }
-
-                gt_anns = self.dataset['annotations'].get(_image_id, [])
-                dt_anns = self.result_annotations.get(_image_id, [])
-
-                gt = self.select_anns(gt_anns, _image_id, _category_id)
-                dt = self.select_anns(dt_anns, _image_id, _category_id)
-
-                match_results[_category_id]['num_groundtruthbox'] += len(gt)
-                match_results[_category_id]['num_detectedbox'] += len(dt)
-
-                if len(dt) > 0 and len(gt) > 0:
-                    if self.use_native_iou_calc:
-                        iou = self.slow_computeIoU(gt, dt)
-                    else:
-                        iou = self.computeIoU(gt, dt)
-
-                    scores = np.float32([d['score'] for d in dt])
-                    pairs, fn_list = self.find_pairs(iou, scores, dt)
-
-                    if match_results[_category_id]['fn_list'].get(_image_id) is None:
-                        match_results[_category_id]['fn_list'][_image_id] = []
-                        match_results[_category_id]['fp_list'][_image_id] = []
-                        match_results[_category_id]['tp_list'][_image_id] = []
-
-                    # FN (false negatives), ложноотрицательные – все объекты, присутствующие
-                    # в истинной разметке данных, но не предсказанные моделью.
-                    match_results[_category_id]['fn_list'][_image_id] += [
-                        gt[_ann_i]['id'] for _ann_i in fn_list]
-
-                    # FP (false positives), ложноположительные – все предсказанные объекты,
-                    # не являющиеся истинно-положительными;
-                    match_results[_category_id]['fp_list'][_image_id] += [
-                        dt[int(row[1])]['id'] for row in pairs if not row[4]]
-
-                    # TP (true positives), истинно-положительные – когда предсказанная рамка объекта имеет IoU с \
-                    # истинной не ниже порогового значения IoU, а его класс предсказан
-                    # с уверенностью не ниже порогового значения уверенности;
-                    match_results[_category_id]['tp_list'][_image_id] += [
-                        {"dt": dt[int(row[1])]['id'], "gt": gt[int(row[0])]['id']} for row in pairs if row[4]]
-
-                    if pairs.shape[0] > 0:
-                        match_results[_category_id]['maxiou_confidence'].append(
-                            pairs[:, 2:])
-
-        for _category_id in categories_id:
-            match_results[_category_id]['maxiou_confidence'] = np.vstack(
-                match_results[_category_id]['maxiou_confidence'])
-        return match_results
+        for gt_id in self.cocoGt.anns.keys():
+            if self.cocoGt.anns[gt_id].get('tp') is None:
+                self.cocoGt.anns[gt_id]['fn'] = True
 
     def calc_auc(self, recall_list, precision_list):
         # https://towardsdatascience.com/how-to-efficiently-implement-area-under-precision-recall-curve-pr-auc-a85872fd7f14
-        mrec = np.concatenate(([0.], recall_list, [1.]))
-        mpre = np.concatenate(([0.], precision_list, [0.]))
+        # mrec = np.concatenate(([0.], recall_list, [1.]))
+        # mpre = np.concatenate(([0.], precision_list, [0.]))
+        mrec = recall_list
+        mpre = precision_list
 
         for i in range(mpre.size - 1, 0, -1):
             mpre[i - 1] = np.maximum(mpre[i - 1], mpre[i])
@@ -332,7 +90,7 @@ class Curves():
         i = np.where(mrec[1:] != mrec[:-1])[0]
         return np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
 
-    def plot_pre_rec(self, match_results: dict, plotly_backend=True, interp=True):
+    def plot_pre_rec(self, plotly_backend=False, label="category_id"):
         use_plotly = False
         if plotly_backend:
             if plotly_available:
@@ -351,48 +109,30 @@ class Curves():
             'auc': [],
         }
 
-        for category_id, _match in match_results.items():
-            label = _match.get("label", "category_id")
-            label = f"[{label}={category_id}] "
-            if category_id is None:
-                label = ""
+        if self.useCats:
+            cat_ids = list(range(self.eval['precision'].shape[2]))
+        else:
+            cat_ids = [0]
 
-            maxiou_confidence = _match['maxiou_confidence']  # iou, score, tp
-            num_detectedbox = _match['num_detectedbox']
-            num_groundtruthbox = _match['num_groundtruthbox']
+        for category_id in cat_ids:
+            _label = f"[{label}={category_id}] "
+            if len(cat_ids) == 1:
+                _label = ""
 
-            idx = (-maxiou_confidence[:, 1]).argsort(kind='mergesort')
+            precision_list = self.eval['precision'][:,
+                                                    :, category_id, :, :].ravel()
+            recall_list = self.recThrs
 
-            scores = maxiou_confidence[idx, 1]
-            tp = maxiou_confidence[idx, 2]
-            fp = -1 * (tp - 1)
-
-            tp_list, fp_list = np.cumsum(tp), np.cumsum(fp)
-
-            precision_list = tp_list / (tp_list + fp_list)
-            recall_list = tp_list / num_groundtruthbox
-
-            if interp:
-                x_line_vals = np.linspace(0, 1, 3000)
-                max_idx = np.argmin(np.abs(x_line_vals - np.max(recall_list)))
-                x_line_vals = x_line_vals[:max_idx + 1]
-                y_vals = np.interp(x_line_vals, recall_list, precision_list)
-                score_vals = np.interp(x_line_vals, recall_list, scores)
-
-                scores = score_vals
-                recall_list = x_line_vals
-                precision_list = y_vals
+            scores = self.eval['scores'][:, :, category_id, :, :].ravel()
 
             auc = round(self.calc_auc(recall_list, precision_list), 4)
-
-            output['auc'].append(auc)
 
             if use_plotly:
                 fig.add_trace(
                     go.Scatter(
                         x=recall_list,
                         y=precision_list,
-                        name=f'{label}auc: {auc:.3f}',
+                        name=f'{_label}auc: {auc:.3f}',
                         mode='lines',
                         text=scores,
                         hovertemplate='Pre: %{y:.3f}<br>' +
@@ -407,13 +147,14 @@ class Curves():
                 axes[0].set_xlabel('Recall')
                 axes[0].set_ylabel('Precision')
                 axes[0].plot(recall_list, precision_list,
-                             label=f'{label}auc: {auc:.3f}')
+                             label=f'{_label}auc: {auc:.3f}')
                 axes[0].grid(True)
                 axes[0].legend()
 
         if use_plotly:
-            fig.layout.yaxis.range = [0, 1.01]
-            fig.layout.xaxis.range = [0, 1.01]
+            margin = 0.01
+            fig.layout.yaxis.range = [0 - margin, 1 + margin]
+            fig.layout.xaxis.range = [0 - margin, 1 + margin]
 
             fig.layout.yaxis.title = 'Precision'
             fig.layout.xaxis.title = 'Recall'
@@ -423,4 +164,207 @@ class Curves():
         else:
             plt.show()
 
-        return output
+    def draw_ann(self, draw, ann, color, width=5):
+        if self.iouType == 'bbox':
+            x1, y1, w, h = ann['bbox']
+            draw.rectangle([x1, y1, x1+w, y1+h], outline=color, width=width)
+        else:
+            for poly in ann['segmentation']:
+                if len(poly) > 3:
+                    draw.polygon(poly, outline=color, width=width)
+
+    def plot_img(self, img, force_matplot=False, figsize=None, slider=False):
+        if plotly_available and not force_matplot:
+            if not slider:
+                fig = px.imshow(img)
+            else:
+                fig = px.imshow(img, animation_frame=0,
+                                labels=dict(animation_frame="enum"))
+
+            fig.update_layout(coloraxis_showscale=False)
+            fig.update_layout(height=600, width=1200)
+            fig.show()
+        else:
+            if figsize is not None:
+                plt.figure(figsize=figsize)
+            plt.imshow(img, interpolation='nearest')
+            plt.axis('off')
+            plt.show()
+
+    def print_colors_info(self, _print=False):
+        _print_func = logger.info
+        if _print:
+            _print_func = print
+
+        if logger.getEffectiveLevel() <= 20 or _print:
+            _print_func(f"DT_COLOR : {self.DT_COLOR}")
+            im = Image.new("RGBA", (64, 32), self.DT_COLOR)
+            self.plot_img(im, force_matplot=True, figsize=(1, 0.5))
+            _print_func("")
+
+            _print_func(f"GT_COLOR : {self.GT_COLOR}")
+            im = Image.new("RGBA", (64, 32), self.GT_COLOR)
+            self.plot_img(im, force_matplot=True, figsize=(1, 0.5))
+            _print_func("")
+
+            _print_func(f"FN_COLOR : {self.FN_COLOR}")
+            im = Image.new("RGBA", (64, 32), self.FN_COLOR)
+            self.plot_img(im, force_matplot=True, figsize=(1, 0.5))
+            _print_func("")
+
+            _print_func(f"FP_COLOR : {self.FP_COLOR}")
+            im = Image.new("RGBA", (64, 32), self.FP_COLOR)
+            self.plot_img(im, force_matplot=True, figsize=(1, 0.5))
+            _print_func("")
+
+    def display_tp_fp_fn(self, image_ids=['all'],
+                         line_width=7,
+                         display_fp=True,
+                         display_fn=True,
+                         display_tp=True,
+                         resize_out_image=None,
+                         data_folder=None,
+                         ):
+        image_batch = []
+
+        for image_id, gt_anns in self.cocoGt.imgToAnns.items():
+            if (image_id in image_ids) or 'all' in image_ids:
+                image = self.cocoGt.imgs[image_id]
+
+                if data_folder is not None:
+                    image_fn = osp.join(data_folder, image["file_name"])
+                else:
+                    image_fn = image["file_name"]
+
+                im = Image.open(image_fn)
+                mask = Image.new("RGBA", im.size, (0, 0, 0, 0))
+                draw = ImageDraw.Draw(mask)
+
+                gt_anns = {ann['id']: ann for ann in gt_anns}
+                if len(gt_anns) > 0:
+                    for ann in gt_anns.values():
+                        if ann.get('fn', False):
+                            self.draw_ann(
+                                draw, ann, color=self.FN_COLOR, width=line_width)
+
+                dt_anns = self.cocoDt.imgToAnns[image_id]
+                dt_anns = {ann['id']: ann for ann in dt_anns}
+
+                if len(dt_anns) > 0:
+                    for ann in dt_anns.values():
+                        if ann.get('tp', False):
+                            self.draw_ann(
+                                draw, ann, color=self.DT_COLOR, width=line_width)
+                            self.draw_ann(
+                                draw, gt_anns[ann['gt_id']], color=self.GT_COLOR, width=line_width)
+                        else:
+                            self.draw_ann(
+                                draw, ann, color=self.FP_COLOR, width=line_width)
+
+                im.paste(mask, mask)
+                image_batch.append(im)
+
+        if len(image_batch) >= 1 and resize_out_image is None:
+            resize_out_image = image_batch[0].size
+
+        if len(image_batch) == 1:
+            self.plot_img(image_batch[0].resize(resize_out_image))
+        elif len(image_batch) > 1:
+            image_batch = np.array([np.array(image.resize(resize_out_image))[
+                                   :, :, ::-1] for image in image_batch])
+            self.plot_img(image_batch, slider=True)
+
+    def _compute_confusion_matrix(self, y_true, y_pred, fp={}, fn={}):
+        """
+        return classes*(classes + fp col + fn col)
+        """
+        categories_real_ids = list(self.cocoGt.cats)
+        categories_enum_ids = {category_id: _i for _i,
+                               category_id in enumerate(categories_real_ids)}
+        K = len(categories_enum_ids)
+
+        cm = np.zeros((K, K + 2), dtype=np.int32)
+        for a, p in zip(y_true, y_pred):
+            cm[categories_enum_ids[a]][categories_enum_ids[p]] += 1
+
+        for enum_id, category_id in enumerate(categories_real_ids):
+            cm[enum_id][-2] = fp.get(category_id, 0)
+            cm[enum_id][-1] = fn.get(category_id, 0)
+
+        return cm
+
+    def compute_confusion_matrix(self):
+        if self.useCats:
+            logger.warning(
+                f"The calculation may not be accurate. No intersection of classes. {self.useCats=}")
+
+        y_true = []
+        y_pred = []
+
+        fn = {}
+        fp = {}
+
+        for image_id, gt_anns in self.cocoGt.imgToAnns.items():
+            gt_anns = {ann['id']: ann for ann in gt_anns}
+            if len(gt_anns) > 0:
+                for ann in gt_anns.values():
+                    if ann.get('fn', False):
+                        if fn.get(ann['category_id']) is None:
+                            fn[ann['category_id']] = 0
+
+                        fn[ann['category_id']] += 1
+
+            dt_anns = self.cocoDt.imgToAnns[image_id]
+            dt_anns = {ann['id']: ann for ann in dt_anns}
+
+            if len(dt_anns) > 0:
+                for ann in dt_anns.values():
+                    if ann.get('tp', False):
+                        y_true.append(gt_anns[ann['gt_id']]['category_id'])
+                        y_pred.append(ann['category_id'])
+                    else:
+                        if fp.get(ann['category_id']) is None:
+                            fp[ann['category_id']] = 0
+
+                        fp[ann['category_id']] += 1
+
+        # classes fp fn
+        cm = self._compute_confusion_matrix(y_true, y_pred, fp=fp, fn=fn)
+        return cm
+
+    def display_matrix(self, conf_matrix=None, in_percent=True, figsize=(10, 10), fontsize=16):
+        if conf_matrix is None:
+            conf_matrix = self.compute_confusion_matrix()
+
+        names = [category['name']
+                 for category_id, category in self.cocoGt.cats.items()]
+        names += ['fp', 'fn']
+
+        if in_percent:
+            sum_by_col = conf_matrix.sum(axis=1)
+
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.matshow(conf_matrix, cmap='Blues', alpha=0.3)
+        for i in range(conf_matrix.shape[0]):
+            for j in range(conf_matrix.shape[1]):
+
+                value = conf_matrix[i, j]
+
+                if in_percent:
+                    value = int(value / sum_by_col[i] * 100)
+
+                if value > 0:
+                    ax.text(x=j, y=i, s=value, va='center', ha='center')
+
+        plt.xlabel('Predictions', fontsize=fontsize)
+        plt.ylabel('Actuals', fontsize=fontsize)
+
+        plt.xticks(list(range(len(names))), names, rotation=90)
+        plt.yticks(list(range(len(names[:-2]))), names[:-2])
+
+        title = 'Confusion Matrix'
+        if in_percent:
+            title += ' [%]'
+
+        plt.title(title, fontsize=fontsize)
+        plt.show()
