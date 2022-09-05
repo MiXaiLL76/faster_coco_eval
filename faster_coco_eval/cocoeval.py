@@ -352,6 +352,8 @@ class COCOeval:
         recall = -np.ones((T, K, A, M))
         scores = -np.ones((T, R, K, A, M))
 
+        tp_rate = -np.ones((T, R, K, A, M))
+
         # create dictionary for future indexing
         _pe = self._paramsEval
         catIds = _pe.catIds if _pe.useCats else [-1]
@@ -367,6 +369,9 @@ class COCOeval:
         i_list = [n for n, i in enumerate(p.imgIds) if i in setI]
         I0 = len(_pe.imgIds)
         A0 = len(_pe.areaRng)
+
+        _matches = []
+
         # retrieve E at each category, area range, and max number of detections
         for k, k0 in enumerate(k_list):
             Nk = k0*A0*I0
@@ -387,6 +392,7 @@ class COCOeval:
 
                     dtm = np.concatenate([e['dtMatches'][:, 0:maxDet]
                                          for e in E], axis=1)[:, inds]
+
                     dtIg = np.concatenate(
                         [e['dtIgnore'][:, 0:maxDet] for e in E], axis=1)[:, inds]
                     gtIg = np.concatenate([e['gtIgnore'] for e in E])
@@ -396,6 +402,15 @@ class COCOeval:
                     tps = np.logical_and(dtm,  np.logical_not(dtIg))
                     fps = np.logical_and(
                         np.logical_not(dtm), np.logical_not(dtIg))
+
+                    # detected ann ids
+                    dtm_ids = np.concatenate(
+                        [e['dtIds'][0:maxDet] for e in E])[inds]
+                    # gt ann ids
+                    gtm_ids = dtm.copy()
+                    # build batch gt, dt, is_tp
+                    _matches.append(
+                        np.vstack([gtm_ids, dtm_ids, tps]).astype(np.int32).T)
 
                     tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float)
                     fp_sum = np.cumsum(fps, axis=1).astype(dtype=np.float)
@@ -431,14 +446,19 @@ class COCOeval:
                             pass
                         precision[t, :, k, a, m] = np.array(q)
                         scores[t, :, k, a, m] = np.array(ss)
+
+        _matches = np.vstack(_matches)
+
         self.eval = {
             'params': p,
             'counts': [T, R, K, A, M],
             'date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'precision': precision,
-            'recall':   recall,
+            'recall': recall,
             'scores': scores,
+            'matches': _matches,
         }
+
         toc = time.time()
         logger.debug('DONE (t={:0.2f}s).'.format(toc-tic))
 
