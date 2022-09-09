@@ -103,7 +103,8 @@ class Curves():
             if len(cat_ids) == 1:
                 _label = ""
 
-            precision_list = self.eval['precision'][:,:, category_id, :, :].ravel()
+            precision_list = self.eval['precision'][:,
+                                                    :, category_id, :, :].ravel()
             recall_list = self.recThrs
             scores = self.eval['scores'][:, :, category_id, :, :].ravel()
             auc = round(self.calc_auc(recall_list, precision_list), 4)
@@ -116,9 +117,8 @@ class Curves():
                 auc=auc,
                 category_id=category_id,
             ))
-        
+
         return curve
-        
 
     def plot_pre_rec(self, curves=None, plotly_backend=False, label="category_id"):
         if curves is None:
@@ -138,13 +138,12 @@ class Curves():
             fig.set_size_inches(15, 7)
             axes = [axes]
 
-
         for _curve in curves:
             recall_list = _curve['recall_list']
             precision_list = _curve['precision_list']
             scores = _curve['scores']
             name = _curve['name']
-            
+
             if use_plotly:
                 fig.add_trace(
                     go.Scatter(
@@ -189,7 +188,7 @@ class Curves():
             for poly in ann['segmentation']:
                 if len(poly) > 3:
                     draw.polygon(poly, outline=color, width=width)
-    
+
     def plot_img(self, img, force_matplot=False, figsize=None, slider=False):
         if plotly_available and not force_matplot and slider:
             fig = px.imshow(img, animation_frame=0,
@@ -249,6 +248,7 @@ class Curves():
                          display_fp=True,
                          display_fn=True,
                          display_tp=True,
+                         display_gt=True,
                          resize_out_image=None,
                          data_folder=None,
                          ):
@@ -266,19 +266,25 @@ class Curves():
                 if osp.exists(image_fn):
                     im = Image.open(image_fn).convert("RGB")
                 else:
-                    logger.warning(f'[{image_fn}] not found!\nLoading default empty image')
-                    
+                    logger.warning(
+                        f'[{image_fn}] not found!\nLoading default empty image')
+
                     im = Image.new("RGB", (image['width'], image['height']))
-                
+
                 mask = Image.new("RGBA", im.size, (0, 0, 0, 0))
                 draw = ImageDraw.Draw(mask)
 
                 gt_anns = {ann['id']: ann for ann in gt_anns}
-                if len(gt_anns) > 0 and display_fn:
+                if len(gt_anns) > 0:
                     for ann in gt_anns.values():
-                        if ann.get('fn', False):
+                        is_fn = ann.get('fn', False)
+
+                        if is_fn and display_fn:
                             self.draw_ann(
                                 draw, ann, color=self.FN_COLOR, width=line_width)
+                        elif display_gt:
+                            self.draw_ann(
+                                draw, ann, color=self.GT_COLOR, width=line_width)
 
                 dt_anns = self.cocoDt.imgToAnns[image_id]
                 dt_anns = {ann['id']: ann for ann in dt_anns}
@@ -289,8 +295,6 @@ class Curves():
                             if display_tp:
                                 self.draw_ann(
                                     draw, ann, color=self.DT_COLOR, width=line_width)
-                                self.draw_ann(
-                                    draw, gt_anns[ann['gt_id']], color=self.GT_COLOR, width=line_width)
                         else:
                             if display_fp:
                                 self.draw_ann(
@@ -303,10 +307,10 @@ class Curves():
             resize_out_image = image_batch[0].size
 
         if len(image_batch) == 1:
-            self.plot_img(np.array(image_batch[0].resize(resize_out_image))[:,:,::-1])
+            self.plot_img(np.array(image_batch[0].resize(resize_out_image)))
         elif len(image_batch) > 1:
-            image_batch = np.array([np.array(image.resize(resize_out_image))[
-                                   :, :, ::-1] for image in image_batch])
+            image_batch = np.array(
+                [np.array(image.resize(resize_out_image)) for image in image_batch])
             self.plot_img(image_batch, slider=True)
 
     def _compute_confusion_matrix(self, y_true, y_pred, fp={}, fn={}):
