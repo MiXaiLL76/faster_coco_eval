@@ -1,5 +1,6 @@
 from .coco import COCO
 from .cocoeval import COCOeval
+from . import mask as maskUtils
 
 from PIL import Image, ImageDraw
 import numpy as np
@@ -22,10 +23,10 @@ logger = logging.getLogger(__name__)
 class Curves():
     A = 128
     DT_COLOR = (238, 130, 238, A)
-    GT_COLOR = (0, 255, 0,   A)
 
-    FN_COLOR = (255, 0, 0,   A)
-    FP_COLOR = (0, 0, 255,   A)
+    GT_COLOR = (0, 255, 0,   A)
+    FN_COLOR = (0, 0, 255,   A)
+    FP_COLOR = (255, 0, 0,   A)
 
     def __init__(self,
                  cocoGt: COCO = None,
@@ -40,17 +41,20 @@ class Curves():
         self.min_score = min_score
         self.iou_tresh = iou_tresh
         self.useCats = useCats
-
+        self.recall_count = recall_count
         self.cocoGt = cocoGt
         self.cocoDt = cocoDt
 
-        cocoEval = COCOeval(self.cocoGt, self.cocoDt, iouType)
-        cocoEval.params.maxDets = [len(cocoGt.anns)]
+        self.evaluate()
+
+    def evaluate(self):
+        cocoEval = COCOeval(self.cocoGt, self.cocoDt, self.iouType)
+        cocoEval.params.maxDets = [len(self.cocoGt.anns)]
 
         cocoEval.params.iouThr = [0, 0.5]
-        cocoEval.params.iouThrs = [iou_tresh]
+        cocoEval.params.iouThrs = [self.iou_tresh]
         cocoEval.params.areaRng = [[0, 10000000000]]
-        self.recThrs = np.linspace(0, 1, recall_count + 1, endpoint=True)
+        self.recThrs = np.linspace(0, 1, self.recall_count + 1, endpoint=True)
         cocoEval.params.recThrs = self.recThrs
 
         cocoEval.params.useCats = int(self.useCats)  # Выключение labels
@@ -76,6 +80,16 @@ class Curves():
         for gt_id in self.cocoGt.anns.keys():
             if self.cocoGt.anns[gt_id].get('tp') is None:
                 self.cocoGt.anns[gt_id]['fn'] = True
+
+    def remap_categories_on_tp(self):
+        # remap categories
+        for dt_id, ann in self.cocoDt.anns.items():
+            if ann.get('tp', False):
+                self.cocoDt.anns[dt_id]['category_id'] = self.cocoGt.anns[ann['gt_id']]['category_id']
+
+        self.useCats = True
+        self.evaluate()
+        # remap categories
 
     def calc_auc(self, recall_list, precision_list):
         # https://towardsdatascience.com/how-to-efficiently-implement-area-under-precision-recall-curve-pr-auc-a85872fd7f14
@@ -187,16 +201,20 @@ class Curves():
         else:
             for poly in ann['segmentation']:
                 if len(poly) > 3:
-                    draw.polygon(poly, outline=color, width=width)
+                    draw.line(poly, width=width, fill=color, joint='curve')
 
     def plot_img(self, img, force_matplot=False, figsize=None, slider=False):
         if plotly_available and not force_matplot and slider:
-            fig = px.imshow(img, animation_frame=0,
-                            labels=dict(animation_frame="enum"))
-
-            fig.update_layout(coloraxis_showscale=False)
-            fig.update_layout(height=600, width=1200)
+            fig = px.imshow(img, animation_frame=0, 
+                    binary_compression_level=5,
+                    binary_format='jpg',
+                    aspect='auto',
+                    labels=dict(animation_frame="shown picture"))
+    
+            fig.update_layout(height=700, width=900)
+            fig.update_layout(autosize=True)
             fig.show()
+
         else:
             is_pillow = 'Image' in str(type(img))
             if is_pillow:
@@ -251,6 +269,8 @@ class Curves():
                          display_gt=True,
                          resize_out_image=None,
                          data_folder=None,
+                         categories=None,
+                         return_img=False,
                          ):
         image_batch = []
 
@@ -277,28 +297,30 @@ class Curves():
                 gt_anns = {ann['id']: ann for ann in gt_anns}
                 if len(gt_anns) > 0:
                     for ann in gt_anns.values():
-                        is_fn = ann.get('fn', False)
+                        if categories is None or ann['category_id'] in categories:
+                            is_fn = ann.get('fn', False)
 
-                        if is_fn and display_fn:
-                            self.draw_ann(
-                                draw, ann, color=self.FN_COLOR, width=line_width)
-                        elif display_gt:
-                            self.draw_ann(
-                                draw, ann, color=self.GT_COLOR, width=line_width)
+                            if is_fn and display_fn:
+                                self.draw_ann(
+                                    draw, ann, color=self.FN_COLOR, width=line_width)
+                            elif display_gt:
+                                self.draw_ann(
+                                    draw, ann, color=self.GT_COLOR, width=line_width)
 
                 dt_anns = self.cocoDt.imgToAnns[image_id]
                 dt_anns = {ann['id']: ann for ann in dt_anns}
 
                 if len(dt_anns) > 0:
                     for ann in dt_anns.values():
-                        if ann.get('tp', False):
-                            if display_tp:
-                                self.draw_ann(
-                                    draw, ann, color=self.DT_COLOR, width=line_width)
-                        else:
-                            if display_fp:
-                                self.draw_ann(
-                                    draw, ann, color=self.FP_COLOR, width=line_width)
+                        if categories is None or ann['category_id'] in categories:
+                            if ann.get('tp', False):
+                                if display_tp:
+                                    self.draw_ann(
+                                        draw, ann, color=self.DT_COLOR, width=line_width)
+                            else:
+                                if display_fp:
+                                    self.draw_ann(
+                                        draw, ann, color=self.FP_COLOR, width=line_width)
 
                 im.paste(mask, mask)
                 image_batch.append(im)
@@ -306,6 +328,9 @@ class Curves():
         if len(image_batch) >= 1 and resize_out_image is None:
             resize_out_image = image_batch[0].size
 
+        if return_img:
+            return image_batch
+        
         if len(image_batch) == 1:
             self.plot_img(np.array(image_batch[0].resize(resize_out_image)))
         elif len(image_batch) > 1:
@@ -371,6 +396,29 @@ class Curves():
         cm = self._compute_confusion_matrix(y_true, y_pred, fp=fp, fn=fn)
         return cm
 
+    def compute_tp_iou(self, categories=None):
+        g = []
+        d = []
+        s = []
+
+        for dt_id, dt_ann in self.cocoDt.anns.items():
+            if dt_ann.get('tp', False):
+                gt_ann = self.cocoGt.anns[dt_ann['gt_id']]
+                if categories is None or gt_ann['category_id'] in categories:
+                    s.append(dt_ann.get('score', 1))
+                    if self.iouType == 'segm':
+                        g.append(gt_ann['rle'])
+                        d.append(dt_ann['rle'])
+                    elif self.iouType == 'bbox':
+                        g.append(gt_ann['bbox'])
+                        d.append(dt_ann['bbox'])
+                    else:
+                        raise Exception('unknown iouType for iou computation')
+        
+        iscrowd = [0 for o in g]
+        ious = maskUtils.iou(d, g, iscrowd).diagonal()
+        return ious
+    
     def display_matrix(self, in_percent=False, conf_matrix=None, figsize=(10, 10), fontsize=16):
         if conf_matrix is None:
             conf_matrix = self.compute_confusion_matrix()

@@ -37,6 +37,12 @@ docker build -f ./Dockerfile --build-arg PYTHON3_VERSION=${PYTHON3_VERSION} --ta
 docker run -v $(pwd):/app/src faster_coco_eval:${PYTHON3_VERSION}
 ```
 
+```bash
+export PYTHON3_VERSION=3.8.10
+docker build -f ./Dockerfile --build-arg PYTHON3_VERSION=${PYTHON3_VERSION} --tag faster_coco_eval:${PYTHON3_VERSION} .
+docker run -v $(pwd):/app/src faster_coco_eval:${PYTHON3_VERSION}
+```
+
 ## Install
 Install form source  
 ```bash  
@@ -79,6 +85,10 @@ cur.plot_pre_rec(plotly_backend=False)
 - matplotlib  
 - Pillow  
 - plotly (optional)  
+
+# v1.2.3
+- Implemented of mean IoU for TP
+- set FP-red FN-blue
 
 # v1.2.2
 - Removed own implementation of pre-rec  
