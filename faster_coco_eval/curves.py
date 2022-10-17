@@ -205,12 +205,12 @@ class Curves():
 
     def plot_img(self, img, force_matplot=False, figsize=None, slider=False):
         if plotly_available and not force_matplot and slider:
-            fig = px.imshow(img, animation_frame=0, 
-                    binary_compression_level=5,
-                    binary_format='jpg',
-                    aspect='auto',
-                    labels=dict(animation_frame="shown picture"))
-    
+            fig = px.imshow(img, animation_frame=0,
+                            binary_compression_level=5,
+                            binary_format='jpg',
+                            aspect='auto',
+                            labels=dict(animation_frame="shown picture"))
+
             fig.update_layout(height=700, width=900)
             fig.update_layout(autosize=True)
             fig.show()
@@ -330,7 +330,7 @@ class Curves():
 
         if return_img:
             return image_batch
-        
+
         if len(image_batch) == 1:
             self.plot_img(np.array(image_batch[0].resize(resize_out_image)))
         elif len(image_batch) > 1:
@@ -414,11 +414,11 @@ class Curves():
                         d.append(dt_ann['bbox'])
                     else:
                         raise Exception('unknown iouType for iou computation')
-        
+
         iscrowd = [0 for o in g]
         ious = maskUtils.iou(d, g, iscrowd).diagonal()
         return ious
-    
+
     def display_matrix(self, in_percent=False, conf_matrix=None, figsize=(10, 10), fontsize=16):
         if conf_matrix is None:
             conf_matrix = self.compute_confusion_matrix()
