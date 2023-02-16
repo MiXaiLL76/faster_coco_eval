@@ -1,6 +1,6 @@
 __author__ = 'tsungyi'
 
-import pycocotools._mask as _mask
+import faster_coco_eval.mask_api_cpp as _mask
 
 # Interface for manipulating masks stored in RLE format.
 #

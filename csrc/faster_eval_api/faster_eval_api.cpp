@@ -2,6 +2,10 @@
 
 #include "coco_eval/cocoeval.h"
 #include <iostream>
+#include <pybind11/pybind11.h>
+
+#define STRINGIFY(x) #x
+#define MACRO_STRINGIFY(x) STRINGIFY(x)
 
 namespace coco_eval
 {
@@ -46,6 +50,12 @@ namespace coco_eval
     m.def("COCOevalEvaluateImages", &COCOeval::EvaluateImages, "COCOeval::EvaluateImages");
     pybind11::class_<COCOeval::InstanceAnnotation>(m, "InstanceAnnotation").def(pybind11::init<uint64_t, double, double, bool, bool>());
     pybind11::class_<COCOeval::ImageEvaluation>(m, "ImageEvaluation").def(pybind11::init<>());
+
+    #ifdef VERSION_INFO
+        m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
+    #else
+        m.attr("__version__") = "dev";
+    #endif
   }
 
 } // namespace coco_eval
