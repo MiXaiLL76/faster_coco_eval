@@ -311,7 +311,7 @@ class COCO:
 
     def showAnns(self, anns, draw_bbox=False):
         warnings.warn("showAnns deprecated in 1.3.0", DeprecationWarning)
-    
+
     def download(self, tarDir=None, imgIds=[]):
         warnings.warn("download deprecated in 1.3.0", DeprecationWarning)
 
