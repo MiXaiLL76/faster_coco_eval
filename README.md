@@ -41,7 +41,8 @@ For usage, look at the original `COCOEval` [class documentation.](https://github
 ## Usage plot curves
 
 ````python  
-from faster_coco_eval import Curves, COCO
+from faster_coco_eval import COCO
+from faster_coco_eval.extra import Curves
 
 cocoGt = COCO(....)
 cocoDt = cocoGt.loadRes(....)

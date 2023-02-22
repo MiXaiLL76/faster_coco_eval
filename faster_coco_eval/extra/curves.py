@@ -1,6 +1,6 @@
 from ..core.coco import COCO
 from ..core.cocoeval import COCOeval
-from .core import mask as maskUtils
+from ..core import mask as maskUtils
 
 from PIL import Image, ImageDraw
 import numpy as np
