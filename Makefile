@@ -1,4 +1,4 @@
-all: sdist wheel
+all: docker-sdist docker-3.7 docker-3.8 docker-3.9 docker-3.10
 	ls -lah dist
 
 sdist:
@@ -6,9 +6,6 @@ sdist:
 
 wheel:
 	python3 -m build . --wheel
-
-docker: docker-sdist docker-3.7 docker-3.8 docker-3.9 docker-3.10
-	ls -lah dist
 
 docker-sdist:
 	bash docker/auto_build.sh "cp38-cp38" sdist
