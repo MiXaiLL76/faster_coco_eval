@@ -412,8 +412,9 @@ class COCOeval:
                     _matches.append(
                         np.vstack([gtm_ids, dtm_ids, tps]).astype(np.int32).T)
 
-                    tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float)
-                    fp_sum = np.cumsum(fps, axis=1).astype(dtype=np.float)
+                    tp_sum = np.cumsum(tps, axis=1).astype(dtype=float)
+                    fp_sum = np.cumsum(fps, axis=1).astype(dtype=float)
+                    
                     for t, (tp, fp) in enumerate(zip(tp_sum, fp_sum)):
                         tp = np.array(tp)
                         fp = np.array(fp)
