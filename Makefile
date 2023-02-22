@@ -26,6 +26,10 @@ pull:
 	twine check dist/*
 	twine upload --repository testpypi dist/*
 
+pull-prod:
+	twine check dist/*
+	twine upload dist/*
+
 clean:
 	rm -rf build
 	rm -rf *.egg-info
