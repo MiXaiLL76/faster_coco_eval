@@ -1,4 +1,3 @@
-from .faster_eval_api import COCOeval_faster
-from .coco import COCO
-from .curves import Curves
-from .info import __version__, __author__
+from .core.faster_eval_api import COCOeval_faster
+from .core.coco import COCO
+from .version import __version__, __author__
