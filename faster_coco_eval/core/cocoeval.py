@@ -61,7 +61,7 @@ class COCOeval:
     # Data, paper, and tutorials available at:  http://mscoco.org/
     # Code written by Piotr Dollar and Tsung-Yi Lin, 2015.
     # Licensed under the Simplified BSD License [see coco/license.txt]
-    def __init__(self, cocoGt=None, cocoDt=None, iouType='segm'):
+    def __init__(self, cocoGt=None, cocoDt=None, iouType='segm', print_function=logger.debug):
         '''
         Initialize CocoEval using coco APIs for gt and dt
         :param cocoGt: coco object with ground truth annotations
@@ -69,7 +69,8 @@ class COCOeval:
         :return: None
         '''
         if not iouType:
-            logger.debug('iouType not specified. use default iouType segm')
+            logger.warning('iouType not specified. use default iouType segm')
+
         self.cocoGt = cocoGt              # ground truth COCO API
         self.cocoDt = cocoDt              # detections COCO API
         # per-image per-category evaluation results [KxAxI] elements
@@ -81,9 +82,12 @@ class COCOeval:
         self._paramsEval = {}               # parameters for evaluation
         self.stats = []                     # result summarization
         self.ious = {}                      # ious between all gts and dts
+
         if not cocoGt is None:
             self.params.imgIds = sorted(cocoGt.getImgIds())
             self.params.catIds = sorted(cocoGt.getCatIds())
+
+        self.print_function = print_function  # output print function
 
     def _prepare(self):
         '''
@@ -131,14 +135,14 @@ class COCOeval:
         :return: None
         '''
         tic = time.time()
-        logger.debug('Running per image evaluation...')
+        self.print_function('Running per image evaluation...')
         p = self.params
         # add backward compatibility if useSegm is specified in params
         if not p.useSegm is None:
             p.iouType = 'segm' if p.useSegm == 1 else 'bbox'
             logger.warning(
                 'useSegm (deprecated) is not None. Running {} evaluation'.format(p.iouType))
-        logger.debug('Evaluate annotation type *{}*'.format(p.iouType))
+        self.print_function('Evaluate annotation type *{}*'.format(p.iouType))
         p.imgIds = list(np.unique(p.imgIds))
         if p.useCats:
             p.catIds = list(np.unique(p.catIds))
@@ -166,7 +170,7 @@ class COCOeval:
                          ]
         self._paramsEval = copy.deepcopy(self.params)
         toc = time.time()
-        logger.debug('DONE (t={:0.2f}s).'.format(toc-tic))
+        self.print_function('DONE (t={:0.2f}s).'.format(toc-tic))
 
     def computeIoU(self, imgId, catId):
         p = self.params
@@ -334,10 +338,10 @@ class COCOeval:
         :param p: input params for evaluation
         :return: None
         '''
-        logger.debug('Accumulating evaluation results...')
+        self.print_function('Accumulating evaluation results...')
         tic = time.time()
         if not self.evalImgs:
-            logger.debug('Please run evaluate() first')
+            self.print_function('Please run evaluate() first')
         # allows input customized parameters
         if p is None:
             p = self.params
@@ -412,8 +416,9 @@ class COCOeval:
                     _matches.append(
                         np.vstack([gtm_ids, dtm_ids, tps]).astype(np.int32).T)
 
-                    tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float)
-                    fp_sum = np.cumsum(fps, axis=1).astype(dtype=np.float)
+                    tp_sum = np.cumsum(tps, axis=1).astype(dtype=float)
+                    fp_sum = np.cumsum(fps, axis=1).astype(dtype=float)
+
                     for t, (tp, fp) in enumerate(zip(tp_sum, fp_sum)):
                         tp = np.array(tp)
                         fp = np.array(fp)
@@ -460,7 +465,7 @@ class COCOeval:
         }
 
         toc = time.time()
-        logger.debug('DONE (t={:0.2f}s).'.format(toc-tic))
+        self.print_function('DONE (t={:0.2f}s).'.format(toc-tic))
 
     def summarize(self):
         '''
@@ -497,8 +502,8 @@ class COCOeval:
                 mean_s = -1
             else:
                 mean_s = np.mean(s[s > -1])
-            logger.debug(iStr.format(titleStr, typeStr,
-                                     iouStr, areaRng, maxDets, mean_s))
+            self.print_function(iStr.format(titleStr, typeStr,
+                                            iouStr, areaRng, maxDets, mean_s))
             return mean_s
 
         def _summarizeDets():
