@@ -58,6 +58,11 @@ cur.plot_pre_rec(plotly_backend=False)
 
 ## history
 
+### v1.3.1
+
+- [x] rework mask code
+- [x] change np.float to float ([numpy deprecations](https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations))
+
 ### v1.3.0
 
 - [x] remove pycocotools dependencies
