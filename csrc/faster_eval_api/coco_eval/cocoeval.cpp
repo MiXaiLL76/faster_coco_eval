@@ -80,8 +80,11 @@ namespace coco_eval
       const int num_iou_thresholds = iou_thresholds.size();
       const int num_ground_truth = ground_truth_sorted_indices.size();
       const int num_detections = detection_sorted_indices.size();
-      std::vector<uint64_t> ground_truth_matches(
-          num_iou_thresholds * num_ground_truth, 0);
+      // std::vector<uint64_t> ground_truth_matches(
+          // num_iou_thresholds * num_ground_truth, 0);
+      std::vector<uint64_t> &ground_truth_matches = results->ground_truth_matches;
+      ground_truth_matches.resize(num_iou_thresholds * num_ground_truth, 0);
+
       std::vector<uint64_t> &detection_matches = results->detection_matches;
       std::vector<bool> &detection_ignores = results->detection_ignores;
       std::vector<bool> &ground_truth_ignores = results->ground_truth_ignores;
@@ -536,6 +539,16 @@ namespace coco_eval
       strftime(
           buffer.data(), 200, "%Y-%m-%d %H:%num_max_detections:%S", &local_time);
 
+      std::vector<uint64_t> out_detection_matches = {};
+      std::vector<uint64_t> out_ground_truth_matches = {};
+      std::vector<uint64_t> out_detection_ignores = {};
+      
+      for (auto eval : evaluations){
+          out_detection_matches.insert(out_detection_matches.end(), eval.detection_matches.begin(), eval.detection_matches.end());
+          out_ground_truth_matches.insert(out_ground_truth_matches.end(), eval.ground_truth_matches.begin(), eval.ground_truth_matches.end());
+          out_detection_ignores.insert(out_detection_ignores.end(), eval.detection_ignores.begin(), eval.detection_ignores.end());
+      }
+
       return py::dict(
           "params"_a = params,
           "counts"_a = std::vector<int64_t>({num_iou_thresholds,
@@ -546,7 +559,10 @@ namespace coco_eval
           "date"_a = buffer,
           "precision"_a = precisions_out,
           "recall"_a = recalls_out,
-          "scores"_a = scores_out);
+          "scores"_a = scores_out,
+          "detection_matches"_a = out_detection_matches,
+          "out_detection_ignores"_a = out_detection_ignores,
+          "ground_truth_matches"_a = out_ground_truth_matches);
     }
 
   } // namespace COCOeval
