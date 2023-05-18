@@ -136,3 +136,21 @@ class COCOeval_faster(COCOeval):
 
         self.print_function('COCOeval_opt.accumulate() finished...')
         self.print_function('DONE (t={:0.2f}s).'.format(toc-tic))
+        
+        self.math_matches()
+
+    def math_matches(self):
+        for dt_id, gt_id in enumerate(self.eval['detection_matches']):
+            dt_id += 1
+            if gt_id > 0:
+                self.cocoDt.anns[dt_id]['tp'] = True
+                self.cocoGt.anns[gt_id]['dt_id'] = dt_id
+                self.cocoDt.anns[dt_id]['gt_id'] = gt_id
+        
+        for dt_id in self.cocoDt.anns.keys():
+            if self.cocoDt.anns[dt_id].get('gt_id') is None:
+                self.cocoDt.anns[dt_id]['fp'] = True
+
+        for gt_id in self.cocoGt.anns.keys():
+            if self.cocoGt.anns[gt_id].get('tp') is None:
+                self.cocoGt.anns[gt_id]['fn'] = True
