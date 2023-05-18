@@ -1,6 +1,6 @@
 from ..core.coco import COCO
-from ..core.cocoeval import COCOeval
 from ..core import mask as maskUtils
+from ..core.faster_eval_api import COCOeval_faster
 
 from PIL import Image, ImageDraw
 import numpy as np
@@ -48,7 +48,7 @@ class Curves():
         self.evaluate()
 
     def evaluate(self):
-        cocoEval = COCOeval(self.cocoGt, self.cocoDt, self.iouType)
+        cocoEval = COCOeval_faster(self.cocoGt, self.cocoDt, self.iouType)
         cocoEval.params.maxDets = [len(self.cocoGt.anns)]
 
         cocoEval.params.iouThr = [0, 0.5]
@@ -63,23 +63,6 @@ class Curves():
         cocoEval.accumulate()
 
         self.eval = cocoEval.eval
-        self.math_matches()
-
-    def math_matches(self):
-        for gt_id, dt_id, is_tp in self.eval['matches']:
-            is_tp = bool(is_tp)
-
-            self.cocoDt.anns[dt_id]['tp'] = is_tp
-
-            if is_tp:
-                self.cocoGt.anns[gt_id]['tp'] = is_tp
-                self.cocoGt.anns[gt_id]['dt_id'] = dt_id
-                #
-                self.cocoDt.anns[dt_id]['gt_id'] = gt_id
-
-        for gt_id in self.cocoGt.anns.keys():
-            if self.cocoGt.anns[gt_id].get('tp') is None:
-                self.cocoGt.anns[gt_id]['fn'] = True
 
     def remap_categories_on_tp(self):
         # remap categories
@@ -368,30 +351,21 @@ class Curves():
         fn = {}
         fp = {}
 
-        for image_id, gt_anns in self.cocoGt.imgToAnns.items():
-            gt_anns = {ann['id']: ann for ann in gt_anns}
-            if len(gt_anns) > 0:
-                for ann in gt_anns.values():
-                    if ann.get('fn', False):
-                        if fn.get(ann['category_id']) is None:
-                            fn[ann['category_id']] = 0
-
-                        fn[ann['category_id']] += 1
-
-            dt_anns = self.cocoDt.imgToAnns[image_id]
-            dt_anns = {ann['id']: ann for ann in dt_anns}
-
-            if len(dt_anns) > 0:
-                for ann in dt_anns.values():
-                    if ann.get('tp', False):
-                        y_true.append(gt_anns[ann['gt_id']]['category_id'])
-                        y_pred.append(ann['category_id'])
-                    else:
-                        if fp.get(ann['category_id']) is None:
-                            fp[ann['category_id']] = 0
-
-                        fp[ann['category_id']] += 1
-
+        for ann_id, ann in self.cocoGt.anns.items():
+            if ann.get('dt_id') is not None:
+                y_true.append(ann['category_id'])
+                y_pred.append(self.cocoDt.anns[ann['dt_id']]['category_id'])
+            else:
+                if fn.get(ann['category_id']) is None:
+                    fn[ann['category_id']] = 0
+                fn[ann['category_id']] += 1
+        
+        for ann_id, ann in self.cocoDt.anns.items():
+            if ann.get('gt_id') is None:
+                if fp.get(ann['category_id']) is None:
+                    fp[ann['category_id']] = 0 
+                fp[ann['category_id']] += 1
+        
         # classes fp fn
         cm = self._compute_confusion_matrix(y_true, y_pred, fp=fp, fn=fn)
         return cm
