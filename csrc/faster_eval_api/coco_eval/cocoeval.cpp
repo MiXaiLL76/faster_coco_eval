@@ -81,11 +81,15 @@ namespace coco_eval
       const int num_ground_truth = ground_truth_sorted_indices.size();
       const int num_detections = detection_sorted_indices.size();
       // std::vector<uint64_t> ground_truth_matches(
-          // num_iou_thresholds * num_ground_truth, 0);
+      // num_iou_thresholds * num_ground_truth, 0);
       std::vector<uint64_t> &ground_truth_matches = results->ground_truth_matches;
       ground_truth_matches.resize(num_iou_thresholds * num_ground_truth, 0);
 
+      std::vector<int> &ground_truth_orig_id = results->ground_truth_orig_id;
+      ground_truth_orig_id.resize(num_iou_thresholds * num_ground_truth, -1);
+
       std::vector<uint64_t> &detection_matches = results->detection_matches;
+
       std::vector<bool> &detection_ignores = results->detection_ignores;
       std::vector<bool> &ground_truth_ignores = results->ground_truth_ignores;
       detection_matches.resize(num_iou_thresholds * num_detections, 0);
@@ -138,6 +142,7 @@ namespace coco_eval
                 ground_truth_instances[ground_truth_sorted_indices[match]].id;
             ground_truth_matches[t * num_ground_truth + match] =
                 detection_instances[detection_sorted_indices[d]].id;
+            ground_truth_orig_id[t * num_ground_truth + match] = (int)ground_truth_instances[ground_truth_sorted_indices[match]].id;
           }
 
           // set unmatched detections outside of area range to ignore
@@ -539,14 +544,19 @@ namespace coco_eval
       strftime(
           buffer.data(), 200, "%Y-%m-%d %H:%num_max_detections:%S", &local_time);
 
+      int evaluations_size = static_cast<int>(evaluations.size());
+
       std::vector<uint64_t> out_detection_matches = {};
       std::vector<uint64_t> out_ground_truth_matches = {};
       std::vector<uint64_t> out_detection_ignores = {};
-      
-      for (auto eval : evaluations){
-          out_detection_matches.insert(out_detection_matches.end(), eval.detection_matches.begin(), eval.detection_matches.end());
-          out_ground_truth_matches.insert(out_ground_truth_matches.end(), eval.ground_truth_matches.begin(), eval.ground_truth_matches.end());
-          out_detection_ignores.insert(out_detection_ignores.end(), eval.detection_ignores.begin(), eval.detection_ignores.end());
+      std::vector<int> out_ground_truth_orig_id = {};
+      // auto eval = evaluations[0];
+      for (auto eval : evaluations)
+      {
+        out_detection_matches.insert(out_detection_matches.end(), eval.detection_matches.begin(), eval.detection_matches.end());
+        out_ground_truth_matches.insert(out_ground_truth_matches.end(), eval.ground_truth_matches.begin(), eval.ground_truth_matches.end());
+        out_detection_ignores.insert(out_detection_ignores.end(), eval.detection_ignores.begin(), eval.detection_ignores.end());
+        out_ground_truth_orig_id.insert(out_ground_truth_orig_id.end(), eval.ground_truth_orig_id.begin(), eval.ground_truth_orig_id.end());
       }
 
       return py::dict(
@@ -561,8 +571,10 @@ namespace coco_eval
           "recall"_a = recalls_out,
           "scores"_a = scores_out,
           "detection_matches"_a = out_detection_matches,
-          "out_detection_ignores"_a = out_detection_ignores,
-          "ground_truth_matches"_a = out_ground_truth_matches);
+          "detection_ignores"_a = out_detection_ignores,
+          "ground_truth_matches"_a = out_ground_truth_matches,
+          "ground_truth_orig_id"_a = out_ground_truth_orig_id,
+          "evaluations_size"_a = evaluations_size);
     }
 
   } // namespace COCOeval
