@@ -561,31 +561,6 @@ class COCOeval:
     def __str__(self):
         self.summarize()
 
-    @property
-    def stats_as_dict(self):
-        iouType = self.params.iouType
-        assert (iouType == 'segm' or iouType ==
-                'bbox'), f'{iouType=} not supported'
-
-        labels = [
-            "AP_all", "AP_50", "AP_75",
-            "AP_small", "AP_medium", "AP_large",
-            "AR_all", "AR_second", "AR_third",
-            "AR_small", "AR_medium", "AR_large", "AR_50", "AR_75"]
-
-        maxDets = self.params.maxDets
-        if len(maxDets) > 1:
-            labels[6] = f'AR_{maxDets[0]}'
-
-        if len(maxDets) >= 2:
-            labels[7] = f'AR_{maxDets[1]}'
-
-        if len(maxDets) >= 3:
-            labels[8] = f'AR_{maxDets[2]}'
-
-        return {_label: float(self.all_stats[i]) for i, _label in enumerate(labels)}
-
-
 class Params:
     '''
     Params for coco evaluation api
@@ -595,7 +570,6 @@ class Params:
         self.imgIds = []
         self.catIds = []
         # np.arange causes trouble.  the data point on arange is slightly larger than the true value
-        self.iouThr = [.5, .75]
         self.iouThrs = np.linspace(.5, 0.95, int(
             np.round((0.95 - .5) / .05)) + 1, endpoint=True)
         self.recThrs = np.linspace(.0, 1.00, int(
