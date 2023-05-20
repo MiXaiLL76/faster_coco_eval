@@ -97,11 +97,13 @@ class COCO:
         imgToAnns, catToImgs = defaultdict(list), defaultdict(list)
         if 'annotations' in self.dataset:
             for ann in self.dataset['annotations']:
+                ann['image_id'] = int(ann['image_id'])
                 imgToAnns[ann['image_id']].append(ann)
                 anns[ann['id']] = ann
 
         if 'images' in self.dataset:
             for img in self.dataset['images']:
+                img['id'] = int(img['id'])
                 imgs[img['id']] = img
 
         if 'categories' in self.dataset:
