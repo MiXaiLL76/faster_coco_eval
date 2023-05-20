@@ -372,7 +372,6 @@ class COCOeval:
         I0 = len(_pe.imgIds)
         A0 = len(_pe.areaRng)
 
-
         # retrieve E at each category, area range, and max number of detections
         for k, k0 in enumerate(k_list):
             Nk = k0*A0*I0
@@ -403,12 +402,6 @@ class COCOeval:
                     tps = np.logical_and(dtm,  np.logical_not(dtIg))
                     fps = np.logical_and(
                         np.logical_not(dtm), np.logical_not(dtIg))
-
-                    # detected ann ids
-                    dtm_ids = np.concatenate(
-                        [e['dtIds'][0:maxDet] for e in E])[inds]
-                    # gt ann ids
-                    gtm_ids = dtm.copy()
 
                     tp_sum = np.cumsum(tps, axis=1).astype(dtype=float)
                     fp_sum = np.cumsum(fps, axis=1).astype(dtype=float)
@@ -560,6 +553,7 @@ class COCOeval:
 
     def __str__(self):
         self.summarize()
+
 
 class Params:
     '''
