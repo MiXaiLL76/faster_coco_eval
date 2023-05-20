@@ -163,9 +163,10 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     install_requires=parse_requirements('requirements/runtime.txt'),
     extras_require={
         'all': parse_requirements('requirements/optional.txt'),
