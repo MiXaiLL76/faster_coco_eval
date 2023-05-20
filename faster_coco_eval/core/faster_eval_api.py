@@ -242,14 +242,19 @@ class COCOeval_faster(COCOeval):
         aucs = []
 
         for K in range(self.eval['counts'][2]):
-            for A in range(self.eval['counts'][2]):
+            for A in range(self.eval['counts'][3]):            
                 precision_list = self.eval['precision'][0, :, K, A, :].ravel()
                 
                 recall_list = self.params.recThrs
                 auc = COCOeval_faster.calc_auc(recall_list, precision_list)
-                aucs.append(auc)
+                
+                if auc != -1:
+                    aucs.append(auc)
         
-        return sum(aucs) / len(aucs)
+        if len(aucs):
+            return sum(aucs) / len(aucs)
+        else:
+            return 0
     
     def summarize(self):
         super().summarize()
