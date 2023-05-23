@@ -58,6 +58,15 @@ cur.plot_pre_rec(plotly_backend=False)
 
 ## history
 
+### v1.3.2
+
+- [x] rework math_matches function. moved to faster_eval_api
+- [x] Moved calculations from python to c++
+- [x] Separated extra classes
+- [x] Added new sample data
+- [x] append mIoU based on TP pred.
+- [x] append mAUC based on Coco pre/rec.
+
 ### v1.3.1
 
 - [x] rework mask code

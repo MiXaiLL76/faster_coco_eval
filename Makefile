@@ -4,6 +4,10 @@ all: docker-sdist docker-3.7 docker-3.8 docker-3.9 docker-3.10
 sdist:
 	python3 -m build . --sdist
 
+bdist: clean
+	python3 setup.py bdist_wheel
+	pip3 install dist/*.whl -U
+
 wheel:
 	python3 -m build . --wheel
 

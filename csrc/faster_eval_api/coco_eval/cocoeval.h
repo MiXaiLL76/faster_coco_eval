@@ -41,6 +41,8 @@ namespace coco_eval
       // instance, or 0 if unmatched
       std::vector<uint64_t> detection_matches;
 
+      std::vector<uint64_t> ground_truth_matches;
+      std::vector<int> ground_truth_orig_id;
       // The detection score of each of the D detected instances
       std::vector<double> detection_scores;
 

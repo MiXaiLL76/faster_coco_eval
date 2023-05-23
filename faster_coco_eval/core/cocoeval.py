@@ -356,8 +356,6 @@ class COCOeval:
         recall = -np.ones((T, K, A, M))
         scores = -np.ones((T, R, K, A, M))
 
-        tp_rate = -np.ones((T, R, K, A, M))
-
         # create dictionary for future indexing
         _pe = self._paramsEval
         catIds = _pe.catIds if _pe.useCats else [-1]
@@ -373,8 +371,6 @@ class COCOeval:
         i_list = [n for n, i in enumerate(p.imgIds) if i in setI]
         I0 = len(_pe.imgIds)
         A0 = len(_pe.areaRng)
-
-        _matches = []
 
         # retrieve E at each category, area range, and max number of detections
         for k, k0 in enumerate(k_list):
@@ -406,15 +402,6 @@ class COCOeval:
                     tps = np.logical_and(dtm,  np.logical_not(dtIg))
                     fps = np.logical_and(
                         np.logical_not(dtm), np.logical_not(dtIg))
-
-                    # detected ann ids
-                    dtm_ids = np.concatenate(
-                        [e['dtIds'][0:maxDet] for e in E])[inds]
-                    # gt ann ids
-                    gtm_ids = dtm.copy()
-                    # build batch gt, dt, is_tp
-                    _matches.append(
-                        np.vstack([gtm_ids, dtm_ids, tps]).astype(np.int32).T)
 
                     tp_sum = np.cumsum(tps, axis=1).astype(dtype=float)
                     fp_sum = np.cumsum(fps, axis=1).astype(dtype=float)
@@ -452,8 +439,6 @@ class COCOeval:
                         precision[t, :, k, a, m] = np.array(q)
                         scores[t, :, k, a, m] = np.array(ss)
 
-        _matches = np.vstack(_matches)
-
         self.eval = {
             'params': p,
             'counts': [T, R, K, A, M],
@@ -461,7 +446,6 @@ class COCOeval:
             'precision': precision,
             'recall': recall,
             'scores': scores,
-            'matches': _matches,
         }
 
         toc = time.time()
@@ -570,30 +554,6 @@ class COCOeval:
     def __str__(self):
         self.summarize()
 
-    @property
-    def stats_as_dict(self):
-        iouType = self.params.iouType
-        assert (iouType == 'segm' or iouType ==
-                'bbox'), f'{iouType=} not supported'
-
-        labels = [
-            "AP_all", "AP_50", "AP_75",
-            "AP_small", "AP_medium", "AP_large",
-            "AR_all", "AR_second", "AR_third",
-            "AR_small", "AR_medium", "AR_large", "AR_50", "AR_75"]
-
-        maxDets = self.params.maxDets
-        if len(maxDets) > 1:
-            labels[6] = f'AR_{maxDets[0]}'
-
-        if len(maxDets) >= 2:
-            labels[7] = f'AR_{maxDets[1]}'
-
-        if len(maxDets) >= 3:
-            labels[8] = f'AR_{maxDets[2]}'
-
-        return {_label: float(self.all_stats[i]) for i, _label in enumerate(labels)}
-
 
 class Params:
     '''
@@ -604,7 +564,6 @@ class Params:
         self.imgIds = []
         self.catIds = []
         # np.arange causes trouble.  the data point on arange is slightly larger than the true value
-        self.iouThr = [.5, .75]
         self.iouThrs = np.linspace(.5, 0.95, int(
             np.round((0.95 - .5) / .05)) + 1, endpoint=True)
         self.recThrs = np.linspace(.0, 1.00, int(
