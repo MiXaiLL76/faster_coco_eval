@@ -180,7 +180,11 @@ class COCOeval_faster(COCOeval):
                             _gt_ann['dt_id'] = dt_id
                             _gt_ann['matched'] = True
                         else:
-                            _old_dt_ann = self.cocoDt.anns[_gt_ann['dt_id']]
+                            # TODO: Непонятно почему не находит. Проверить на тестовых данных
+                            _old_dt_ann = self.cocoDt.anns.get(_gt_ann['dt_id'])
+                            if _old_dt_ann is None:
+                                continue
+
                             if _old_dt_ann['id'] == _dt_ann['id']:
                                 continue
                             else:
