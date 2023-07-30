@@ -190,7 +190,7 @@ class PreviewResults(ExtraEval):
     def compute_confusion_matrix(self):
         if self.useCats:
             logger.warning(
-                f"The calculation may not be accurate. No intersection of classes. {self.useCats=}")
+                f"The calculation may not be accurate. No intersection of classes. useCats={self.useCats}")
 
         y_true = []
         y_pred = []

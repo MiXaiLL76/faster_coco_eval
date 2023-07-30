@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import platform
 import setuptools
 from setuptools import setup, Extension
 from pybind11.setup_helpers import Pybind11Extension, build_ext
@@ -127,7 +128,8 @@ def get_extensions(version_info):
             'faster_coco_eval.mask_api_cpp',
             sources=sources,
             include_dirs=include_dirs,
-            extra_compile_args=[
+            extra_compile_args=[] if platform.system()=='Windows' else
+            [
                 '-Wno-cpp',
                 '-Wno-unused-function',
                 '-std=c99',

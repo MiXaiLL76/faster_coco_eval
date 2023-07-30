@@ -239,8 +239,13 @@ class COCOeval_faster(COCOeval):
                         raise Exception('unknown iouType for iou computation')
 
         iscrowd = [0 for o in g]
-        ious = maskUtils.iou(d, g, iscrowd).diagonal()
-        return ious.mean()
+        
+        ious = maskUtils.iou(d, g, iscrowd)
+        if len(ious) == 0:
+            return 0
+        else:
+            ious = ious.diagonal()
+            return ious.mean()
     
     def compute_mAUC(self):
         aucs = []
@@ -272,7 +277,7 @@ class COCOeval_faster(COCOeval):
     def stats_as_dict(self):
         iouType = self.params.iouType
         assert (iouType == 'segm' or iouType ==
-                'bbox'), f'{iouType=} not supported'
+                'bbox'), f'iouType={iouType} not supported'
 
         labels = [
             "AP_all", "AP_50", "AP_75",
