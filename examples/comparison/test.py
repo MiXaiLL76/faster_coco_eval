@@ -227,7 +227,7 @@ def main():
     model = build_detector(cfg.model, test_cfg=cfg.get('test_cfg'))
     fp16_cfg = cfg.get('fp16', None)
     if fp16_cfg is not None:
-        print(f"{fp16_cfg=}")
+        print(f"fp16_cfg={fp16_cfg}")
         wrap_fp16_model(model)
 
     checkpoint = load_checkpoint(model, args.checkpoint, map_location='cpu')
