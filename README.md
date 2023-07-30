@@ -58,6 +58,14 @@ cur.plot_pre_rec(plotly_backend=False)
 
 ## history
 
+### v1.3.3
+
+- [x] fix by ViTrox <https://github.com/vitrox-technologies/faster_coco_eval>
+    - missing file issue
+    - issue discovered by torchmetric
+    - fstring for python3.7
+    - Windows compilation
+
 ### v1.3.2
 
 - [x] rework math_matches function. moved to faster_eval_api
