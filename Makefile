@@ -1,4 +1,4 @@
-all: docker-sdist docker-3.7 docker-3.8 docker-3.9 docker-3.10
+all: docker-sdist docker-3.7 docker-3.8 docker-3.9 docker-3.10  docker-3.11
 	ls -lah dist
 
 sdist:
@@ -25,6 +25,9 @@ docker-3.9:
 	
 docker-3.10:
 	bash docker/auto_build.sh "cp310-cp310" wheel
+
+docker-3.11:
+	bash docker/auto_build.sh "cp311-cp311" wheel
 
 pull:
 	twine check dist/*
