@@ -52,7 +52,9 @@ class COCOeval_faster(COCOeval):
         elif p.iouType == "keypoints":
             computeIoU = self.computeOks
         self.ious = {
-            (imgId, catId): computeIoU(imgId, catId) for imgId in p.imgIds for catId in catIds
+            (imgId, catId): computeIoU(imgId, catId)
+            for imgId in p.imgIds
+            for catId in catIds
         }  # bottleneck
 
         maxDet = p.maxDets[-1]
@@ -65,8 +67,7 @@ class COCOeval_faster(COCOeval):
             for instance in instances:
                 instance_cpp = _C.InstanceAnnotation(
                     int(instance["id"]),
-                    instance["score"] if is_det else instance.get(
-                        "score", 0.0),
+                    instance["score"] if is_det else instance.get("score", 0.0),
                     instance["area"],
                     bool(instance.get("iscrowd", 0)),
                     bool(instance.get("ignore", 0)),
@@ -76,28 +77,35 @@ class COCOeval_faster(COCOeval):
 
         # Convert GT annotations, detections, and IOUs to a format that's fast to access in C++
         ground_truth_instances = [
-            [convert_instances_to_cpp(self._gts[imgId, catId])
-             for catId in p.catIds]
+            [convert_instances_to_cpp(self._gts[imgId, catId]) for catId in p.catIds]
             for imgId in p.imgIds
         ]
         detected_instances = [
-            [convert_instances_to_cpp(
-                self._dts[imgId, catId], is_det=True) for catId in p.catIds]
+            [
+                convert_instances_to_cpp(self._dts[imgId, catId], is_det=True)
+                for catId in p.catIds
+            ]
             for imgId in p.imgIds
         ]
-        ious = [[self.ious[imgId, catId] for catId in catIds]
-                for imgId in p.imgIds]
+        ious = [[self.ious[imgId, catId] for catId in catIds] for imgId in p.imgIds]
 
         if not p.useCats:
             # For each image, flatten per-category lists into a single list
-            ground_truth_instances = [[[o for c in i for o in c]]
-                                      for i in ground_truth_instances]
-            detected_instances = [[[o for c in i for o in c]]
-                                  for i in detected_instances]
+            ground_truth_instances = [
+                [[o for c in i for o in c]] for i in ground_truth_instances
+            ]
+            detected_instances = [
+                [[o for c in i for o in c]] for i in detected_instances
+            ]
 
         # Call C++ implementation of self.evaluateImgs()
         self._evalImgs_cpp = _C.COCOevalEvaluateImages(
-            p.areaRng, maxDet, p.iouThrs, ious, ground_truth_instances, detected_instances
+            p.areaRng,
+            maxDet,
+            p.iouThrs,
+            ious,
+            ground_truth_instances,
+            detected_instances,
         )
         self._evalImgs = None
 
@@ -105,8 +113,8 @@ class COCOeval_faster(COCOeval):
 
         toc = time.time()
 
-        self.print_function('COCOeval_opt.evaluate() finished...')
-        self.print_function('DONE (t={:0.2f}s).'.format(toc-tic))
+        self.print_function("COCOeval_opt.evaluate() finished...")
+        self.print_function("DONE (t={:0.2f}s).".format(toc - tic))
 
     def accumulate(self):
         """
@@ -128,19 +136,33 @@ class COCOeval_faster(COCOeval):
 
         # precision and scores are num_iou_thresholds X num_recall_thresholds X num_categories X
         # num_area_ranges X num_max_detections
-        self.eval["precision"] = np.array(
-            self.eval["precision"]).reshape(self.eval["counts"])
-        self.eval["scores"] = np.array(
-            self.eval["scores"]).reshape(self.eval["counts"])
-        
-        cat_count = self.eval['counts'][2]
-        iou_tresh = self.eval['counts'][0]
-        area_ranges = self.eval['counts'][3]
+        self.eval["precision"] = np.array(self.eval["precision"]).reshape(
+            self.eval["counts"]
+        )
+        self.eval["scores"] = np.array(self.eval["scores"]).reshape(self.eval["counts"])
 
         try:
-            self.ground_truth_shape   = [cat_count, area_ranges, iou_tresh, -1]
-            self.ground_truth_orig_id = np.array(self.eval['ground_truth_orig_id']).reshape(self.ground_truth_shape)
-            self.ground_truth_matches = np.array(self.eval['ground_truth_matches']).reshape(self.ground_truth_shape)
+            self.detection_matches = np.vstack(
+                np.array(self.eval["detection_matches"]).reshape(
+                    self.eval["counts"][0], self.eval["counts"][3], -1
+                )
+            )
+            assert self.detection_matches.shape[1] == len(self.cocoDt.anns)
+
+            self.ground_truth_matches = np.vstack(
+                np.array(self.eval["ground_truth_matches"]).reshape(
+                    self.eval["counts"][0], self.eval["counts"][3], -1
+                )
+            )
+            assert self.ground_truth_matches.shape[1] == len(self.cocoGt.anns)
+
+            self.ground_truth_orig_id = np.vstack(
+                np.array(self.eval["ground_truth_orig_id"]).reshape(
+                    self.eval["counts"][0], self.eval["counts"][3], -1
+                )
+            )
+            assert self.ground_truth_orig_id.shape[1] == len(self.cocoGt.anns)
+
             self.math_matches()
             self.matched = True
         except Exception as e:
@@ -149,157 +171,169 @@ class COCOeval_faster(COCOeval):
 
         toc = time.time()
 
-        self.print_function('COCOeval_opt.accumulate() finished...')
-        self.print_function('DONE (t={:0.2f}s).'.format(toc-tic))
-        
-        
+        self.print_function("COCOeval_opt.accumulate() finished...")
+        self.print_function("DONE (t={:0.2f}s).".format(toc - tic))
 
     def math_matches(self):
-        for category_id in range(self.ground_truth_shape[0]):
-            for area_range_id in range(self.ground_truth_shape[1]):
-                for iou_tresh_id in range(self.ground_truth_shape[2]):
-                    for _row, gt_id in enumerate(self.ground_truth_orig_id[category_id,area_range_id,iou_tresh_id]):
-                        if gt_id == -1:
-                            continue
+        for gidx, ground_truth_matches in enumerate(self.ground_truth_matches):
+            gt_ids = self.ground_truth_orig_id[gidx]
 
-                        dt_id = self.ground_truth_matches[category_id,area_range_id,iou_tresh_id][_row]
+            for idx, dt_id in enumerate(ground_truth_matches):
+                if dt_id == 0:
+                    continue
 
-                        _gt_ann = self.cocoGt.anns[gt_id]
-                        _dt_ann = self.cocoDt.anns[dt_id]
+                gt_id = gt_ids[idx]
+                if gt_id == -1:
+                    continue
 
-                        if _gt_ann['image_id'] != _dt_ann['image_id']:
-                            continue
+                _gt_ann = self.cocoGt.anns[gt_id]
+                _dt_ann = self.cocoDt.anns[dt_id]
 
-                        iou = self.computeAnnIoU(_gt_ann, _dt_ann)
-                        
-                        if not _gt_ann.get('matched', False):
-                            _dt_ann['tp'] = True
-                            _dt_ann['gt_id'] = gt_id
-                            _dt_ann['iou'] = iou
+                if int(_gt_ann["image_id"]) != int(_dt_ann["image_id"]):
+                    continue
 
-                            _gt_ann['dt_id'] = dt_id
-                            _gt_ann['matched'] = True
-                        else:
-                            # TODO: Непонятно почему не находит. Проверить на тестовых данных
-                            _old_dt_ann = self.cocoDt.anns.get(_gt_ann['dt_id'])
-                            if _old_dt_ann is None:
-                                continue
+                if self.params.useCats == 1:
+                    if int(_gt_ann["category_id"]) != int(_dt_ann["category_id"]):
+                        continue
 
-                            if _old_dt_ann['id'] == _dt_ann['id']:
-                                continue
-                            else:
-                                if (_old_dt_ann.get('iou', self.computeAnnIoU(_gt_ann, _old_dt_ann)) < iou) or (_old_dt_ann['score'] < _dt_ann['score']):
-                                    _dt_ann['tp'] = True
-                                    _dt_ann['gt_id'] = gt_id
-                                    _dt_ann['iou'] = iou
-                                    _gt_ann['dt_id'] = dt_id
+                iou = self.computeAnnIoU(_gt_ann, _dt_ann)
 
-                                    for key in ['tp', 'gt_id', 'iou']:
-                                        if key in _old_dt_ann:
-                                            del _old_dt_ann[key]
+                if not _gt_ann.get("matched", False):
+                    _dt_ann["tp"] = True
+                    _dt_ann["gt_id"] = gt_id
+                    _dt_ann["iou"] = iou
+
+                    _gt_ann["dt_id"] = dt_id
+                    _gt_ann["matched"] = True
+                else:
+                    _old_dt_ann = self.cocoDt.anns[_gt_ann["dt_id"]]
+
+                    if _old_dt_ann.get("iou", 0) < iou:
+                        for _key in ["tp", "gt_id", "iou"]:
+                            if _old_dt_ann.get(_key) is not None:
+                                del _old_dt_ann[_key]
+
+                        _dt_ann["tp"] = True
+                        _dt_ann["gt_id"] = gt_id
+                        _dt_ann["iou"] = iou
+
+                        _gt_ann["dt_id"] = dt_id
 
         for dt_id in self.cocoDt.anns.keys():
-            if self.cocoDt.anns[dt_id].get('gt_id') is None:
-                self.cocoDt.anns[dt_id]['fp'] = True
+            if self.cocoDt.anns[dt_id].get("gt_id") is None:
+                self.cocoDt.anns[dt_id]["fp"] = True
 
         for gt_id in self.cocoGt.anns.keys():
-            if self.cocoGt.anns[gt_id].get('matched') is None:
-                self.cocoGt.anns[gt_id]['fn'] = True
+            if self.cocoGt.anns[gt_id].get("matched") is None:
+                self.cocoGt.anns[gt_id]["fn"] = True
 
     def computeAnnIoU(self, gt_ann, dt_ann):
         g = []
         d = []
 
-        if self.params.iouType == 'segm':
-            g.append(gt_ann['rle'])
-            d.append(dt_ann['rle'])
-        elif self.params.iouType == 'bbox':
-            g.append(gt_ann['bbox'])
-            d.append(dt_ann['bbox'])
-        
+        if self.params.iouType == "segm":
+            g.append(gt_ann["rle"])
+            d.append(dt_ann["rle"])
+        elif self.params.iouType == "bbox":
+            g.append(gt_ann["bbox"])
+            d.append(dt_ann["bbox"])
+
         return maskUtils.iou(d, g, [0]).max()
-    
-    def compute_mIoU(self, categories=None):
+
+    def compute_mIoU(self, categories=None, raw=False):
         g = []
         d = []
         s = []
 
         for _, dt_ann in self.cocoDt.anns.items():
-            if dt_ann.get('tp', False):
-                gt_ann = self.cocoGt.anns[dt_ann['gt_id']]
-                if categories is None or gt_ann['category_id'] in categories:
-                    s.append(dt_ann.get('score', 1))
-                    if self.params.iouType == 'segm':
-                        g.append(gt_ann['rle'])
-                        d.append(dt_ann['rle'])
-                    elif self.params.iouType == 'bbox':
-                        g.append(gt_ann['bbox'])
-                        d.append(dt_ann['bbox'])
+            if dt_ann.get("tp", False):
+                gt_ann = self.cocoGt.anns[dt_ann["gt_id"]]
+                if categories is None or gt_ann["category_id"] in categories:
+                    s.append(dt_ann.get("score", 1))
+                    if self.params.iouType == "segm":
+                        g.append(gt_ann["rle"])
+                        d.append(dt_ann["rle"])
+                    elif self.params.iouType == "bbox":
+                        g.append(gt_ann["bbox"])
+                        d.append(dt_ann["bbox"])
                     else:
-                        raise Exception('unknown iouType for iou computation')
+                        raise Exception("unknown iouType for iou computation")
 
         iscrowd = [0 for o in g]
-        
+
         ious = maskUtils.iou(d, g, iscrowd)
+        if raw:
+            return ious
+
         if len(ious) == 0:
             return 0
         else:
             ious = ious.diagonal()
             return ious.mean()
-    
+
     def compute_mAUC(self):
         aucs = []
 
-        for K in range(self.eval['counts'][2]):
-            for A in range(self.eval['counts'][3]):            
-                precision_list = self.eval['precision'][0, :, K, A, :].ravel()
-                
+        for K in range(self.eval["counts"][2]):
+            for A in range(self.eval["counts"][3]):
+                precision_list = self.eval["precision"][0, :, K, A, :].ravel()
+
                 recall_list = self.params.recThrs
                 auc = COCOeval_faster.calc_auc(recall_list, precision_list)
-                
+
                 if auc != -1:
                     aucs.append(auc)
-        
+
         if len(aucs):
             return sum(aucs) / len(aucs)
         else:
             return 0
-    
+
     def summarize(self):
         super().summarize()
-        
+
         if self.matched:
             self.all_stats = np.append(self.all_stats, self.compute_mIoU())
             self.all_stats = np.append(self.all_stats, self.compute_mAUC())
 
-    
     @property
     def stats_as_dict(self):
         iouType = self.params.iouType
-        assert (iouType == 'segm' or iouType ==
-                'bbox'), f'iouType={iouType} not supported'
+        assert (
+            iouType == "segm" or iouType == "bbox"
+        ), "iouType={} not supported".format(iouType)
 
         labels = [
-            "AP_all", "AP_50", "AP_75",
-            "AP_small", "AP_medium", "AP_large",
-            "AR_all", "AR_second", "AR_third",
-            "AR_small", "AR_medium", "AR_large", "AR_50", "AR_75"]
-        
+            "AP_all",
+            "AP_50",
+            "AP_75",
+            "AP_small",
+            "AP_medium",
+            "AP_large",
+            "AR_all",
+            "AR_second",
+            "AR_third",
+            "AR_small",
+            "AR_medium",
+            "AR_large",
+            "AR_50",
+            "AR_75",
+        ]
+
         if self.matched:
             labels += ["mIoU", "mAUC_" + str(int(self.params.iouThrs[0] * 100))]
-        
+
         maxDets = self.params.maxDets
         if len(maxDets) > 1:
-            labels[6] = f'AR_{maxDets[0]}'
+            labels[6] = "AR_{}".format(maxDets[0])
 
         if len(maxDets) >= 2:
-            labels[7] = f'AR_{maxDets[1]}'
+            labels[7] = "AR_{}".format(maxDets[1])
 
         if len(maxDets) >= 3:
-            labels[8] = f'AR_{maxDets[2]}'
+            labels[8] = "AR_{}".format(maxDets[2])
 
         return {_label: float(self.all_stats[i]) for i, _label in enumerate(labels)}
-
 
     @staticmethod
     def calc_auc(recall_list, precision_list):

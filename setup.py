@@ -101,8 +101,8 @@ def get_extensions(version_info):
         "csrc/faster_eval_api/coco_eval/cocoeval.cpp",
         "csrc/faster_eval_api/faster_eval_api.cpp",
     ]
-    print(f"Sources: {sources}")
-
+    print("Sources: {}".format(sources))
+    
     ext_modules += [
         Pybind11Extension(
             name="faster_coco_eval.faster_eval_api_cpp",
@@ -120,8 +120,8 @@ def get_extensions(version_info):
         'csrc/mask/common'
     ]
 
-    print(f"Sources: {sources}")
-    print(f"Include: {include_dirs}")
+    print("Sources: {}".format(sources))
+    print("Include: {}".format(include_dirs))
 
     ext_modules += [
         Extension(

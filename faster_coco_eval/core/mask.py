@@ -61,7 +61,7 @@ def iou(d: list, g: list, iscrowd: list):
     -------
     iou_array : np.ndarray
         Intersection over union between masks or bbox.
-   """
+    """
     return _mask.iou(d, g, iscrowd)
 
 
@@ -71,7 +71,7 @@ def encode(bimask: np.ndarray):
         return _mask.encode(bimask)
     elif len(bimask.shape) == 2:
         h, w = bimask.shape
-        return _mask.encode(bimask.reshape((h, w, 1), order='F'))[0]
+        return _mask.encode(bimask.reshape((h, w, 1), order="F"))[0]
 
 
 def decode(rleObjs):

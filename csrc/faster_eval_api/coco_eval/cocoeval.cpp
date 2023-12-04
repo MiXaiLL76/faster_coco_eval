@@ -548,14 +548,11 @@ namespace coco_eval
 
       std::vector<uint64_t> out_detection_matches = {};
       std::vector<uint64_t> out_ground_truth_matches = {};
-      std::vector<uint64_t> out_detection_ignores = {};
       std::vector<int> out_ground_truth_orig_id = {};
-      // auto eval = evaluations[0];
       for (auto eval : evaluations)
       {
         out_detection_matches.insert(out_detection_matches.end(), eval.detection_matches.begin(), eval.detection_matches.end());
         out_ground_truth_matches.insert(out_ground_truth_matches.end(), eval.ground_truth_matches.begin(), eval.ground_truth_matches.end());
-        out_detection_ignores.insert(out_detection_ignores.end(), eval.detection_ignores.begin(), eval.detection_ignores.end());
         out_ground_truth_orig_id.insert(out_ground_truth_orig_id.end(), eval.ground_truth_orig_id.begin(), eval.ground_truth_orig_id.end());
       }
 
@@ -571,7 +568,7 @@ namespace coco_eval
           "recall"_a = recalls_out,
           "scores"_a = scores_out,
           "detection_matches"_a = out_detection_matches,
-          "detection_ignores"_a = out_detection_ignores,
+          // "detection_ignores"_a = out_detection_ignores,
           "ground_truth_matches"_a = out_ground_truth_matches,
           "ground_truth_orig_id"_a = out_ground_truth_orig_id,
           "evaluations_size"_a = evaluations_size);

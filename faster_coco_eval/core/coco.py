@@ -1,5 +1,5 @@
-__author__ = 'tylin'
-__version__ = '2.0'
+__author__ = "tylin"
+__version__ = "2.0"
 # Interface for accessing the Microsoft COCO dataset.
 
 # Microsoft COCO is a large image dataset designed for object detection,
@@ -54,11 +54,12 @@ from collections import defaultdict
 import warnings
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
 def _isArrayLike(obj):
-    return hasattr(obj, '__iter__') and hasattr(obj, '__len__')
+    return hasattr(obj, "__iter__") and hasattr(obj, "__len__")
 
 
 class COCO:
@@ -75,46 +76,50 @@ class COCO:
         self.score_tresh: float = 0.0
 
         if not annotation_file == None:
-            logger.debug('loading annotations into memory...')
+            logger.debug("loading annotations into memory...")
             tic = time.time()
             if type(annotation_file) is str:
-                with open(annotation_file, 'r') as f:
+                with open(annotation_file, "r") as f:
                     self.dataset = json.load(f)
             elif type(annotation_file) is dict:
                 self.dataset = annotation_file
             else:
                 self.dataset = None
 
-            assert type(self.dataset) == dict, 'annotation file format {} not supported'.format(
-                type(self.dataset))
-            logger.debug('Done (t={:0.2f}s)'.format(time.time() - tic))
+            assert (
+                type(self.dataset) == dict
+            ), "annotation file format {} not supported".format(type(self.dataset))
+            logger.debug("Done (t={:0.2f}s)".format(time.time() - tic))
             self.createIndex()
 
     def createIndex(self):
         # create index
-        logger.debug('creating index...')
+        logger.debug("creating index...")
         anns, cats, imgs = {}, {}, {}
         imgToAnns, catToImgs = defaultdict(list), defaultdict(list)
-        if 'annotations' in self.dataset:
-            for ann in self.dataset['annotations']:
-                ann['image_id'] = int(ann['image_id'])
-                imgToAnns[ann['image_id']].append(ann)
-                anns[ann['id']] = ann
+        annsImgIds_dict = {}
+        if "images" in self.dataset:
+            for img in self.dataset["images"]:
+                img["id"] = int(img["id"])
+                imgs[img["id"]] = img
+                annsImgIds_dict[img["id"]] = True
 
-        if 'images' in self.dataset:
-            for img in self.dataset['images']:
-                img['id'] = int(img['id'])
-                imgs[img['id']] = img
+        if "annotations" in self.dataset:
+            for ann in self.dataset["annotations"]:
+                ann["image_id"] = int(ann["image_id"])
+                if annsImgIds_dict.get(ann["image_id"]):
+                    imgToAnns[ann["image_id"]].append(ann)
+                    anns[ann["id"]] = ann
 
-        if 'categories' in self.dataset:
-            for cat in self.dataset['categories']:
-                cats[cat['id']] = cat
+        if "categories" in self.dataset:
+            for cat in self.dataset["categories"]:
+                cats[cat["id"]] = cat
 
-        if 'annotations' in self.dataset and 'categories' in self.dataset:
-            for ann in self.dataset['annotations']:
-                catToImgs[ann['category_id']].append(ann['image_id'])
+        if "annotations" in self.dataset and "categories" in self.dataset:
+            for ann in self.dataset["annotations"]:
+                catToImgs[ann["category_id"]].append(ann["image_id"])
 
-        logger.debug('index created!')
+        logger.debug("index created!")
 
         # create class members
         self.anns = anns
@@ -128,8 +133,8 @@ class COCO:
         Print information about the annotation file.
         :return:
         """
-        for key, value in self.dataset['info'].items():
-            logger.debug('{}: {}'.format(key, value))
+        for key, value in self.dataset["info"].items():
+            logger.debug("{}: {}".format(key, value))
 
     def getAnnIds(self, imgIds=[], catIds=[], areaRng=[], iscrowd=None):
         """
@@ -144,22 +149,33 @@ class COCO:
         catIds = catIds if _isArrayLike(catIds) else [catIds]
 
         if len(imgIds) == len(catIds) == len(areaRng) == 0:
-            anns = self.dataset['annotations']
+            anns = self.dataset["annotations"]
         else:
             if not len(imgIds) == 0:
-                lists = [self.imgToAnns[imgId]
-                         for imgId in imgIds if imgId in self.imgToAnns]
+                lists = [
+                    self.imgToAnns[imgId] for imgId in imgIds if imgId in self.imgToAnns
+                ]
                 anns = list(itertools.chain.from_iterable(lists))
             else:
-                anns = self.dataset['annotations']
-            anns = anns if len(catIds) == 0 else [
-                ann for ann in anns if ann['category_id'] in catIds]
-            anns = anns if len(areaRng) == 0 else [
-                ann for ann in anns if ann['area'] > areaRng[0] and ann['area'] < areaRng[1]]
+                anns = self.dataset["annotations"]
+            anns = (
+                anns
+                if len(catIds) == 0
+                else [ann for ann in anns if ann["category_id"] in catIds]
+            )
+            anns = (
+                anns
+                if len(areaRng) == 0
+                else [
+                    ann
+                    for ann in anns
+                    if ann["area"] > areaRng[0] and ann["area"] < areaRng[1]
+                ]
+            )
         if not iscrowd == None:
-            ids = [ann['id'] for ann in anns if ann['iscrowd'] == iscrowd]
+            ids = [ann["id"] for ann in anns if ann["iscrowd"] == iscrowd]
         else:
-            ids = [ann['id'] for ann in anns]
+            ids = [ann["id"] for ann in anns]
         return ids
 
     def getCatIds(self, catNms=[], supNms=[], catIds=[]):
@@ -175,25 +191,34 @@ class COCO:
         catIds = catIds if _isArrayLike(catIds) else [catIds]
 
         if len(catNms) == len(supNms) == len(catIds) == 0:
-            cats = self.dataset['categories']
+            cats = self.dataset["categories"]
         else:
-            cats = self.dataset['categories']
-            cats = cats if len(catNms) == 0 else [
-                cat for cat in cats if cat['name'] in catNms]
-            cats = cats if len(supNms) == 0 else [
-                cat for cat in cats if cat['supercategory'] in supNms]
-            cats = cats if len(catIds) == 0 else [
-                cat for cat in cats if cat['id'] in catIds]
-        ids = [cat['id'] for cat in cats]
+            cats = self.dataset["categories"]
+            cats = (
+                cats
+                if len(catNms) == 0
+                else [cat for cat in cats if cat["name"] in catNms]
+            )
+            cats = (
+                cats
+                if len(supNms) == 0
+                else [cat for cat in cats if cat["supercategory"] in supNms]
+            )
+            cats = (
+                cats
+                if len(catIds) == 0
+                else [cat for cat in cats if cat["id"] in catIds]
+            )
+        ids = [cat["id"] for cat in cats]
         return ids
 
     def getImgIds(self, imgIds=[], catIds=[]):
-        '''
+        """
         Get img ids that satisfy given filter conditions.
         :param imgIds (int array) : get imgs for given ids
         :param catIds (int array) : get imgs with all given cats
         :return: ids (int array)  : integer array of img ids
-        '''
+        """
         imgIds = imgIds if _isArrayLike(imgIds) else [imgIds]
         catIds = catIds if _isArrayLike(catIds) else [catIds]
 
@@ -249,9 +274,9 @@ class COCO:
         """
         self.score_tresh = min_score
         res = COCO()
-        res.dataset['images'] = [img for img in self.dataset['images']]
+        res.dataset["images"] = [img for img in self.dataset["images"]]
 
-        logger.debug('Loading and preparing results...')
+        logger.debug("Loading and preparing results...")
         tic = time.time()
         if type(resFile) == str:
             anns = json.load(open(resFile))
@@ -259,55 +284,58 @@ class COCO:
             anns = self.loadNumpyAnnotations(resFile)
         else:
             anns = resFile
-        assert type(anns) == list, 'results in not an array of objects'
+        assert type(anns) == list, "results in not an array of objects"
 
-        anns = [ann for ann in anns if ann.get('score', 1) >= self.score_tresh]
+        anns = [ann for ann in anns if ann.get("score", 1) >= self.score_tresh]
 
-        annsImgIds = [ann['image_id'] for ann in anns]
-        assert set(annsImgIds) == (set(annsImgIds) & set(self.getImgIds())), \
-            'Results do not correspond to current coco set'
-        if 'caption' in anns[0]:
-            imgIds = set([img['id'] for img in res.dataset['images']]) & set(
-                [ann['image_id'] for ann in anns])
-            res.dataset['images'] = [
-                img for img in res.dataset['images'] if img['id'] in imgIds]
+        annsImgIds = [ann["image_id"] for ann in anns]
+        assert set(annsImgIds) == (
+            set(annsImgIds) & set(self.getImgIds())
+        ), "Results do not correspond to current coco set"
+        if "caption" in anns[0]:
+            imgIds = set([img["id"] for img in res.dataset["images"]]) & set(
+                [ann["image_id"] for ann in anns]
+            )
+            res.dataset["images"] = [
+                img for img in res.dataset["images"] if img["id"] in imgIds
+            ]
             for id, ann in enumerate(anns):
-                ann['id'] = id+1
-        elif 'bbox' in anns[0] and not anns[0]['bbox'] == []:
-            res.dataset['categories'] = copy.deepcopy(
-                self.dataset['categories'])
+                ann["id"] = id + 1
+        elif "bbox" in anns[0] and not anns[0]["bbox"] == []:
+            res.dataset["categories"] = copy.deepcopy(self.dataset["categories"])
             for id, ann in enumerate(anns):
-                bb = ann['bbox']
-                x1, x2, y1, y2 = [bb[0], bb[0]+bb[2], bb[1], bb[1]+bb[3]]
-                if not 'segmentation' in ann:
-                    ann['segmentation'] = [[x1, y1, x1, y2, x2, y2, x2, y1]]
-                ann['area'] = bb[2]*bb[3]
-                ann['id'] = id+1
-                ann['iscrowd'] = 0
-        elif 'segmentation' in anns[0]:
-            res.dataset['categories'] = copy.deepcopy(
-                self.dataset['categories'])
+                bb = ann["bbox"]
+                x1, x2, y1, y2 = [bb[0], bb[0] + bb[2], bb[1], bb[1] + bb[3]]
+                if not "segmentation" in ann:
+                    ann["segmentation"] = [[x1, y1, x1, y2, x2, y2, x2, y1]]
+                ann["area"] = bb[2] * bb[3]
+                ann["id"] = id + 1
+                ann["iscrowd"] = 0
+        elif "segmentation" in anns[0]:
+            res.dataset["categories"] = copy.deepcopy(self.dataset["categories"])
             for id, ann in enumerate(anns):
                 # now only support compressed RLE format as segmentation results
-                ann['area'] = maskUtils.area(ann['segmentation'])
-                if not 'bbox' in ann:
-                    ann['bbox'] = maskUtils.toBbox(ann['segmentation'])
-                ann['id'] = id+1
-                ann['iscrowd'] = 0
-        elif 'keypoints' in anns[0]:
-            res.dataset['categories'] = copy.deepcopy(
-                self.dataset['categories'])
+                ann["area"] = maskUtils.area(ann["segmentation"])
+                if not "bbox" in ann:
+                    ann["bbox"] = maskUtils.toBbox(ann["segmentation"])
+                ann["id"] = id + 1
+                ann["iscrowd"] = 0
+        elif "keypoints" in anns[0]:
+            res.dataset["categories"] = copy.deepcopy(self.dataset["categories"])
             for id, ann in enumerate(anns):
-                s = ann['keypoints']
+                s = ann["keypoints"]
                 x = s[0::3]
                 y = s[1::3]
                 x0, x1, y0, y1 = np.min(x), np.max(x), np.min(y), np.max(y)
-                ann['area'] = (x1-x0)*(y1-y0)
-                ann['id'] = id + 1
-                ann['bbox'] = [x0, y0, x1-x0, y1-y0]
-        logger.debug('DONE (t={:0.2f}s)'.format(time.time() - tic))
+                ann["area"] = (x1 - x0) * (y1 - y0)
+                ann["id"] = id + 1
+                ann["bbox"] = [x0, y0, x1 - x0, y1 - y0]
+        logger.debug("DONE (t={:0.2f}s)".format(time.time() - tic))
 
-        res.dataset['annotations'] = anns
+        annsImgIds_dict = {image["id"]: True for image in res.dataset["images"]}
+        anns = [ann for ann in anns if annsImgIds_dict.get(ann["image_id"])]
+
+        res.dataset["annotations"] = anns
         res.createIndex()
         return res
 
@@ -323,21 +351,23 @@ class COCO:
         :param  data (numpy.ndarray)
         :return: annotations (python nested list)
         """
-        logger.debug('Converting ndarray to lists...')
-        assert (type(data) == np.ndarray)
+        logger.debug("Converting ndarray to lists...")
+        assert type(data) == np.ndarray
         logger.debug(data.shape)
-        assert (data.shape[1] == 7)
+        assert data.shape[1] == 7
         N = data.shape[0]
         ann = []
         for i in range(N):
             if i % 1000000 == 0:
-                logger.debug('{}/{}'.format(i, N))
-            ann += [{
-                'image_id': int(data[i, 0]),
-                'bbox': [data[i, 1], data[i, 2], data[i, 3], data[i, 4]],
-                'score': data[i, 5],
-                'category_id': int(data[i, 6]),
-            }]
+                logger.debug("{}/{}".format(i, N))
+            ann += [
+                {
+                    "image_id": int(data[i, 0]),
+                    "bbox": [data[i, 1], data[i, 2], data[i, 3], data[i, 4]],
+                    "score": data[i, 5],
+                    "category_id": int(data[i, 6]),
+                }
+            ]
         return ann
 
     def annToRLE(self, ann):
@@ -345,20 +375,20 @@ class COCO:
         Convert annotation which can be polygons, uncompressed RLE to RLE.
         :return: binary mask (numpy 2D array)
         """
-        t = self.imgs[ann['image_id']]
-        h, w = t['height'], t['width']
-        segm = ann['segmentation']
+        t = self.imgs[ann["image_id"]]
+        h, w = t["height"], t["width"]
+        segm = ann["segmentation"]
         if type(segm) == list:
             # polygon -- a single object might consist of multiple parts
             # we merge all parts into one mask rle code
             rles = maskUtils.frPyObjects(segm, h, w)
             rle = maskUtils.merge(rles)
-        elif type(segm['counts']) == list:
+        elif type(segm["counts"]) == list:
             # uncompressed RLE
             rle = maskUtils.frPyObjects(segm, h, w)
         else:
             # rle
-            rle = ann['segmentation']
+            rle = ann["segmentation"]
         return rle
 
     def annToMask(self, ann):

@@ -58,6 +58,13 @@ cur.plot_pre_rec(plotly_backend=False)
 
 ## history
 
+### v1.4.0
+
+- [x] fix issue <https://github.com/MiXaiLL76/faster_coco_eval/issues/12>
+- [x] Updated pre-rec calculation method
+- [x] Updated required libraries
+- [x] Moved all matplotlib dependencies to plotly
+
 ### v1.3.3
 
 - [x] fix by ViTrox <https://github.com/vitrox-technologies/faster_coco_eval>
@@ -134,11 +141,6 @@ cur.plot_pre_rec(plotly_backend=False)
 - [x] Append unittest
 - [x] Append ROC / AUC curves  
 - [x] Check if it works on windows
-
-### TODOs
-
-- [X] Remove pycocotools dependencies
-- [ ] Remove matplotlib dependencies
 
 ## License
 
