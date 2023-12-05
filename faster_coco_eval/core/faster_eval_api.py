@@ -162,9 +162,9 @@ class COCOeval_faster(COCOeval):
                 )
             )
             assert self.ground_truth_orig_id.shape[1] == len(self.cocoGt.anns)
-
-            self.math_matches()
-            self.matched = True
+            if self.extra_calc:
+                self.math_matches()
+                self.matched = True
         except Exception as e:
             logger.error("math_matches error: ", exc_info=True)
             self.matched = False
@@ -183,11 +183,16 @@ class COCOeval_faster(COCOeval):
                     continue
 
                 gt_id = gt_ids[idx]
-                if gt_id == -1:
+                if gt_id <= -1:
                     continue
 
-                _gt_ann = self.cocoGt.anns[gt_id]
-                _dt_ann = self.cocoDt.anns[dt_id]
+                _gt_ann = self.cocoGt.anns.get(gt_id)
+                if _gt_ann is None:
+                    continue
+
+                _dt_ann = self.cocoDt.anns.get(dt_id)
+                if _dt_ann is None:
+                    continue
 
                 if int(_gt_ann["image_id"]) != int(_dt_ann["image_id"]):
                     continue

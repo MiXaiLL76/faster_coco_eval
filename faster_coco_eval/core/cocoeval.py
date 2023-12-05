@@ -64,7 +64,7 @@ class COCOeval:
     # Code written by Piotr Dollar and Tsung-Yi Lin, 2015.
     # Licensed under the Simplified BSD License [see coco/license.txt]
     def __init__(
-        self, cocoGt=None, cocoDt=None, iouType="segm", print_function=logger.debug
+        self, cocoGt=None, cocoDt=None, iouType="segm", print_function=logger.debug, extra_calc=True,
     ):
         """
         Initialize CocoEval using coco APIs for gt and dt
@@ -86,6 +86,9 @@ class COCOeval:
         self._paramsEval: dict = {}  # parameters for evaluation
         self.stats: list = []  # result summarization
         self.ious: dict = {}  # ious between all gts and dts
+        
+        self.extra_calc = extra_calc
+        self.matched    = False
 
         if not cocoGt is None:
             self.params.imgIds = sorted(cocoGt.getImgIds())
