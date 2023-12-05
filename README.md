@@ -64,6 +64,7 @@ cur.plot_pre_rec(plotly_backend=False)
 - [x] Updated pre-rec calculation method
 - [x] Updated required libraries
 - [x] Moved all matplotlib dependencies to plotly
+- [x] Append new examples & mmeval test file
 
 ### v1.3.3
 
