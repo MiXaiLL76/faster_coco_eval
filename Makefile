@@ -12,22 +12,22 @@ wheel:
 	python3 -m build . --wheel
 
 docker-sdist:
-	bash docker/auto_build.sh "cp38-cp38" sdist
+	bash -e docker/auto_build.sh "cp38-cp38" sdist
 
 docker-3.7:
-	bash docker/auto_build.sh "cp37-cp37m" wheel
+	bash -e docker/auto_build.sh "cp37-cp37m" wheel
 
 docker-3.8:
-	bash docker/auto_build.sh "cp38-cp38" wheel
+	bash -e docker/auto_build.sh "cp38-cp38" wheel
 	
 docker-3.9:
-	bash docker/auto_build.sh "cp39-cp39" wheel
+	bash -e docker/auto_build.sh "cp39-cp39" wheel
 	
 docker-3.10:
-	bash docker/auto_build.sh "cp310-cp310" wheel
+	bash -e docker/auto_build.sh "cp310-cp310" wheel
 
 docker-3.11:
-	bash docker/auto_build.sh "cp311-cp311" wheel
+	bash -e docker/auto_build.sh "cp311-cp311" wheel
 
 pull:
 	twine check dist/*
