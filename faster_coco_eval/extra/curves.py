@@ -1,4 +1,4 @@
-from ..core.faster_eval_api import COCOeval_faster
+from ..core import COCOeval_faster
 from .extra import ExtraEval
 
 import logging

@@ -1,6 +1,5 @@
 from .extra import ExtraEval
-
-from PIL import Image, ImageDraw
+from PIL import Image
 import numpy as np
 import logging
 import os.path as osp
@@ -74,7 +73,9 @@ class PreviewResults(ExtraEval):
         if osp.exists(image_fn):
             im = Image.open(image_fn).convert("RGB")
         else:
-            logger.warning("[{}] not found!\nLoading default empty image".format(image_fn))
+            logger.warning(
+                "[{}] not found!\nLoading default empty image".format(image_fn)
+            )
 
             im = Image.new("RGB", (image["width"], image["height"]))
 
@@ -212,7 +213,9 @@ class PreviewResults(ExtraEval):
     def compute_confusion_matrix(self):
         if self.useCats:
             logger.warning(
-                "The calculation may not be accurate. No intersection of classes. useCats={}".format(self.useCats)
+                "The calculation may not be accurate. No intersection of classes. useCats={}".format(
+                    self.useCats
+                )
             )
 
         y_true = []

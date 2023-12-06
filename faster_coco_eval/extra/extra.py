@@ -1,5 +1,4 @@
-from ..core.coco import COCO
-from ..core.faster_eval_api import COCOeval_faster
+from ..core import COCO, COCOeval_faster
 
 import numpy as np
 import logging
