@@ -29,7 +29,7 @@ class ExtraEval:
         self.evaluate()
 
     def evaluate(self):
-        cocoEval = COCOeval_faster(self.cocoGt, self.cocoDt, self.iouType)
+        cocoEval = COCOeval_faster(self.cocoGt, self.cocoDt, self.iouType, extra_calc=True)
         cocoEval.params.maxDets = [len(self.cocoGt.anns)]
 
         cocoEval.params.iouThrs = [self.iou_tresh]

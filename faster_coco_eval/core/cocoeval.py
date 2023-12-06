@@ -69,7 +69,7 @@ class COCOeval:
         cocoDt=None,
         iouType="segm",
         print_function=logger.debug,
-        extra_calc=True,
+        extra_calc=False,
     ):
         """
         Initialize CocoEval using coco APIs for gt and dt
