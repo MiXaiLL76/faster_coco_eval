@@ -1,4 +1,5 @@
 # distutils: language = c
+# cython: language_level=2
 
 #**************************************************************************
 # Microsoft COCO Toolbox.      version 2.0

@@ -134,6 +134,7 @@ def get_extensions(version_info):
                 '-Wno-unused-function',
                 '-std=c99',
                 '-O3',
+                '-Wno-maybe-uninitialized',
                 '-Wno-misleading-indentation',
             ],
             extra_link_args=[],
@@ -170,7 +171,4 @@ setup(
     ],
     python_requires=">=3.7",
     install_requires=parse_requirements('requirements/runtime.txt'),
-    extras_require={
-        'all': parse_requirements('requirements/optional.txt'),
-    },
 )
