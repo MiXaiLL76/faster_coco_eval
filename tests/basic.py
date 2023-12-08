@@ -42,7 +42,7 @@ class TestBaseCoco(unittest.TestCase):
         cocoGt = COCO(prepared_coco_in_dict)
         cocoDt = cocoGt.loadRes(prepared_anns)
 
-        cocoEval = COCOeval_faster(cocoGt, cocoDt, iouType)
+        cocoEval = COCOeval_faster(cocoGt, cocoDt, iouType, extra_calc=True)
         cocoEval.params.maxDets = [len(cocoGt.anns)]
 
         if not useCats:
