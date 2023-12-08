@@ -1,183 +1,206 @@
 from .extra import ExtraEval
-
-from PIL import Image, ImageDraw
+from PIL import Image
 import numpy as np
 import logging
 import os.path as osp
 
-import matplotlib.pyplot as plt
-
-try:
-    import plotly.express as px
-    plotly_available = True
-except:
-    plotly_available = False
+import plotly.express as px
+import plotly.graph_objs as go
 
 logger = logging.getLogger(__name__)
 
 
 class PreviewResults(ExtraEval):
-    A = 128
+    A = 0.1
     DT_COLOR = (238, 130, 238, A)
 
-    GT_COLOR = (0, 255, 0,   A)
-    FN_COLOR = (0, 0, 255,   A)
-    FP_COLOR = (255, 0, 0,   A)
+    GT_COLOR = (0, 255, 0, A)
+    FN_COLOR = (0, 0, 255, A)
+    FP_COLOR = (255, 0, 0, A)
 
-    def draw_ann(self, draw, ann, color, width=5):
-        if self.iouType == 'bbox':
-            x1, y1, w, h = ann['bbox']
-            draw.rectangle([x1, y1, x1+w, y1+h], outline=color, width=width)
+    def get_ann_poly(self, ann, color, text=None, legendgroup=None):
+        all_x = []
+        all_y = []
+
+        if self.iouType == "bbox":
+            x1, y1, w, h = ann["bbox"]
+            all_x = [x1, x1 + w, x1 + w, x1, x1, None]
+            all_y = [y1, y1, y1 + h, y1 + h, y1, None]
         else:
-            for poly in ann['segmentation']:
+            for poly in ann["segmentation"]:
                 if len(poly) > 3:
-                    draw.line(poly, width=width, fill=color, joint='curve')
+                    poly += poly[:2]
+                    poly = np.array(poly).reshape(-1, 2)
+                    all_x += poly[:, 0].tolist() + [None]
+                    all_y += poly[:, 1].tolist() + [None]
 
-    def plot_img(self, img, force_matplot=False, figsize=None, slider=False):
-        if plotly_available and not force_matplot and slider:
-            fig = px.imshow(img, animation_frame=0,
-                            binary_compression_level=5,
-                            binary_format='jpg',
-                            aspect='auto',
-                            labels=dict(animation_frame="shown picture"))
+        return go.Scatter(
+            x=all_x,
+            y=all_y,
+            name="",
+            text=text,
+            hovertemplate="{text}<extra></extra>",
+            mode="lines",
+            legendgroup=legendgroup,
+            legendgrouptitle_text=legendgroup,
+            showlegend=False,
+            fill="toself",
+            fillcolor="rgba{}".format(color),
+            line=dict(color="rgb{}".format(color[:3])),
+        )
 
-            fig.update_layout(height=700, width=900)
-            fig.update_layout(autosize=True)
-            fig.show()
+    def display_image(
+        self,
+        image_id=1,
+        display_fp=True,
+        display_fn=True,
+        display_tp=True,
+        display_gt=True,
+        data_folder=None,
+        categories=None,
+    ):
+        polygons = []
 
+        image = self.cocoGt.imgs[image_id]
+        gt_anns = {ann["id"]: ann for ann in self.cocoGt.imgToAnns[image_id]}
+        dt_anns = {ann["id"]: ann for ann in self.cocoDt.imgToAnns[image_id]}
+
+        if data_folder is not None:
+            image_fn = osp.join(data_folder, image["file_name"])
         else:
-            is_pillow = 'Image' in str(type(img))
-            if is_pillow:
-                img = [img]
-                count = 1
-            elif type(img) is list:
-                count = len(img)
-            else:
-                is_batch = len(img.shape) == 4
-                if not is_batch:
-                    img = np.array([img])
-                count = img.shape[0]
+            image_fn = image["file_name"]
 
-            for img_i in range(count):
-                if figsize is not None:
-                    plt.figure(figsize=figsize)
-                plt.imshow(img[img_i], interpolation='nearest')
-                plt.axis('off')
-                plt.show()
+        if osp.exists(image_fn):
+            im = Image.open(image_fn).convert("RGB")
+        else:
+            logger.warning(
+                "[{}] not found!\nLoading default empty image".format(image_fn)
+            )
 
-    def print_colors_info(self, _print=False):
-        _print_func = logger.info
-        if _print:
-            _print_func = print
+            im = Image.new("RGB", (image["width"], image["height"]))
 
-        if logger.getEffectiveLevel() <= 20 or _print:
-            _print_func(f"DT_COLOR : {self.DT_COLOR}")
-            im = Image.new("RGBA", (64, 32), self.DT_COLOR)
-            self.plot_img(im, force_matplot=True, figsize=(1, 0.5))
-            _print_func("")
+        categories_labels = {
+            category["id"]: category["name"] for _, category in self.cocoGt.cats.items()
+        }
 
-            _print_func(f"GT_COLOR : {self.GT_COLOR}")
-            im = Image.new("RGBA", (64, 32), self.GT_COLOR)
-            self.plot_img(im, force_matplot=True, figsize=(1, 0.5))
-            _print_func("")
+        if len(gt_anns) > 0:
+            for ann in gt_anns.values():
+                if categories is None or ann["category_id"] in categories:
+                    if ann.get("fn", False):
+                        if display_fn:
+                            poly = self.get_ann_poly(
+                                ann,
+                                color=self.FN_COLOR,
+                                text="<b>FN</b><br>id={}<br>category={}".format(
+                                    ann["id"], categories_labels[ann["category_id"]]
+                                ),
+                                legendgroup="fn",
+                            )
+                            polygons.append(poly)
+                    else:
+                        if display_gt:
+                            poly = self.get_ann_poly(
+                                ann,
+                                color=self.GT_COLOR,
+                                text="<b>GT</b><br>id={}<br>category={}".format(
+                                    ann["id"], categories_labels[ann["category_id"]]
+                                ),
+                                legendgroup="gt",
+                            )
+                            polygons.append(poly)
 
-            _print_func(f"FN_COLOR : {self.FN_COLOR}")
-            im = Image.new("RGBA", (64, 32), self.FN_COLOR)
-            self.plot_img(im, force_matplot=True, figsize=(1, 0.5))
-            _print_func("")
+        if len(dt_anns) > 0:
+            for ann in dt_anns.values():
+                if categories is None or ann["category_id"] in categories:
+                    if ann.get("tp", False):
+                        if display_tp:
+                            poly = self.get_ann_poly(
+                                ann,
+                                color=self.DT_COLOR,
+                                text="<b>DT</b><br>id={}<br>category={}<br>score={:.2f}<br>IoU={:.2f}".format(
+                                    ann["id"],
+                                    categories_labels[ann["category_id"]],
+                                    ann["score"],
+                                    ann["iou"],
+                                ),
+                                legendgroup="tp",
+                            )
+                            polygons.append(poly)
+                    else:
+                        if display_fp:
+                            poly = self.get_ann_poly(
+                                ann,
+                                color=self.FP_COLOR,
+                                text="<b>FP</b><br>id={}<br>category={}<br>score={:.2f}".format(
+                                    ann["id"],
+                                    categories_labels[ann["category_id"]],
+                                    ann["score"],
+                                ),
+                                legendgroup="fp",
+                            )
+                            polygons.append(poly)
 
-            _print_func(f"FP_COLOR : {self.FP_COLOR}")
-            im = Image.new("RGBA", (64, 32), self.FP_COLOR)
-            self.plot_img(im, force_matplot=True, figsize=(1, 0.5))
-            _print_func("")
+        fig = px.imshow(
+            im,
+            binary_compression_level=5,
+            binary_format="jpg",
+            aspect="auto",
+            labels=dict(animation_frame="shown picture"),
+        )
 
-    def display_tp_fp_fn(self, image_ids=['all'],
-                         line_width=7,
-                         display_fp=True,
-                         display_fn=True,
-                         display_tp=True,
-                         display_gt=True,
-                         resize_out_image=None,
-                         data_folder=None,
-                         categories=None,
-                         return_img=False,
-                         ):
-        image_batch = []
+        legends = {}
+        for poly in polygons:
+            if legends.get(poly.legendgroup) is None:
+                poly.showlegend = True
+                legends[poly.legendgroup] = True
 
-        for image_id, gt_anns in self.cocoGt.imgToAnns.items():
-            if (image_id in image_ids) or 'all' in image_ids:
-                image = self.cocoGt.imgs[image_id]
+            fig.add_trace(poly)
 
-                if data_folder is not None:
-                    image_fn = osp.join(data_folder, image["file_name"])
-                else:
-                    image_fn = image["file_name"]
+        layout = {
+            "title": "image_id={}<br>image_fn={}".format(image_id, image_fn),
+            "autosize": True,
+            "height": 700,
+            "width": 900,
+        }
 
-                if osp.exists(image_fn):
-                    im = Image.open(image_fn).convert("RGB")
-                else:
-                    logger.warning(
-                        f'[{image_fn}] not found!\nLoading default empty image')
+        fig.update_layout(layout)
+        fig.update_xaxes(range=[0, image["width"]])
+        fig.update_yaxes(range=[image["height"], 0])
+        fig.show()
 
-                    im = Image.new("RGB", (image['width'], image['height']))
-
-                mask = Image.new("RGBA", im.size, (0, 0, 0, 0))
-                draw = ImageDraw.Draw(mask)
-
-                gt_anns = {ann['id']: ann for ann in gt_anns}
-                if len(gt_anns) > 0:
-                    for ann in gt_anns.values():
-                        if categories is None or ann['category_id'] in categories:
-                            is_fn = ann.get('fn', False)
-
-                            if is_fn and display_fn:
-                                self.draw_ann(
-                                    draw, ann, color=self.FN_COLOR, width=line_width)
-                            elif display_gt:
-                                self.draw_ann(
-                                    draw, ann, color=self.GT_COLOR, width=line_width)
-
-                dt_anns = self.cocoDt.imgToAnns[image_id]
-                dt_anns = {ann['id']: ann for ann in dt_anns}
-
-                if len(dt_anns) > 0:
-                    for ann in dt_anns.values():
-                        if categories is None or ann['category_id'] in categories:
-                            if ann.get('tp', False):
-                                if display_tp:
-                                    self.draw_ann(
-                                        draw, ann, color=self.DT_COLOR, width=line_width)
-                            else:
-                                if display_fp:
-                                    self.draw_ann(
-                                        draw, ann, color=self.FP_COLOR, width=line_width)
-
-                im.paste(mask, mask)
-                image_batch.append(im)
-
-        if len(image_batch) >= 1 and resize_out_image is None:
-            resize_out_image = image_batch[0].size
-
-        if return_img:
-            return image_batch
-
-        if len(image_batch) == 1:
-            self.plot_img(np.array(image_batch[0].resize(resize_out_image)))
-        elif len(image_batch) > 1:
-            image_batch = np.array(
-                [np.array(image.resize(resize_out_image)) for image in image_batch])
-            self.plot_img(image_batch, slider=True)
+    def display_tp_fp_fn(
+        self,
+        image_ids=["all"],
+        display_fp=True,
+        display_fn=True,
+        display_tp=True,
+        display_gt=False,
+        data_folder=None,
+        categories=None,
+    ):
+        for image_id, _ in self.cocoGt.imgToAnns.items():
+            if (image_id in image_ids) or "all" in image_ids:
+                self.display_image(
+                    image_id,
+                    display_fp=display_fp,
+                    display_fn=display_fn,
+                    display_tp=display_tp,
+                    display_gt=display_gt,
+                    data_folder=data_folder,
+                    categories=categories,
+                )
 
     def _compute_confusion_matrix(self, y_true, y_pred, fp={}, fn={}):
         """
         return classes*(classes + fp col + fn col)
         """
         categories_real_ids = list(self.cocoGt.cats)
-        categories_enum_ids = {category_id: _i for _i,
-                               category_id in enumerate(categories_real_ids)}
+        categories_enum_ids = {
+            category_id: _i for _i, category_id in enumerate(categories_real_ids)
+        }
         K = len(categories_enum_ids)
 
-        cm = np.zeros((K, K + 2), dtype=np.int32)
+        cm = np.zeros((K, K + 2), dtype=np.float32)
         for a, p in zip(y_true, y_pred):
             cm[categories_enum_ids[a]][categories_enum_ids[p]] += 1
 
@@ -190,7 +213,10 @@ class PreviewResults(ExtraEval):
     def compute_confusion_matrix(self):
         if self.useCats:
             logger.warning(
-                f"The calculation may not be accurate. No intersection of classes. useCats={self.useCats}")
+                "The calculation may not be accurate. No intersection of classes. useCats={}".format(
+                    self.useCats
+                )
+            )
 
         y_true = []
         y_pred = []
@@ -199,58 +225,80 @@ class PreviewResults(ExtraEval):
         fp = {}
 
         for ann_id, ann in self.cocoGt.anns.items():
-            if ann.get('dt_id') is not None:
-                y_true.append(ann['category_id'])
-                y_pred.append(self.cocoDt.anns[ann['dt_id']]['category_id'])
+            if ann.get("dt_id") is not None:
+                dt_ann = self.cocoDt.anns[ann["dt_id"]]
+
+                y_true.append(ann["category_id"])
+                y_pred.append(dt_ann["category_id"])
 
             else:
-                if fn.get(ann['category_id']) is None:
-                    fn[ann['category_id']] = 0
-                fn[ann['category_id']] += 1
-        
+                if fn.get(ann["category_id"]) is None:
+                    fn[ann["category_id"]] = 0
+                fn[ann["category_id"]] += 1
+
         for ann_id, ann in self.cocoDt.anns.items():
-            if ann.get('gt_id') is None:
-                if fp.get(ann['category_id']) is None:
-                    fp[ann['category_id']] = 0 
-                fp[ann['category_id']] += 1
+            if ann.get("gt_id") is None:
+                if fp.get(ann["category_id"]) is None:
+                    fp[ann["category_id"]] = 0
+                fp[ann["category_id"]] += 1
 
         # classes fp fn
         cm = self._compute_confusion_matrix(y_true, y_pred, fp=fp, fn=fn)
         return cm
 
-    def display_matrix(self, in_percent=False, conf_matrix=None, figsize=(10, 10), fontsize=16):
+    def display_matrix(self, in_percent=False, conf_matrix=None):
         if conf_matrix is None:
             conf_matrix = self.compute_confusion_matrix()
 
-        names = [category['name']
-                 for category_id, category in self.cocoGt.cats.items()]
-        names += ['fp', 'fn']
+        labels = [category["name"] for _, category in self.cocoGt.cats.items()]
+        labels += ["fp", "fn"]
 
         if in_percent:
-            sum_by_col = conf_matrix.sum(axis=1)
+            conf_matrix /= conf_matrix.sum(axis=1).reshape(-1, 1)
+            conf_matrix *= 100
 
-        fig, ax = plt.subplots(figsize=figsize)
-        ax.matshow(conf_matrix, cmap='Blues', alpha=0.3)
-        for i in range(conf_matrix.shape[0]):
-            for j in range(conf_matrix.shape[1]):
+        hovertemplate = "Real: %{y}<br>" "Predict: %{x}<br>"
 
-                value = conf_matrix[i, j]
+        if in_percent:
+            hovertemplate += "Percent: %{z:.0f}<extra></extra>"
+        else:
+            hovertemplate += "Count: %{z:.0f}<extra></extra>"
 
+        heatmap = go.Heatmap(
+            z=conf_matrix,
+            x=labels,
+            y=labels[:-2],
+            colorscale="Blues",
+            hovertemplate=hovertemplate,
+        )
+
+        annotations = []
+        for j, row in enumerate(conf_matrix):
+            for i, value in enumerate(row):
+                text_value = "{:.0f}".format(value)
                 if in_percent:
-                    value = int(value / sum_by_col[i] * 100)
+                    text_value += "%"
 
-                if value > 0:
-                    ax.text(x=j, y=i, s=value, va='center', ha='center')
+                annotations.append(
+                    {
+                        "x": labels[i],
+                        "y": labels[j],
+                        "font": {"color": "white"},
+                        "text": text_value,
+                        "xref": "x1",
+                        "yref": "y1",
+                        "showarrow": False,
+                    }
+                )
 
-        plt.xlabel('Predictions', fontsize=fontsize)
-        plt.ylabel('Actuals', fontsize=fontsize)
+        layout = {
+            "title": "Confusion Matrix",
+            "xaxis": {"title": "Predicted value"},
+            "yaxis": {"title": "Real value"},
+            "annotations": annotations,
+        }
 
-        plt.xticks(list(range(len(names))), names, rotation=90)
-        plt.yticks(list(range(len(names[:-2]))), names[:-2])
-
-        title = 'Confusion Matrix'
-        if in_percent:
-            title += ' [%]'
-
-        plt.title(title, fontsize=fontsize)
-        plt.show()
+        fig = go.Figure(data=[heatmap], layout=layout)
+        fig.update_traces(showscale=False)
+        fig.update_layout(height=700, width=900)
+        fig.show()

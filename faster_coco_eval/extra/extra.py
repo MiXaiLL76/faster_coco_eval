@@ -1,33 +1,35 @@
-from ..core.coco import COCO
-from ..core.faster_eval_api import COCOeval_faster
+from ..core import COCO, COCOeval_faster
 
 import numpy as np
 import logging
+import copy
 
 logger = logging.getLogger(__name__)
 
-class ExtraEval():
-    def __init__(self,
-                 cocoGt: COCO = None,
-                 cocoDt: COCO = None,
-                 iouType: str = 'bbox',
-                 min_score: float = 0,
-                 iou_tresh: float = 0.0,
-                 recall_count: int = 100,
-                 useCats: bool = False,
-                 ):
+
+class ExtraEval:
+    def __init__(
+        self,
+        cocoGt: COCO = None,
+        cocoDt: COCO = None,
+        iouType: str = "bbox",
+        min_score: float = 0,
+        iou_tresh: float = 0.0,
+        recall_count: int = 100,
+        useCats: bool = False,
+    ):
         self.iouType = iouType
         self.min_score = min_score
         self.iou_tresh = iou_tresh
         self.useCats = useCats
         self.recall_count = recall_count
-        self.cocoGt = cocoGt
-        self.cocoDt = cocoDt
+        self.cocoGt = copy.deepcopy(cocoGt)
+        self.cocoDt = copy.deepcopy(cocoDt)
 
         self.evaluate()
 
     def evaluate(self):
-        cocoEval = COCOeval_faster(self.cocoGt, self.cocoDt, self.iouType)
+        cocoEval = COCOeval_faster(self.cocoGt, self.cocoDt, self.iouType, extra_calc=True)
         cocoEval.params.maxDets = [len(self.cocoGt.anns)]
 
         cocoEval.params.iouThrs = [self.iou_tresh]
@@ -36,10 +38,10 @@ class ExtraEval():
         cocoEval.params.recThrs = self.recThrs
 
         cocoEval.params.useCats = int(self.useCats)  # Выключение labels
-        
+
         self.cocoEval = cocoEval
 
         cocoEval.evaluate()
         cocoEval.accumulate()
-        
+
         self.eval = cocoEval.eval

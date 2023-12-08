@@ -2,9 +2,9 @@
 requires = [
     "setuptools>=42",
     "wheel",
+    "build",
     "numpy",
     "cython",
-    "build>=0.10.0",
     "pybind11==2.11.1",
 ]
-build-backend = 'setuptools.build_meta'
+build-backend = "setuptools.build_meta"

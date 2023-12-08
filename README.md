@@ -48,7 +48,7 @@ cocoGt = COCO(....)
 cocoDt = cocoGt.loadRes(....)
 
 cur = Curves(cocoGt, cocoDt, iou_tresh=0.5, iouType='segm')
-cur.plot_pre_rec(plotly_backend=False)
+cur.plot_pre_rec()
 ````
 
 ## Setup dependencies
@@ -57,6 +57,14 @@ cur.plot_pre_rec(plotly_backend=False)
 - plotly (optional if extra.Curve usage)  
 
 ## history
+
+### v1.4.0
+
+- [x] fix issue <https://github.com/MiXaiLL76/faster_coco_eval/issues/12>
+- [x] Updated pre-rec calculation method
+- [x] Updated required libraries
+- [x] Moved all matplotlib dependencies to plotly
+- [x] Append new examples & mmeval test file
 
 ### v1.3.3
 
@@ -134,11 +142,6 @@ cur.plot_pre_rec(plotly_backend=False)
 - [x] Append unittest
 - [x] Append ROC / AUC curves  
 - [x] Check if it works on windows
-
-### TODOs
-
-- [X] Remove pycocotools dependencies
-- [ ] Remove matplotlib dependencies
 
 ## License
 
