@@ -48,7 +48,7 @@ cocoGt = COCO(....)
 cocoDt = cocoGt.loadRes(....)
 
 cur = Curves(cocoGt, cocoDt, iou_tresh=0.5, iouType='segm')
-cur.plot_pre_rec(plotly_backend=False)
+cur.plot_pre_rec()
 ````
 
 ## Setup dependencies
