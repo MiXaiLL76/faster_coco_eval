@@ -58,6 +58,7 @@ class PreviewResults(ExtraEval):
         display_gt=True,
         data_folder=None,
         categories=None,
+        return_fig: bool = False,
     ):
         polygons = []
 
@@ -166,6 +167,10 @@ class PreviewResults(ExtraEval):
         fig.update_layout(layout)
         fig.update_xaxes(range=[0, image["width"]])
         fig.update_yaxes(range=[image["height"], 0])
+
+        if return_fig:
+            return fig
+
         fig.show()
 
     def display_tp_fp_fn(
@@ -246,7 +251,9 @@ class PreviewResults(ExtraEval):
         cm = self._compute_confusion_matrix(y_true, y_pred, fp=fp, fn=fn)
         return cm
 
-    def display_matrix(self, in_percent=False, conf_matrix=None):
+    def display_matrix(
+        self, in_percent=False, conf_matrix=None, return_fig: bool = False
+    ):
         if conf_matrix is None:
             conf_matrix = self.compute_confusion_matrix()
 
@@ -301,4 +308,8 @@ class PreviewResults(ExtraEval):
         fig = go.Figure(data=[heatmap], layout=layout)
         fig.update_traces(showscale=False)
         fig.update_layout(height=700, width=900)
+
+        if return_fig:
+            return fig
+
         fig.show()
