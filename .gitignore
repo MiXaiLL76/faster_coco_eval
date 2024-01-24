@@ -6,3 +6,4 @@ faster_coco_eval.egg-info
 __pycache__
 examples/comparison/COCO
 examples/comparison/model
+csrc/mask/pycocotools/_mask.c

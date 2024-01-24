@@ -20,10 +20,10 @@ Testing was carried out using the mmdetection framework and the eval_metric.py s
 Visualization of testing **comparison.ipynb** available in directory [examples/comparison](./examples/comparison/comparison.ipynb)
 Tested with yolo3 model (bbox eval) and yoloact model (segm eval)
 
-| Type | COCOeval    | COCOeval_faster | Profit       |
-| ---- | ----------- | --------------- | ------------ |
-| bbox | 18.477 sec. | 7.345 sec.      | 2.5x faster  |
-| segm | 29.819 sec. | 15.840 sec.     | 2x faster    |
+| Type | COCOeval    | COCOeval_faster | Profit      |
+| ---- | ----------- | --------------- | ----------- |
+| bbox | 18.477 sec. | 7.345 sec.      | 2.5x faster |
+| segm | 29.819 sec. | 15.840 sec.     | 2x faster   |
 
 ## Usage
 
@@ -57,6 +57,17 @@ cur.plot_pre_rec()
 - plotly (optional if extra.Curve usage)  
 
 ## history
+
+### v1.4.1
+
+- [x] append Plotly fig return 
+- [x] append preview GT only func. Without eval.
+
+```py
+cocoGt = COCO(...)
+preview = PreviewResults(cocoGt, iouType='segm')
+preview.display_tp_fp_fn(data_folder=..., image_ids=..., display_gt=True)
+```
 
 ### v1.4.0
 

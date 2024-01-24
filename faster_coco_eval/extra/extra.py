@@ -25,11 +25,19 @@ class ExtraEval:
         self.recall_count = recall_count
         self.cocoGt = copy.deepcopy(cocoGt)
         self.cocoDt = copy.deepcopy(cocoDt)
+        self.eval = None
 
-        self.evaluate()
+        assert self.cocoGt is not None, "cocoGt is empty"
+
+        if (self.cocoGt is not None) and (self.cocoDt is not None):
+            self.evaluate()
 
     def evaluate(self):
-        cocoEval = COCOeval_faster(self.cocoGt, self.cocoDt, self.iouType, extra_calc=True)
+        assert self.cocoDt is not None, "cocoDt is empty"
+
+        cocoEval = COCOeval_faster(
+            self.cocoGt, self.cocoDt, self.iouType, extra_calc=True
+        )
         cocoEval.params.maxDets = [len(self.cocoGt.anns)]
 
         cocoEval.params.iouThrs = [self.iou_tresh]

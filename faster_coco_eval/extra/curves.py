@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 class Curves(ExtraEval):
     def build_curve(self, label):
+        assert self.eval is not None, "Run first self.evaluate()"
+
         curve = []
 
         if self.useCats:
@@ -41,7 +43,9 @@ class Curves(ExtraEval):
 
         return curve
 
-    def plot_pre_rec(self, curves=None, label="category_id"):
+    def plot_pre_rec(
+        self, curves=None, label: str = "category_id", return_fig: bool = False
+    ):
         if curves is None:
             curves = self.build_curve(label)
 
@@ -85,4 +89,8 @@ class Curves(ExtraEval):
         }
 
         fig.update_layout(layout)
+
+        if return_fig:
+            return fig
+
         fig.show()

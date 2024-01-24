@@ -18,17 +18,18 @@ class COCO(_COCO):
             Defaults to None.
     """
 
-    def __init__(self,
-                 annotation_file: Optional[Union[str, Path]] = None) -> None:
+    def __init__(self, annotation_file: Optional[Union[str, Path]] = None) -> None:
         super().__init__(annotation_file=annotation_file)
         self.img_ann_map = self.imgToAnns
         self.cat_img_map = self.catToImgs
 
-    def get_ann_ids(self,
-                    img_ids: Union[list, int] = [],
-                    cat_ids: Union[list, int] = [],
-                    area_rng: Union[list, int] = [],
-                    iscrowd: Optional[bool] = None) -> list:
+    def get_ann_ids(
+        self,
+        img_ids: Union[list, int] = [],
+        cat_ids: Union[list, int] = [],
+        area_rng: Union[list, int] = [],
+        iscrowd: Optional[bool] = None,
+    ) -> list:
         """Get annotation ids that satisfy given filter conditions.
 
         Args:
@@ -42,10 +43,12 @@ class COCO(_COCO):
         """
         return self.getAnnIds(img_ids, cat_ids, area_rng, iscrowd)
 
-    def get_cat_ids(self,
-                    cat_names: Union[list, int] = [],
-                    sup_names: Union[list, int] = [],
-                    cat_ids: Union[list, int] = []) -> list:
+    def get_cat_ids(
+        self,
+        cat_names: Union[list, int] = [],
+        sup_names: Union[list, int] = [],
+        cat_ids: Union[list, int] = [],
+    ) -> list:
         """Get category ids that satisfy given filter conditions.
 
         Args:
@@ -59,9 +62,9 @@ class COCO(_COCO):
         """
         return self.getCatIds(cat_names, sup_names, cat_ids)
 
-    def get_img_ids(self,
-                    img_ids: Union[list, int] = [],
-                    cat_ids: Union[list, int] = []) -> list:
+    def get_img_ids(
+        self, img_ids: Union[list, int] = [], cat_ids: Union[list, int] = []
+    ) -> list:
         """Get image ids that satisfy given filter conditions.
 
         Args:
@@ -113,48 +116,47 @@ class COCOPanoptic(COCO):
     def createIndex(self) -> None:
         """Create index."""
         # create index
-        print('creating index...')
+        print("creating index...")
         # anns stores 'segment_id -> annotation'
         anns: Dict[int, list] = {}
         cats: Dict[int, dict] = {}
         imgs: Dict[int, dict] = {}
         img_to_anns, cat_to_imgs = defaultdict(list), defaultdict(list)
-        if 'annotations' in self.dataset:
-            for ann in self.dataset['annotations']:
-                for seg_ann in ann['segments_info']:
+        if "annotations" in self.dataset:
+            for ann in self.dataset["annotations"]:
+                for seg_ann in ann["segments_info"]:
                     # to match with instance.json
-                    seg_ann['image_id'] = ann['image_id']
-                    img_to_anns[ann['image_id']].append(seg_ann)
+                    seg_ann["image_id"] = ann["image_id"]
+                    img_to_anns[ann["image_id"]].append(seg_ann)
                     # segment_id is not unique in coco dataset orz...
                     # annotations from different images but
                     # may have same segment_id
-                    if seg_ann['id'] in anns.keys():
-                        anns[seg_ann['id']].append(seg_ann)
+                    if seg_ann["id"] in anns.keys():
+                        anns[seg_ann["id"]].append(seg_ann)
                     else:
-                        anns[seg_ann['id']] = [seg_ann]
+                        anns[seg_ann["id"]] = [seg_ann]
 
             # filter out annotations from other images
             img_to_anns_ = defaultdict(list)
             for k, v in img_to_anns.items():
-                img_to_anns_[k] = [x for x in v if x['image_id'] == k]
+                img_to_anns_[k] = [x for x in v if x["image_id"] == k]
             img_to_anns = img_to_anns_
 
-        if 'images' in self.dataset:
-            for img_info in self.dataset['images']:
-                img_info['segm_file'] = img_info['file_name'].replace(
-                    'jpg', 'png')
-                imgs[img_info['id']] = img_info
+        if "images" in self.dataset:
+            for img_info in self.dataset["images"]:
+                img_info["segm_file"] = img_info["file_name"].replace("jpg", "png")
+                imgs[img_info["id"]] = img_info
 
-        if 'categories' in self.dataset:
-            for cat in self.dataset['categories']:
-                cats[cat['id']] = cat
+        if "categories" in self.dataset:
+            for cat in self.dataset["categories"]:
+                cats[cat["id"]] = cat
 
-        if 'annotations' in self.dataset and 'categories' in self.dataset:
-            for ann in self.dataset['annotations']:
-                for seg_ann in ann['segments_info']:
-                    cat_to_imgs[seg_ann['category_id']].append(ann['image_id'])
+        if "annotations" in self.dataset and "categories" in self.dataset:
+            for ann in self.dataset["annotations"]:
+                for seg_ann in ann["segments_info"]:
+                    cat_to_imgs[seg_ann["category_id"]].append(ann["image_id"])
 
-        print('index created!')
+        print("index created!")
 
         self.anns = anns
         self.imgToAnns = img_to_anns

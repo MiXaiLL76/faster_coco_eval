@@ -58,23 +58,29 @@ class PreviewResults(ExtraEval):
         display_gt=True,
         data_folder=None,
         categories=None,
+        return_fig: bool = False,
     ):
         polygons = []
 
         image = self.cocoGt.imgs[image_id]
         gt_anns = {ann["id"]: ann for ann in self.cocoGt.imgToAnns[image_id]}
-        dt_anns = {ann["id"]: ann for ann in self.cocoDt.imgToAnns[image_id]}
 
-        if data_folder is not None:
-            image_fn = osp.join(data_folder, image["file_name"])
+        if self.cocoDt is not None:
+            dt_anns = {ann["id"]: ann for ann in self.cocoDt.imgToAnns[image_id]}
         else:
-            image_fn = image["file_name"]
+            dt_anns = {}
 
-        if osp.exists(image_fn):
-            im = Image.open(image_fn).convert("RGB")
+        image_fn = image["file_name"]
+        if data_folder is not None:
+            image_load_path = osp.join(data_folder, image["file_name"])
+        else:
+            image_load_path = image["file_name"]
+
+        if osp.exists(image_load_path):
+            im = Image.open(image_load_path).convert("RGB")
         else:
             logger.warning(
-                "[{}] not found!\nLoading default empty image".format(image_fn)
+                "[{}] not found!\nLoading default empty image".format(image_load_path)
             )
 
             im = Image.new("RGB", (image["width"], image["height"]))
@@ -166,6 +172,10 @@ class PreviewResults(ExtraEval):
         fig.update_layout(layout)
         fig.update_xaxes(range=[0, image["width"]])
         fig.update_yaxes(range=[image["height"], 0])
+
+        if return_fig:
+            return fig
+
         fig.show()
 
     def display_tp_fp_fn(
@@ -211,6 +221,8 @@ class PreviewResults(ExtraEval):
         return cm
 
     def compute_confusion_matrix(self):
+        assert self.eval is not None, "Run first self.evaluate()"
+
         if self.useCats:
             logger.warning(
                 "The calculation may not be accurate. No intersection of classes. useCats={}".format(
@@ -246,7 +258,9 @@ class PreviewResults(ExtraEval):
         cm = self._compute_confusion_matrix(y_true, y_pred, fp=fp, fn=fn)
         return cm
 
-    def display_matrix(self, in_percent=False, conf_matrix=None):
+    def display_matrix(
+        self, in_percent=False, conf_matrix=None, return_fig: bool = False
+    ):
         if conf_matrix is None:
             conf_matrix = self.compute_confusion_matrix()
 
@@ -301,4 +315,8 @@ class PreviewResults(ExtraEval):
         fig = go.Figure(data=[heatmap], layout=layout)
         fig.update_traces(showscale=False)
         fig.update_layout(height=700, width=900)
+
+        if return_fig:
+            return fig
+
         fig.show()
