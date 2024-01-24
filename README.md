@@ -61,6 +61,13 @@ cur.plot_pre_rec()
 ### v1.4.1
 
 - [x] append Plotly fig return 
+- [x] append preview GT only func. Without eval.
+
+```py
+cocoGt = COCO(...)
+preview = PreviewResults(cocoGt, iouType='segm')
+preview.display_tp_fp_fn(data_folder=..., image_ids=..., display_gt=True)
+```
 
 ### v1.4.0
 
