@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 class Curves(ExtraEval):
     def build_curve(self, label):
+        assert self.eval is not None, "Run first self.evaluate()"
+
         curve = []
 
         if self.useCats:
