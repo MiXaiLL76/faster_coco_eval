@@ -11,7 +11,7 @@ for _dir in ${_dirs[@]}; do
   
   python_files=$(find ${_dir} -name "*.py")
   for _file in ${python_files[@]}; do
-    autopep8 --in-place ${_file}
+    black ${_file}
   done
 done
 

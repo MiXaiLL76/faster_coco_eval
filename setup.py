@@ -8,21 +8,21 @@ import numpy as np
 
 
 def readme():
-    with open('README.md', encoding='utf-8') as f:
+    with open("README.md", encoding="utf-8") as f:
         content = f.read()
     return content
 
 
-version_file = 'faster_coco_eval/version.py'
+version_file = "faster_coco_eval/version.py"
 
 
 def get_version():
     with open(version_file) as f:
-        exec(compile(f.read(), version_file, 'exec'))
-    return locals()['__version__'], locals()['__author__']
+        exec(compile(f.read(), version_file, "exec"))
+    return locals()["__version__"], locals()["__author__"]
 
 
-def parse_requirements(fname='requirements/runtime.txt', with_version=True):
+def parse_requirements(fname="requirements/runtime.txt", with_version=True):
     """Parse the package dependencies listed in a requirements file but strips
     specific versioning information.
     Args:
@@ -36,58 +36,58 @@ def parse_requirements(fname='requirements/runtime.txt', with_version=True):
     import re
     import sys
     from os.path import exists
+
     require_fpath = fname
 
     def parse_line(line):
         """Parse information from a line in a requirements text file."""
-        if line.startswith('-r '):
+        if line.startswith("-r "):
             # Allow specifying requirements in other files
-            target = line.split(' ')[1]
+            target = line.split(" ")[1]
             for info in parse_require_file(target):
                 yield info
         else:
-            info = {'line': line}
-            if line.startswith('-e '):
-                info['package'] = line.split('#egg=')[1]
+            info = {"line": line}
+            if line.startswith("-e "):
+                info["package"] = line.split("#egg=")[1]
             else:
                 # Remove versioning from the package
-                pat = '(' + '|'.join(['>=', '==', '>']) + ')'
+                pat = "(" + "|".join([">=", "==", ">"]) + ")"
                 parts = re.split(pat, line, maxsplit=1)
                 parts = [p.strip() for p in parts]
 
-                info['package'] = parts[0]
+                info["package"] = parts[0]
                 if len(parts) > 1:
                     op, rest = parts[1:]
-                    if ';' in rest:
+                    if ";" in rest:
                         # Handle platform specific dependencies
                         # http://setuptools.readthedocs.io/en/latest/setuptools.html#declaring-platform-specific-dependencies
-                        version, platform_deps = map(str.strip,
-                                                     rest.split(';'))
-                        info['platform_deps'] = platform_deps
+                        version, platform_deps = map(str.strip, rest.split(";"))
+                        info["platform_deps"] = platform_deps
                     else:
                         version = rest  # NOQA
-                    info['version'] = (op, version)
+                    info["version"] = (op, version)
             yield info
 
     def parse_require_file(fpath):
         with open(fpath) as f:
             for line in f.readlines():
                 line = line.strip()
-                if line and not line.startswith('#'):
+                if line and not line.startswith("#"):
                     yield from parse_line(line)
 
     def gen_packages_items():
         if exists(require_fpath):
             for info in parse_require_file(require_fpath):
-                parts = [info['package']]
-                if with_version and 'version' in info:
-                    parts.extend(info['version'])
-                if not sys.version.startswith('3.4'):
+                parts = [info["package"]]
+                if with_version and "version" in info:
+                    parts.extend(info["version"])
+                if not sys.version.startswith("3.4"):
                     # apparently package_deps are broken in 3.4
-                    platform_deps = info.get('platform_deps')
+                    platform_deps = info.get("platform_deps")
                     if platform_deps is not None:
-                        parts.append(';' + platform_deps)
-                item = ''.join(parts)
+                        parts.append(";" + platform_deps)
+                item = "".join(parts)
                 yield item
 
     packages = list(gen_packages_items())
@@ -102,40 +102,38 @@ def get_extensions(version_info):
         "csrc/faster_eval_api/faster_eval_api.cpp",
     ]
     print("Sources: {}".format(sources))
-    
+
     ext_modules += [
         Pybind11Extension(
             name="faster_coco_eval.faster_eval_api_cpp",
             sources=sources,
-            define_macros=[('VERSION_INFO', version_info)],
+            define_macros=[("VERSION_INFO", version_info)],
         )
     ]
 
     sources = [
-        'csrc/mask/common/maskApi.c',
-        'csrc/mask/pycocotools/_mask.pyx',
+        "csrc/mask/common/maskApi.c",
+        "csrc/mask/pycocotools/_mask.pyx",
     ]
-    include_dirs = [
-        np.get_include(),
-        'csrc/mask/common'
-    ]
+    include_dirs = [np.get_include(), "csrc/mask/common"]
 
     print("Sources: {}".format(sources))
     print("Include: {}".format(include_dirs))
 
     ext_modules += [
         Extension(
-            'faster_coco_eval.mask_api_cpp',
+            "faster_coco_eval.mask_api_cpp",
             sources=sources,
             include_dirs=include_dirs,
-            extra_compile_args=[] if platform.system()=='Windows' else
-            [
-                '-Wno-cpp',
-                '-Wno-unused-function',
-                '-std=c99',
-                '-O3',
-                '-Wno-maybe-uninitialized',
-                '-Wno-misleading-indentation',
+            extra_compile_args=[]
+            if platform.system() == "Windows"
+            else [
+                "-Wno-cpp",
+                "-Wno-unused-function",
+                "-std=c99",
+                "-O3",
+                "-Wno-maybe-uninitialized",
+                "-Wno-misleading-indentation",
             ],
             extra_link_args=[],
         )
@@ -159,16 +157,16 @@ setup(
     ext_modules=get_extensions(__version__),
     cmdclass={"build_ext": build_ext},
     classifiers=[
-        'Development Status :: 4 - Beta',
-        'License :: OSI Approved :: Apache Software License',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-        'Topic :: Scientific/Engineering :: Artificial Intelligence',
+        "Development Status :: 4 - Beta",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     python_requires=">=3.7",
-    install_requires=parse_requirements('requirements/runtime.txt'),
+    install_requires=parse_requirements("requirements/runtime.txt"),
 )
