@@ -51,6 +51,18 @@ cur = Curves(cocoGt, cocoDt, iou_tresh=0.5, iouType='segm')
 cur.plot_pre_rec()
 ````
 
+# Usage pnly GT preview
+
+```py
+cocoGt = COCO(....)
+    preview = PreviewResults(cocoGt, iouType="segm")
+    preview.display_tp_fp_fn(
+        data_folder=.....,
+        image_ids=list(cocoGt.imgs.keys())[:2],
+        display_gt=True,
+    )
+```
+
 ## Setup dependencies
 
 - numpy
