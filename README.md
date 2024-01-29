@@ -51,7 +51,7 @@ cur = Curves(cocoGt, cocoDt, iou_tresh=0.5, iouType='segm')
 cur.plot_pre_rec()
 ````
 
-# Usage pnly GT preview
+## Usage pnly GT preview
 
 ```py
 cocoGt = COCO(....)
