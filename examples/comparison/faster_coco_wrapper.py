@@ -1,10 +1,11 @@
 # Copyright (c) MiXaill76.
 from collections import defaultdict
 from pathlib import Path
+from typing import Dict, Optional, Sequence, Union
+
+import faster_coco_eval.core.mask as _mask_util
 from faster_coco_eval import COCO as _COCO
 from faster_coco_eval import COCOeval_faster as _COCOeval
-import faster_coco_eval.core.mask as _mask_util
-from typing import Dict, Optional, Sequence, Union
 
 
 class COCO(_COCO):
@@ -18,7 +19,9 @@ class COCO(_COCO):
             Defaults to None.
     """
 
-    def __init__(self, annotation_file: Optional[Union[str, Path]] = None) -> None:
+    def __init__(
+        self, annotation_file: Optional[Union[str, Path]] = None
+    ) -> None:
         super().__init__(annotation_file=annotation_file)
         self.img_ann_map = self.imgToAnns
         self.cat_img_map = self.catToImgs
@@ -144,7 +147,9 @@ class COCOPanoptic(COCO):
 
         if "images" in self.dataset:
             for img_info in self.dataset["images"]:
-                img_info["segm_file"] = img_info["file_name"].replace("jpg", "png")
+                img_info["segm_file"] = img_info["file_name"].replace(
+                    "jpg", "png"
+                )
                 imgs[img_info["id"]] = img_info
 
         if "categories" in self.dataset:

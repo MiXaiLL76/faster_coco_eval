@@ -1,10 +1,12 @@
 #!/usr/bin/python3
 
-import platform
 import setuptools
-from setuptools import setup, Extension
-from pybind11.setup_helpers import Pybind11Extension, build_ext
+from setuptools import Extension, setup
+
+import glob
 import numpy as np
+import platform
+from pybind11.setup_helpers import Pybind11Extension, build_ext
 
 
 def readme():
@@ -161,12 +163,14 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.6",
+    data_files=glob.glob("requirements/*"),
     install_requires=parse_requirements("requirements/runtime.txt"),
 )

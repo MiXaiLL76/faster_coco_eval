@@ -9,14 +9,12 @@ import tempfile
 import warnings
 from collections import OrderedDict
 from json import dump
+from mmeval.fileio import get_local_path, load
+from mmeval.metrics import COCODetection
+from mmeval.utils import is_list_of
 from rich.console import Console
 from rich.table import Table
-from typing import Dict, List, Optional, Sequence, Union
-
-from mmeval.core.base_metric import BaseMetric
-from mmeval.fileio import get_local_path, load
-from mmeval.utils import is_list_of
-from mmeval.metrics import COCODetection
+from typing import List, Optional, Sequence, Union
 
 try:
     from faster_coco_wrapper import COCO, COCOeval
@@ -57,7 +55,8 @@ class FasterCOCODetection(COCODetection):
         for metric in self.metrics:
             if metric not in allowed_metrics:
                 raise KeyError(
-                    "metric should be one of 'bbox' and 'segm'" f"but got {metric}."
+                    "metric should be one of 'bbox' and 'segm'"
+                    f"but got {metric}."
                 )
 
         # do class wise evaluation, default False
@@ -69,14 +68,19 @@ class FasterCOCODetection(COCODetection):
         # iou_thrs used to compute recall or precision.
         if iou_thrs is None:
             iou_thrs = np.linspace(
-                0.5, 0.95, int(np.round((0.95 - 0.5) / 0.05)) + 1, endpoint=True
+                0.5,
+                0.95,
+                int(np.round((0.95 - 0.5) / 0.05)) + 1,
+                endpoint=True,
             )
         elif isinstance(iou_thrs, float):
             iou_thrs = np.array([iou_thrs])
         elif is_list_of(iou_thrs, float):
             iou_thrs = np.array(iou_thrs)
         else:
-            raise TypeError("`iou_thrs` should be None, float, or a list of float")
+            raise TypeError(
+                "`iou_thrs` should be None, float, or a list of float"
+            )
 
         self.iou_thrs = iou_thrs
         self.metric_items = metric_items
@@ -106,7 +110,9 @@ class FasterCOCODetection(COCODetection):
         self.cat_ids: list = []
         self.img_ids: list = []
 
-    def gt_to_coco_json(self, gt_dicts: Sequence[dict], outfile_prefix: str) -> str:
+    def gt_to_coco_json(
+        self, gt_dicts: Sequence[dict], outfile_prefix: str
+    ) -> str:
         """Convert ground truth to coco format json file.
 
         Args:
@@ -164,7 +170,8 @@ class FasterCOCODetection(COCODetection):
                 ignore_flag = ignore_flags[i]
                 mask = gt_masks[i]
                 annotation = dict(
-                    id=len(annotations) + 1,  # coco api requires id starts with 1
+                    id=len(annotations)
+                    + 1,  # coco api requires id starts with 1
                     image_id=img_id,
                     bbox=coco_bbox,
                     iscrowd=int(ignore_flag),
@@ -177,7 +184,9 @@ class FasterCOCODetection(COCODetection):
                         # small/medium/large AP results.
                         area = mask_util.area(mask)
                         annotation["area"] = float(area)
-                    if isinstance(mask, dict) and isinstance(mask["counts"], bytes):
+                    if isinstance(mask, dict) and isinstance(
+                        mask["counts"], bytes
+                    ):
                         mask["counts"] = mask["counts"].decode()
                     annotation["segmentation"] = mask
                 annotations.append(annotation)
@@ -240,7 +249,9 @@ class FasterCOCODetection(COCODetection):
         eval_results: OrderedDict = OrderedDict()
         table_results: OrderedDict = OrderedDict()
         if self.format_only:
-            self.logger.info(f"Results are saved in {osp.dirname(outfile_prefix)}")
+            self.logger.info(
+                f"Results are saved in {osp.dirname(outfile_prefix)}"
+            )
             return eval_results
 
         for metric in self.metrics:
@@ -297,7 +308,9 @@ class FasterCOCODetection(COCODetection):
             if metric_items is not None:
                 for metric_item in metric_items:
                     if metric_item not in coco_metric_names:
-                        raise KeyError(f'metric item "{metric_item}" is not supported')
+                        raise KeyError(
+                            f'metric item "{metric_item}" is not supported'
+                        )
 
             coco_eval.evaluate()
             coco_eval.accumulate()
@@ -307,7 +320,14 @@ class FasterCOCODetection(COCODetection):
                 coco_eval.summarize()
             self.logger.info("\n" + redirect_string.getvalue())
             if metric_items is None:
-                metric_items = ["mAP", "mAP_50", "mAP_75", "mAP_s", "mAP_m", "mAP_l"]
+                metric_items = [
+                    "mAP",
+                    "mAP_50",
+                    "mAP_75",
+                    "mAP_s",
+                    "mAP_m",
+                    "mAP_l",
+                ]
 
             results_list = []
             for metric_item in metric_items:
@@ -340,7 +360,9 @@ class FasterCOCODetection(COCODetection):
                     )
                     eval_results[f'{metric}_{nm["name"]}_precision'] = ap
 
-                table_results[f"{metric}_classwise_result"] = results_per_category
+                table_results[
+                    f"{metric}_classwise_result"
+                ] = results_per_category
         if tmp_dir is not None:
             tmp_dir.cleanup()
         # if the testing results of the whole dataset is empty,
@@ -398,7 +420,9 @@ class FasterCOCODetection(COCODetection):
             self.logger.info("\n" + capture.get())
 
             if self.classwise and metric != "proposal":
-                self.logger.info(f"Evaluating {metric} metric of each category...")
+                self.logger.info(
+                    f"Evaluating {metric} metric of each category..."
+                )
                 classwise_table_title = f" {metric} Classwise Results (%)"
                 classwise_result = table_results[f"{metric}_classwise_result"]
 
@@ -406,7 +430,10 @@ class FasterCOCODetection(COCODetection):
                 results_flatten = list(itertools.chain(*classwise_result))
                 headers = ["category", f"{metric}_AP"] * (num_columns // 2)
                 results_2d = itertools.zip_longest(
-                    *[results_flatten[i::num_columns] for i in range(num_columns)]
+                    *[
+                        results_flatten[i::num_columns]
+                        for i in range(num_columns)
+                    ]
                 )
 
                 table = Table(title=classwise_table_title)

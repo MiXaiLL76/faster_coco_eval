@@ -1,12 +1,11 @@
 import argparse
 import numpy as np
-import pycocotools.mask as cocomask
-import tqdm
 import time
-from mmeval.metrics import COCODetection  # type: ignore
+import tqdm
 from faster_coco_detection import FasterCOCODetection
-from mmdet.datasets import CocoDataset
 from mmdet.apis import DetInferencer
+from mmdet.datasets import CocoDataset
+from mmeval.metrics import COCODetection  # type: ignore
 
 
 def do_mmeval_evaluate(config_file: str, checkpoint: str):
@@ -30,7 +29,9 @@ def do_mmeval_evaluate(config_file: str, checkpoint: str):
         proposal_nums=[1, 10, 100],
     )
 
-    faster_coco_metric.dataset_meta = {"CLASSES": coco_dataset.METAINFO["classes"]}
+    faster_coco_metric.dataset_meta = {
+        "CLASSES": coco_dataset.METAINFO["classes"]
+    }
     coco_metric.dataset_meta = {"CLASSES": coco_dataset.METAINFO["classes"]}
 
     for item in tqdm.tqdm(coco_dataset):
@@ -62,7 +63,10 @@ if __name__ == "__main__":
         "--load", type=str, help="load a model for evaluation.", required=True
     )
     parser.add_argument(
-        "--config", type=str, help="load a config for evaluation.", required=True
+        "--config",
+        type=str,
+        help="load a config for evaluation.",
+        required=True,
     )
     args = parser.parse_args()
 

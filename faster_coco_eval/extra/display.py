@@ -1,11 +1,11 @@
-from .extra import ExtraEval
-from PIL import Image
-import numpy as np
 import logging
+import numpy as np
 import os.path as osp
-
 import plotly.express as px
 import plotly.graph_objs as go
+from PIL import Image
+
+from .extra import ExtraEval
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,9 @@ class PreviewResults(ExtraEval):
         gt_anns = {ann["id"]: ann for ann in self.cocoGt.imgToAnns[image_id]}
 
         if self.cocoDt is not None:
-            dt_anns = {ann["id"]: ann for ann in self.cocoDt.imgToAnns[image_id]}
+            dt_anns = {
+                ann["id"]: ann for ann in self.cocoDt.imgToAnns[image_id]
+            }
         else:
             dt_anns = {}
 
@@ -80,13 +82,16 @@ class PreviewResults(ExtraEval):
             im = Image.open(image_load_path).convert("RGB")
         else:
             logger.warning(
-                "[{}] not found!\nLoading default empty image".format(image_load_path)
+                "[{}] not found!\nLoading default empty image".format(
+                    image_load_path
+                )
             )
 
             im = Image.new("RGB", (image["width"], image["height"]))
 
         categories_labels = {
-            category["id"]: category["name"] for _, category in self.cocoGt.cats.items()
+            category["id"]: category["name"]
+            for _, category in self.cocoGt.cats.items()
         }
 
         if len(gt_anns) > 0:
@@ -98,7 +103,8 @@ class PreviewResults(ExtraEval):
                                 ann,
                                 color=self.FN_COLOR,
                                 text="<b>FN</b><br>id={}<br>category={}".format(
-                                    ann["id"], categories_labels[ann["category_id"]]
+                                    ann["id"],
+                                    categories_labels[ann["category_id"]],
                                 ),
                                 legendgroup="fn",
                             )
@@ -109,7 +115,8 @@ class PreviewResults(ExtraEval):
                                 ann,
                                 color=self.GT_COLOR,
                                 text="<b>GT</b><br>id={}<br>category={}".format(
-                                    ann["id"], categories_labels[ann["category_id"]]
+                                    ann["id"],
+                                    categories_labels[ann["category_id"]],
                                 ),
                                 legendgroup="gt",
                             )
@@ -206,7 +213,8 @@ class PreviewResults(ExtraEval):
         """
         categories_real_ids = list(self.cocoGt.cats)
         categories_enum_ids = {
-            category_id: _i for _i, category_id in enumerate(categories_real_ids)
+            category_id: _i
+            for _i, category_id in enumerate(categories_real_ids)
         }
         K = len(categories_enum_ids)
 

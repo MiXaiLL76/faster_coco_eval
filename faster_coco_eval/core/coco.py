@@ -44,16 +44,16 @@ __version__ = "2.0"
 # Code written by Piotr Dollar and Tsung-Yi Lin, 2014.
 # Licensed under the Simplified BSD License [see bsd.txt]
 
-import json
-import time
-import numpy as np
 import copy
 import itertools
-from . import mask as maskUtils
-from collections import defaultdict
-import warnings
-
+import json
 import logging
+import numpy as np
+import time
+import warnings
+from collections import defaultdict
+
+from . import mask as maskUtils
 
 logger = logging.getLogger(__name__)
 
@@ -71,11 +71,16 @@ class COCO:
         :return:
         """
         # load dataset
-        self.dataset, self.anns, self.cats, self.imgs = dict(), dict(), dict(), dict()
+        self.dataset, self.anns, self.cats, self.imgs = (
+            dict(),
+            dict(),
+            dict(),
+            dict(),
+        )
         self.imgToAnns, self.catToImgs = defaultdict(list), defaultdict(list)
         self.score_tresh: float = 0.0
 
-        if not annotation_file == None:
+        if annotation_file is not None:
             logger.debug("loading annotations into memory...")
             tic = time.time()
             if type(annotation_file) is str:
@@ -87,8 +92,10 @@ class COCO:
                 self.dataset = None
 
             assert (
-                type(self.dataset) == dict
-            ), "annotation file format {} not supported".format(type(self.dataset))
+                type(self.dataset) is dict
+            ), "annotation file format {} not supported".format(
+                type(self.dataset)
+            )
             logger.debug("Done (t={:0.2f}s)".format(time.time() - tic))
             self.createIndex()
 
@@ -153,7 +160,9 @@ class COCO:
         else:
             if not len(imgIds) == 0:
                 lists = [
-                    self.imgToAnns[imgId] for imgId in imgIds if imgId in self.imgToAnns
+                    self.imgToAnns[imgId]
+                    for imgId in imgIds
+                    if imgId in self.imgToAnns
                 ]
                 anns = list(itertools.chain.from_iterable(lists))
             else:
@@ -172,7 +181,7 @@ class COCO:
                     if ann["area"] > areaRng[0] and ann["area"] < areaRng[1]
                 ]
             )
-        if not iscrowd == None:
+        if iscrowd is not None:
             ids = [ann["id"] for ann in anns if ann["iscrowd"] == iscrowd]
         else:
             ids = [ann["id"] for ann in anns]
@@ -241,7 +250,7 @@ class COCO:
         """
         if _isArrayLike(ids):
             return [self.anns[id] for id in ids]
-        elif type(ids) == int:
+        elif type(ids) is int:
             return [self.anns[ids]]
 
     def loadCats(self, ids=[]):
@@ -252,7 +261,7 @@ class COCO:
         """
         if _isArrayLike(ids):
             return [self.cats[id] for id in ids]
-        elif type(ids) == int:
+        elif type(ids) is int:
             return [self.cats[ids]]
 
     def loadImgs(self, ids=[]):
@@ -263,7 +272,7 @@ class COCO:
         """
         if _isArrayLike(ids):
             return [self.imgs[id] for id in ids]
-        elif type(ids) == int:
+        elif type(ids) is int:
             return [self.imgs[ids]]
 
     def loadRes(self, resFile, min_score=0):
@@ -278,13 +287,13 @@ class COCO:
 
         logger.debug("Loading and preparing results...")
         tic = time.time()
-        if type(resFile) == str:
+        if type(resFile) is str:
             anns = json.load(open(resFile))
-        elif type(resFile) == np.ndarray:
+        elif type(resFile) is np.ndarray:
             anns = self.loadNumpyAnnotations(resFile)
         else:
             anns = resFile
-        assert type(anns) == list, "results in not an array of objects"
+        assert type(anns) is list, "results in not an array of objects"
 
         anns = [ann for ann in anns if ann.get("score", 1) >= self.score_tresh]
 
@@ -302,26 +311,32 @@ class COCO:
             for id, ann in enumerate(anns):
                 ann["id"] = id + 1
         elif "bbox" in anns[0] and not anns[0]["bbox"] == []:
-            res.dataset["categories"] = copy.deepcopy(self.dataset["categories"])
+            res.dataset["categories"] = copy.deepcopy(
+                self.dataset["categories"]
+            )
             for id, ann in enumerate(anns):
                 bb = ann["bbox"]
                 x1, x2, y1, y2 = [bb[0], bb[0] + bb[2], bb[1], bb[1] + bb[3]]
-                if not "segmentation" in ann:
+                if "segmentation" not in ann:
                     ann["segmentation"] = [[x1, y1, x1, y2, x2, y2, x2, y1]]
                 ann["area"] = bb[2] * bb[3]
                 ann["id"] = id + 1
                 ann["iscrowd"] = 0
         elif "segmentation" in anns[0]:
-            res.dataset["categories"] = copy.deepcopy(self.dataset["categories"])
+            res.dataset["categories"] = copy.deepcopy(
+                self.dataset["categories"]
+            )
             for id, ann in enumerate(anns):
                 # now only support compressed RLE format as segmentation results
                 ann["area"] = maskUtils.area(ann["segmentation"])
-                if not "bbox" in ann:
+                if "bbox" not in ann:
                     ann["bbox"] = maskUtils.toBbox(ann["segmentation"])
                 ann["id"] = id + 1
                 ann["iscrowd"] = 0
         elif "keypoints" in anns[0]:
-            res.dataset["categories"] = copy.deepcopy(self.dataset["categories"])
+            res.dataset["categories"] = copy.deepcopy(
+                self.dataset["categories"]
+            )
             for id, ann in enumerate(anns):
                 s = ann["keypoints"]
                 x = s[0::3]
@@ -352,7 +367,7 @@ class COCO:
         :return: annotations (python nested list)
         """
         logger.debug("Converting ndarray to lists...")
-        assert type(data) == np.ndarray
+        assert type(data) is np.ndarray
         logger.debug(data.shape)
         assert data.shape[1] == 7
         N = data.shape[0]
@@ -378,12 +393,12 @@ class COCO:
         t = self.imgs[ann["image_id"]]
         h, w = t["height"], t["width"]
         segm = ann["segmentation"]
-        if type(segm) == list:
+        if type(segm) is list:
             # polygon -- a single object might consist of multiple parts
             # we merge all parts into one mask rle code
             rles = maskUtils.frPyObjects(segm, h, w)
             rle = maskUtils.merge(rles)
-        elif type(segm["counts"]) == list:
+        elif type(segm["counts"]) is list:
             # uncompressed RLE
             rle = maskUtils.frPyObjects(segm, h, w)
         else:

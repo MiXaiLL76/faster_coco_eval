@@ -1,10 +1,8 @@
+import logging
+import plotly.graph_objects as go
+
 from ..core import COCOeval_faster
 from .extra import ExtraEval
-
-import logging
-
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +23,14 @@ class Curves(ExtraEval):
             if len(cat_ids) == 1:
                 _label = ""
 
-            precision_list = self.eval["precision"][:, :, category_id, :, :].ravel()
+            precision_list = self.eval["precision"][
+                :, :, category_id, :, :
+            ].ravel()
             recall_list = self.recThrs
             scores = self.eval["scores"][:, :, category_id, :, :].ravel()
-            auc = round(COCOeval_faster.calc_auc(recall_list, precision_list), 4)
+            auc = round(
+                COCOeval_faster.calc_auc(recall_list, precision_list), 4
+            )
 
             curve.append(
                 dict(

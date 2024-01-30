@@ -12,5 +12,11 @@ docker build -f ./docker/Dockerfile \
 
 docker_name="faster_coco_eval_${PYTHON3_VERSION//-/_}_${MAKE_CONFIG}"
 
-docker run --name ${docker_name} -v $(pwd):/app/src faster_coco_eval:${PYTHON3_VERSION}_${MAKE_CONFIG}
-docker rm ${docker_name} 
+exited=$(docker ps -a -q -f status=exited)
+if [ -n "$exited" ]; then
+    docker rm $exited
+fi
+
+docker run --name ${docker_name} -v $(pwd):/app/src "faster_coco_eval:${PYTHON3_VERSION}_${MAKE_CONFIG}"
+
+docker rm ${docker_name}

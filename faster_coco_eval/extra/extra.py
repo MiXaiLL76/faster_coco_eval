@@ -1,8 +1,8 @@
-from ..core import COCO, COCOeval_faster
-
-import numpy as np
-import logging
 import copy
+import logging
+import numpy as np
+
+from ..core import COCO, COCOeval_faster
 
 logger = logging.getLogger(__name__)
 
