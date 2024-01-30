@@ -1,5 +1,4 @@
 # distutils: language = c
-# cython: language_level=2
 
 #**************************************************************************
 # Microsoft COCO Toolbox.      version 2.0
@@ -11,13 +10,15 @@
 __author__ = 'tsungyi'
 
 import sys
+
 PYTHON_VERSION = sys.version_info[0]
 
 # import both Python-level and C-level symbols of Numpy
 # the API uses Numpy to interface C and Python
 import numpy as np
+
 cimport numpy as np
-from libc.stdlib cimport malloc, free
+from libc.stdlib cimport free, malloc
 
 # intialized Numpy. must do.
 np.import_array()
@@ -40,7 +41,7 @@ cdef extern from "maskApi.h":
         uint* cnts,
     void rlesInit( RLE **R, siz n )
     void rleEncode( RLE *R, const byte *M, siz h, siz w, siz n )
-    void rleDecode( const RLE *R, byte *mask, siz n )
+    byte rleDecode( const RLE *R, byte *mask, siz n )
     void rleMerge( const RLE *R, RLE *M, siz n, int intersect )
     void rleArea( const RLE *R, siz n, uint *a )
     void rleIou( RLE *dt, RLE *gt, siz m, siz n, byte *iscrowd, double *o )
@@ -146,7 +147,8 @@ def decode(rleObjs):
     cdef RLEs Rs = _frString(rleObjs)
     h, w, n = Rs._R[0].h, Rs._R[0].w, Rs._n
     masks = Masks(h, w, n)
-    rleDecode(<RLE*>Rs._R, masks._mask, n);
+    if rleDecode(<RLE*>Rs._R, masks._mask, n) != 1:
+        raise ValueError("Invalid RLE mask representation")
     return np.array(masks)
 
 def merge(rleObjs, intersect=0):
@@ -210,11 +212,13 @@ def iou( dt, gt, pyiscrowd ):
     # convert iscrowd to numpy array
     cdef np.ndarray[np.uint8_t, ndim=1] iscrowd = np.array(pyiscrowd, dtype=np.uint8)
     # simple type checking
-    cdef siz m, n
+    cdef siz m, n, crowd_length
     dt = _preproc(dt)
     gt = _preproc(gt)
     m = _len(dt)
     n = _len(gt)
+    crowd_length = len(pyiscrowd)
+    assert crowd_length == n, "iou(iscrowd=) must have the same length as gt"
     if m == 0 or n == 0:
         return []
     if not type(dt) == type(gt):
