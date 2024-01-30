@@ -6,9 +6,9 @@ import logging
 import numpy as np
 import time
 
-from .cocoeval import COCOeval
-from . import mask as maskUtils
 import faster_coco_eval.faster_eval_api_cpp as _C
+from . import mask as maskUtils
+from .cocoeval import COCOeval
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,10 @@ class COCOeval_faster(COCOeval):
 
         # Convert GT annotations, detections, and IOUs to a format that's fast to access in C++
         ground_truth_instances = [
-            [convert_instances_to_cpp(self._gts[imgId, catId]) for catId in p.catIds]
+            [
+                convert_instances_to_cpp(self._gts[imgId, catId])
+                for catId in p.catIds
+            ]
             for imgId in p.imgIds
         ]
         detected_instances = [
@@ -87,7 +90,9 @@ class COCOeval_faster(COCOeval):
             ]
             for imgId in p.imgIds
         ]
-        ious = [[self.ious[imgId, catId] for catId in catIds] for imgId in p.imgIds]
+        ious = [
+            [self.ious[imgId, catId] for catId in catIds] for imgId in p.imgIds
+        ]
 
         if not p.useCats:
             # For each image, flatten per-category lists into a single list
@@ -139,7 +144,9 @@ class COCOeval_faster(COCOeval):
         self.eval["precision"] = np.array(self.eval["precision"]).reshape(
             self.eval["counts"]
         )
-        self.eval["scores"] = np.array(self.eval["scores"]).reshape(self.eval["counts"])
+        self.eval["scores"] = np.array(self.eval["scores"]).reshape(
+            self.eval["counts"]
+        )
 
         try:
             self.detection_matches = np.vstack(
@@ -166,7 +173,7 @@ class COCOeval_faster(COCOeval):
                 self.math_matches()
                 self.matched = True
         except Exception as e:
-            logger.error("math_matches error: ", exc_info=True)
+            logger.error("{} math_matches error: ".format(e), exc_info=True)
             self.matched = False
 
         toc = time.time()
@@ -198,7 +205,9 @@ class COCOeval_faster(COCOeval):
                     continue
 
                 if self.params.useCats == 1:
-                    if int(_gt_ann["category_id"]) != int(_dt_ann["category_id"]):
+                    if int(_gt_ann["category_id"]) != int(
+                        _dt_ann["category_id"]
+                    ):
                         continue
 
                 iou = self.computeAnnIoU(_gt_ann, _dt_ann)
@@ -326,7 +335,10 @@ class COCOeval_faster(COCOeval):
         ]
 
         if self.matched:
-            labels += ["mIoU", "mAUC_" + str(int(self.params.iouThrs[0] * 100))]
+            labels += [
+                "mIoU",
+                "mAUC_" + str(int(self.params.iouThrs[0] * 100)),
+            ]
 
         maxDets = self.params.maxDets
         if len(maxDets) > 1:
@@ -338,7 +350,9 @@ class COCOeval_faster(COCOeval):
         if len(maxDets) >= 3:
             labels[8] = "AR_{}".format(maxDets[2])
 
-        return {_label: float(self.all_stats[i]) for i, _label in enumerate(labels)}
+        return {
+            _label: float(self.all_stats[i]) for i, _label in enumerate(labels)
+        }
 
     @staticmethod
     def calc_auc(recall_list, precision_list):

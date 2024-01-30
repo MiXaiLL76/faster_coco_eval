@@ -2,6 +2,7 @@
 
 import json
 import unittest
+
 from faster_coco_eval import COCO, COCOeval_faster
 from faster_coco_eval.extra import PreviewResults
 
@@ -14,8 +15,8 @@ def load(file):
 
 class TestBaseCoco(unittest.TestCase):
     def test_coco(self):
-        prepared_coco_in_dict = load("dataset/gt_dataset.json")
-        prepared_anns = load("dataset/dt_dataset.json")
+        prepared_coco_in_dict = load("tests/dataset/gt_dataset.json")
+        prepared_anns = load("tests/dataset/dt_dataset.json")
 
         stats_as_dict = {
             "AP_all": 0.7832783278327835,
@@ -57,8 +58,8 @@ class TestBaseCoco(unittest.TestCase):
 
 class TestConfusionMatrix(unittest.TestCase):
     def test_coco(self):
-        prepared_coco_in_dict = load("dataset/gt_dataset.json")
-        prepared_anns = load("dataset/dt_dataset.json")
+        prepared_coco_in_dict = load("tests/dataset/gt_dataset.json")
+        prepared_anns = load("tests/dataset/dt_dataset.json")
 
         prepared_result = [
             [2.0, 1.0, 0.0, 0.0, 1.0, 0.0],
