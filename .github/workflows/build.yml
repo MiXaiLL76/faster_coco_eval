@@ -22,7 +22,7 @@ jobs:
         uses: pypa/cibuildwheel@v2.16
         env:
           CIBW_BUILD_FRONTEND: build
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.6"
+          CIBW_PROJECT_REQUIRES_PYTHON: "==3.6"
           CIBW_SKIP: "pp* *musllinux*"
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
           CIBW_TEST_COMMAND: cd {project}/ && python tests/basic.py
@@ -51,3 +51,33 @@ jobs:
         with:
           name: sdist
           path: ./dist/*.tar.gz
+
+  publish_test:
+    needs: [build_wheels, build_sdist]
+    name: Publish package to PyPI
+    runs-on: ubuntu-latest
+    # https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#using-an-environment
+    environment: release
+    # https://github.com/pypa/gh-action-pypi-publish#trusted-publishing
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist
+      
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels
+          path: dist
+      
+      - name: Display structure of downloaded files
+        run: ls -R dist
+
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
