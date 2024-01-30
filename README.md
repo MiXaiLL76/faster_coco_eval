@@ -70,6 +70,12 @@ cocoGt = COCO(....)
 
 ## history
 
+### v1.4.2
+- [x] append Auto-formatters 
+- [x] append py36 support
+- [x] append pandas to requirements for plotly[express]
+- [x] update mask api with pycootools
+
 ### v1.4.1
 
 - [x] append Plotly fig return 
