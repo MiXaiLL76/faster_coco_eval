@@ -3,6 +3,7 @@
 import setuptools
 from setuptools import Extension, setup
 
+import glob
 import numpy as np
 import platform
 from pybind11.setup_helpers import Pybind11Extension, build_ext
@@ -170,5 +171,6 @@ setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     python_requires=">=3.6",
+    data_files=glob.glob("requirements/*"),
     install_requires=parse_requirements("requirements/runtime.txt"),
 )
