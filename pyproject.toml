@@ -3,7 +3,7 @@ requires = [
     "setuptools>=42",
     "wheel",
     "build",
-    "numpy",
+    "oldest-supported-numpy",
     "cython",
     "pybind11==2.11.1",
 ]
