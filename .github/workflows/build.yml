@@ -2,6 +2,7 @@ name: Build and Publish
 
 on:
   - workflow_dispatch
+  - workflow_call
 
 jobs:
   build_wheels:
