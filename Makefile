@@ -1,4 +1,4 @@
-all: docker-sdist docker-3.6 docker-3.7 docker-3.8 docker-3.9 docker-3.10  docker-3.11
+all: format docker-sdist docker-3.6 docker-3.7 docker-3.8 docker-3.9 docker-3.10  docker-3.11
 	ls -lah dist
 
 sdist:
@@ -39,6 +39,11 @@ pull:
 pull-prod:
 	twine check dist/*
 	twine upload dist/*
+
+format:
+	python3 -m black --config pyproject.toml .
+	python3 -m isort .
+	flake8
 
 clean:
 	rm -rf build
