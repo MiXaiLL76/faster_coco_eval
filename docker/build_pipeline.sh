@@ -19,4 +19,8 @@ else
     cp dist/*.tar.gz /app/src/dist/
 fi
 
+pip install /app/src/dist/*
+
+python3 tests/basic.py
+
 chown ${EID}:${EID} -R /app/src/dist

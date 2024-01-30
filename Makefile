@@ -1,4 +1,4 @@
-all: docker-sdist docker-3.7 docker-3.8 docker-3.9 docker-3.10  docker-3.11
+all: docker-sdist docker-3.6 docker-3.7 docker-3.8 docker-3.9 docker-3.10  docker-3.11
 	ls -lah dist
 
 sdist:
@@ -13,6 +13,9 @@ wheel:
 
 docker-sdist:
 	bash -e docker/auto_build.sh "cp38-cp38" sdist
+
+docker-3.6:
+	bash -e docker/auto_build.sh "cp36-cp36m" wheel
 
 docker-3.7:
 	bash -e docker/auto_build.sh "cp37-cp37m" wheel
