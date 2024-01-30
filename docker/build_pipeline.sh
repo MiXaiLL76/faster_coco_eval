@@ -19,7 +19,7 @@ else
     cp dist/*.tar.gz /app/src/dist/
 fi
 
-python3 -m pip install /app/src/dist/*
+python3 -m pip install ${WHL}
 
 python3 tests/basic.py
 
