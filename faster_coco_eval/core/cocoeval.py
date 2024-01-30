@@ -1,14 +1,13 @@
 __author__ = "tsungyi"
 
+import copy
+import logging
 import numpy as np
-import datetime
 import time
 from collections import defaultdict
+
 from . import mask as maskUtils
 from .coco import COCO
-import copy
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +94,7 @@ class COCOeval:
         self.extra_calc = extra_calc
         self.matched = False
 
-        if not cocoGt is None:
+        if cocoGt is not None:
             self.params.imgIds = sorted(cocoGt.getImgIds())
             self.params.catIds = sorted(cocoGt.getCatIds())
 
@@ -154,7 +153,7 @@ class COCOeval:
         self.print_function("Running per image evaluation...")
         p = self.params
         # add backward compatibility if useSegm is specified in params
-        if not p.useSegm is None:
+        if p.useSegm is not None:
             p.iouType = "segm" if p.useSegm == 1 else "bbox"
             logger.warning(
                 "useSegm (deprecated) is not None. Running {} evaluation".format(
@@ -263,9 +262,18 @@ class COCOeval:
                 else:
                     # measure minimum distance to keypoints in (x0,y0) & (x1,y1)
                     z = np.zeros((k))
-                    dx = np.max((z, x0 - xd), axis=0) + np.max((z, xd - x1), axis=0)
-                    dy = np.max((z, y0 - yd), axis=0) + np.max((z, yd - y1), axis=0)
-                e = (dx ** 2 + dy ** 2) / vars / (gt["area"] + np.spacing(1)) / 2
+                    dx = np.max((z, x0 - xd), axis=0) + np.max(
+                        (z, xd - x1), axis=0
+                    )
+                    dy = np.max((z, y0 - yd), axis=0) + np.max(
+                        (z, yd - y1), axis=0
+                    )
+                e = (
+                    (dx ** 2 + dy ** 2)
+                    / vars
+                    / (gt["area"] + np.spacing(1))
+                    / 2
+                )
                 if k1 > 0:
                     e = e[vg > 0]
                 ious[i, j] = np.sum(np.exp(-e)) / e.shape[0]
@@ -338,9 +346,9 @@ class COCOeval:
                     dtm[tind, dind] = gt[m]["id"]
                     gtm[tind, m] = d["id"]
         # set unmatched detections outside of area range to ignore
-        a = np.array([d["area"] < aRng[0] or d["area"] > aRng[1] for d in dt]).reshape(
-            (1, len(dt))
-        )
+        a = np.array(
+            [d["area"] < aRng[0] or d["area"] > aRng[1] for d in dt]
+        ).reshape((1, len(dt)))
         dtIg = np.logical_or(dtIg, np.logical_and(dtm == 0, np.repeat(a, T, 0)))
         # store results for given image and category
         return {
@@ -358,124 +366,7 @@ class COCOeval:
         }
 
     def accumulate(self, p=None):
-        """
-        Accumulate per image evaluation results and store the result in self.eval
-        :param p: input params for evaluation
-        :return: None
-        """
-        self.print_function("Accumulating evaluation results...")
-        tic = time.time()
-        if not self.evalImgs:
-            self.print_function("Please run evaluate() first")
-        # allows input customized parameters
-        if p is None:
-            p = self.params
-        p.catIds = p.catIds if p.useCats == 1 else [-1]
-        T = len(p.iouThrs)
-        R = len(p.recThrs)
-        K = len(p.catIds) if p.useCats else 1
-        A = len(p.areaRng)
-        M = len(p.maxDets)
-        # -1 for the precision of absent categories
-        precision = -np.ones((T, R, K, A, M))
-        recall = -np.ones((T, K, A, M))
-        scores = -np.ones((T, R, K, A, M))
-
-        # create dictionary for future indexing
-        _pe = self._paramsEval
-        catIds = _pe.catIds if _pe.useCats else [-1]
-        setK = set(catIds)
-        setA = set(map(tuple, _pe.areaRng))
-        setM = set(_pe.maxDets)
-        setI = set(_pe.imgIds)
-        # get inds to evaluate
-        k_list = [n for n, k in enumerate(p.catIds) if k in setK]
-        m_list = [m for n, m in enumerate(p.maxDets) if m in setM]
-        a_list = [
-            n for n, a in enumerate(map(lambda x: tuple(x), p.areaRng)) if a in setA
-        ]
-        i_list = [n for n, i in enumerate(p.imgIds) if i in setI]
-        I0 = len(_pe.imgIds)
-        A0 = len(_pe.areaRng)
-
-        # retrieve E at each category, area range, and max number of detections
-        for k, k0 in enumerate(k_list):
-            Nk = k0 * A0 * I0
-            for a, a0 in enumerate(a_list):
-                Na = a0 * I0
-                for m, maxDet in enumerate(m_list):
-                    E = [self.evalImgs[Nk + Na + i] for i in i_list]
-                    E = [e for e in E if not e is None]
-                    if len(E) == 0:
-                        continue
-                    dtScores = np.concatenate([e["dtScores"][0:maxDet] for e in E])
-
-                    # different sorting method generates slightly different results.
-                    # mergesort is used to be consistent as Matlab implementation.
-                    inds = np.argsort(-dtScores, kind="mergesort")
-                    dtScoresSorted = dtScores[inds]
-
-                    dtm = np.concatenate(
-                        [e["dtMatches"][:, 0:maxDet] for e in E], axis=1
-                    )[:, inds]
-
-                    dtIg = np.concatenate(
-                        [e["dtIgnore"][:, 0:maxDet] for e in E], axis=1
-                    )[:, inds]
-                    gtIg = np.concatenate([e["gtIgnore"] for e in E])
-                    npig = np.count_nonzero(gtIg == 0)
-                    if npig == 0:
-                        continue
-                    tps = np.logical_and(dtm, np.logical_not(dtIg))
-                    fps = np.logical_and(np.logical_not(dtm), np.logical_not(dtIg))
-
-                    tp_sum = np.cumsum(tps, axis=1).astype(dtype=float)
-                    fp_sum = np.cumsum(fps, axis=1).astype(dtype=float)
-
-                    for t, (tp, fp) in enumerate(zip(tp_sum, fp_sum)):
-                        tp = np.array(tp)
-                        fp = np.array(fp)
-                        nd = len(tp)
-                        rc = tp / npig
-                        pr = tp / (fp + tp + np.spacing(1))
-                        q = np.zeros((R,))
-                        ss = np.zeros((R,))
-
-                        if nd:
-                            recall[t, k, a, m] = rc[-1]
-                        else:
-                            recall[t, k, a, m] = 0
-
-                        # numpy is slow without cython optimization for accessing elements
-                        # use python array gets significant speed improvement
-                        pr = pr.tolist()
-                        q = q.tolist()
-
-                        for i in range(nd - 1, 0, -1):
-                            if pr[i] > pr[i - 1]:
-                                pr[i - 1] = pr[i]
-
-                        inds = np.searchsorted(rc, p.recThrs, side="left")
-                        try:
-                            for ri, pi in enumerate(inds):
-                                q[ri] = pr[pi]
-                                ss[ri] = dtScoresSorted[pi]
-                        except:
-                            pass
-                        precision[t, :, k, a, m] = np.array(q)
-                        scores[t, :, k, a, m] = np.array(ss)
-
-        self.eval = {
-            "params": p,
-            "counts": [T, R, K, A, M],
-            "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "precision": precision,
-            "recall": recall,
-            "scores": scores,
-        }
-
-        toc = time.time()
-        self.print_function("DONE (t={:0.2f}s).".format(toc - tic))
+        raise DeprecationWarning("deprecated")
 
     def summarize(self):
         """
@@ -542,9 +433,13 @@ class COCOeval:
             # AR_first or AR_all
             stats[6] = _summarize(0, maxDets=self.params.maxDets[0])
             if len(self.params.maxDets) >= 2:
-                stats[7] = _summarize(0, maxDets=self.params.maxDets[1])  # AR_second
+                stats[7] = _summarize(
+                    0, maxDets=self.params.maxDets[1]
+                )  # AR_second
             if len(self.params.maxDets) >= 3:
-                stats[8] = _summarize(0, maxDets=self.params.maxDets[2])  # AR_third
+                stats[8] = _summarize(
+                    0, maxDets=self.params.maxDets[2]
+                )  # AR_third
 
             stats[9] = _summarize(
                 0, areaRng="small", maxDets=self.params.maxDets[-1]
@@ -629,7 +524,11 @@ class Params:
             0.0, 1.00, int(np.round((1.00 - 0.0) / 0.01)) + 1, endpoint=True
         )
         self.maxDets = [20]
-        self.areaRng = [[0 ** 2, 1e5 ** 2], [32 ** 2, 96 ** 2], [96 ** 2, 1e5 ** 2]]
+        self.areaRng = [
+            [0 ** 2, 1e5 ** 2],
+            [32 ** 2, 96 ** 2],
+            [96 ** 2, 1e5 ** 2],
+        ]
         self.areaRngLbl = ["all", "medium", "large"]
         self.useCats = 1
         self.kpt_oks_sigmas = (
