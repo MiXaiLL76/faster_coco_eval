@@ -10,7 +10,12 @@ wheel:
 format:
 	python3 -m black --config pyproject.toml .
 	python3 -m isort --profile black .
-	flake8
+	$(MAKE) linter
+
+linter:
+	python3 -m black . --check --diff
+	python3 -m isort --profile black . --check --diff
+	flake8 .
 
 clean:
 	rm -rf build

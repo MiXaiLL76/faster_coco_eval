@@ -1,0 +1,23 @@
+name: Lint
+
+on:
+  - push
+  - pull_request
+  - workflow_call
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: flake8 black[jupyter] isort
+
+      - name: Lint with flake8
+        run: make linter

@@ -6,7 +6,11 @@ on:
   - workflow_call
 
 jobs:
+  lint:
+    uses: ./.github/workflows/linter.yml
+
   test:
+    needs: [lint]
     name: Test on ${{ matrix.os }}, ${{ matrix.install_from }}
     runs-on: ${{ matrix.os }}
     strategy:
