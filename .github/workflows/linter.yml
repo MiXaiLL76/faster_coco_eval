@@ -17,7 +17,7 @@ jobs:
           python-version: "3.x"
 
       - name: Install dependencies
-        run: flake8 black[jupyter] isort
+        run: pip3 install flake8 black[jupyter] isort
 
       - name: Lint with flake8
         run: make linter
