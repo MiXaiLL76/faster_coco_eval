@@ -9,8 +9,8 @@ wheel:
 
 format:
 	python3 -m black --config pyproject.toml .
-	python3 -m isort .
-	python3 -m flake8
+	python3 -m isort --profile black .
+	flake8
 
 clean:
 	rm -rf build
