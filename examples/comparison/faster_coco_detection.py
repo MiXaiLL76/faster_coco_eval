@@ -196,7 +196,10 @@ class FasterCOCODetection(COCODetection):
             description="Coco json file converted by mmeval CocoMetric.",
         )
         coco_json = dict(
-            info=info, images=image_infos, categories=categories, licenses=None,
+            info=info,
+            images=image_infos,
+            categories=categories,
+            licenses=None,
         )
         if len(annotations) > 0:
             coco_json["annotations"] = annotations
@@ -360,9 +363,9 @@ class FasterCOCODetection(COCODetection):
                     )
                     eval_results[f'{metric}_{nm["name"]}_precision'] = ap
 
-                table_results[
-                    f"{metric}_classwise_result"
-                ] = results_per_category
+                table_results[f"{metric}_classwise_result"] = (
+                    results_per_category
+                )
         if tmp_dir is not None:
             tmp_dir.cleanup()
         # if the testing results of the whole dataset is empty,
