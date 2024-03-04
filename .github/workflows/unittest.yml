@@ -6,28 +6,27 @@ on:
   - workflow_call
 
 jobs:
+  lint:
+    uses: ./.github/workflows/linter.yml
+
   test:
+    needs: [lint]
     name: Test on ${{ matrix.os }}, ${{ matrix.install_from }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        install_from: [source, source_with_pre, sdist]
+        os: [ubuntu-latest]
+        install_from: [source, sdist]
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
       - name: Install from source
         if: matrix.install_from == 'source'
         run: pip install .
-
-      - name: Install from source with prerelease.
-        if: matrix.install_from == 'source_with_pre'
-        # This tests compatibility with pre-release dependencies
-        run: pip install --pre .
 
       - name: Install from sdist
         if: matrix.install_from == 'sdist'

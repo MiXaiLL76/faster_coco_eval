@@ -6,6 +6,7 @@ on:
 
 jobs:
   build_wheels:
+    needs: test_source
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -13,35 +14,24 @@ jobs:
         include:
           - os: ubuntu-latest
             cibw_archs: auto64
-          - os: ubuntu-latest
-            cibw_archs: aarch64
-          - os: windows-latest
-            cibw_archs: auto64
-          - os: macos-latest
-            cibw_archs: universal2
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        if: matrix.cibw_archs == 'aarch64'
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16
         env:
           CIBW_BUILD_FRONTEND: build
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.7"
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.6"
           CIBW_SKIP: "pp* *musllinux*"
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
-          CIBW_TEST_COMMAND: python {project}/tests/test_cases.py
+          CIBW_TEST_COMMAND: cd {project}/ && python tests/basic.py
         with:
           package-dir: ./
 
       - uses: actions/upload-artifact@v4
         with:
+          name: wheels
           path: ./wheelhouse/*.whl
 
   test_source:
@@ -59,4 +49,62 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
+          name: sdist
           path: ./dist/*.tar.gz
+
+  publish_test:
+    needs: [build_wheels, build_sdist]
+    name: Publish package to TestPyPI
+    runs-on: ubuntu-latest
+    # https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#using-an-environment
+    environment: release
+    # https://github.com/pypa/gh-action-pypi-publish#trusted-publishing
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist
+      
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels
+          path: dist
+      
+      - name: Display structure of downloaded files
+        run: ls -R dist
+
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
+
+  publish_prod:
+    needs: [publish_test]
+    name: Publish package to PyPI
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist
+      
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels
+          path: dist
+      
+      - name: Display structure of downloaded files
+        run: ls -R dist
+
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}

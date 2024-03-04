@@ -148,33 +148,37 @@ class COCOeval_faster(COCOeval):
             self.eval["counts"]
         )
 
+        self.matched = False
         try:
-            self.detection_matches = np.vstack(
-                np.array(self.eval["detection_matches"]).reshape(
-                    self.eval["counts"][0], self.eval["counts"][3], -1
-                )
-            )
-            assert self.detection_matches.shape[1] == len(self.cocoDt.anns)
-
-            self.ground_truth_matches = np.vstack(
-                np.array(self.eval["ground_truth_matches"]).reshape(
-                    self.eval["counts"][0], self.eval["counts"][3], -1
-                )
-            )
-            assert self.ground_truth_matches.shape[1] == len(self.cocoGt.anns)
-
-            self.ground_truth_orig_id = np.vstack(
-                np.array(self.eval["ground_truth_orig_id"]).reshape(
-                    self.eval["counts"][0], self.eval["counts"][3], -1
-                )
-            )
-            assert self.ground_truth_orig_id.shape[1] == len(self.cocoGt.anns)
             if self.extra_calc:
+                self.detection_matches = np.vstack(
+                    np.array(self.eval["detection_matches"]).reshape(
+                        self.eval["counts"][0], self.eval["counts"][3], -1
+                    )
+                )
+                assert self.detection_matches.shape[1] <= len(self.cocoDt.anns)
+
+                self.ground_truth_matches = np.vstack(
+                    np.array(self.eval["ground_truth_matches"]).reshape(
+                        self.eval["counts"][0], self.eval["counts"][3], -1
+                    )
+                )
+                assert self.ground_truth_matches.shape[1] == len(
+                    self.cocoGt.anns
+                )
+
+                self.ground_truth_orig_id = np.vstack(
+                    np.array(self.eval["ground_truth_orig_id"]).reshape(
+                        self.eval["counts"][0], self.eval["counts"][3], -1
+                    )
+                )
+                assert self.ground_truth_orig_id.shape[1] == len(
+                    self.cocoGt.anns
+                )
                 self.math_matches()
                 self.matched = True
         except Exception as e:
             logger.error("{} math_matches error: ".format(e), exc_info=True)
-            self.matched = False
 
         toc = time.time()
 

@@ -17,7 +17,7 @@ for coco's AP metrics, especially when dealing with a high number of instances i
 For our use case with a test dataset of 5000 images from the coco val dataset.
 Testing was carried out using the mmdetection framework and the eval_metric.py script. The indicators are presented below.
 
-Visualization of testing **comparison.ipynb** available in directory [examples/comparison](./examples/comparison/comparison.ipynb)
+Visualization of testing **comparison.ipynb** available in directory [examples/comparison](https://github.com/MiXaiLL76/faster_coco_eval/blob/main/examples/comparison/comparison.ipynb)
 Tested with yolo3 model (bbox eval) and yoloact model (segm eval)
 
 | Type | COCOeval    | COCOeval_faster | Profit      |
@@ -25,152 +25,18 @@ Tested with yolo3 model (bbox eval) and yoloact model (segm eval)
 | bbox | 18.477 sec. | 7.345 sec.      | 2.5x faster |
 | segm | 29.819 sec. | 15.840 sec.     | 2x faster   |
 
+## Feautures
+
+This library provides not only validation functions, but also error visualization functions. Including visualization of errors in the image.  
+You can study in more detail in the [examples](https://github.com/MiXaiLL76/faster_coco_eval/blob/main/examples) and [Wiki](https://github.com/MiXaiLL76/faster_coco_eval/wiki).
+
 ## Usage
 
-This package contains a faster implementation of the
- [pycocotools](https://github.com/cocodataset/cocoapi/tree/master/PythonAPI/pycocotools) `COCOEval` class.  
-To import and use `COCOeval_faster` type:
+Code examples for using the library are available on the [Wiki](https://github.com/MiXaiLL76/faster_coco_eval/wiki)
 
-````python  
-from faster_coco_eval import COCO, COCOeval_faster
-....
-````
+## Update history
 
-For usage, look at the original `COCOEval` [class documentation.](https://github.com/cocodataset/cocoapi)
-
-## Usage plot curves
-
-````python  
-from faster_coco_eval import COCO
-from faster_coco_eval.extra import Curves
-
-cocoGt = COCO(....)
-cocoDt = cocoGt.loadRes(....)
-
-cur = Curves(cocoGt, cocoDt, iou_tresh=0.5, iouType='segm')
-cur.plot_pre_rec()
-````
-
-## Usage pnly GT preview
-
-```py
-cocoGt = COCO(....)
-    preview = PreviewResults(cocoGt, iouType="segm")
-    preview.display_tp_fp_fn(
-        data_folder=.....,
-        image_ids=list(cocoGt.imgs.keys())[:2],
-        display_gt=True,
-    )
-```
-
-## Setup dependencies
-
-- numpy
-- plotly (optional if extra.Curve usage)  
-
-## history
-
-### v1.4.2
-- [x] append Auto-formatters 
-- [x] append py36 support
-- [x] append pandas to requirements for plotly[express]
-- [x] update mask api with pycootools
-
-### v1.4.1
-
-- [x] append Plotly fig return 
-- [x] append preview GT only func. Without eval.
-
-```py
-cocoGt = COCO(...)
-preview = PreviewResults(cocoGt, iouType='segm')
-preview.display_tp_fp_fn(data_folder=..., image_ids=..., display_gt=True)
-```
-
-### v1.4.0
-
-- [x] fix issue <https://github.com/MiXaiLL76/faster_coco_eval/issues/12>
-- [x] Updated pre-rec calculation method
-- [x] Updated required libraries
-- [x] Moved all matplotlib dependencies to plotly
-- [x] Append new examples & mmeval test file
-
-### v1.3.3
-
-- [x] fix by ViTrox <https://github.com/vitrox-technologies/faster_coco_eval>
-    - missing file issue
-    - issue discovered by torchmetric
-    - fstring for python3.7
-    - Windows compilation
-
-### v1.3.2
-
-- [x] rework math_matches function. moved to faster_eval_api
-- [x] Moved calculations from python to c++
-- [x] Separated extra classes
-- [x] Added new sample data
-- [x] append mIoU based on TP pred.
-- [x] append mAUC based on Coco pre/rec.
-
-### v1.3.1
-
-- [x] rework mask code
-- [x] change np.float to float ([numpy deprecations](https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations))
-
-### v1.3.0
-
-- [x] remove pycocotools dependencies
-- [x] clean c/c++ code
-
-### v1.2.3
-
-- [x] Implemented of mean IoU for TP
-- [x] set FP-red FN-blue
-
-### v1.2.2
-
-- [x] Removed own implementation of pre-rec  
-- [x] Switched to the implementation of pre-rec calculation from COCO eval  
-- [x] Lost backward compatibility  
-- [x] Implemented output fp/fn/tp + gt to pictures  
-
-### v1.2.1
-
-- [x] bug fix with pre-rec curve  
-- [x] rework error calc (tp/fp/fn)  
-- [x] change image plot to plotly
-- [x] append docker auto builder  
-- [x] append native iou calc (slow but accurate)  
-- [x] rework auc calc with [link](https://towardsdatascience.com/how-to-efficiently-implement-area-under-precision-recall-curve-pr-auc-a85872fd7f14)  
-
-### v1.1.3-v1.1.4
-
-- [x] rebuild plotly backend
-- [x] Segm bug-fix
-
-### v1.1.2
-
-- [x] Append fp fn error analysis via curves
-- [x] Append confusion matrix
-- [x] Append plotly backend support for ROC / AUC
-
-### v1.1.1
-
-- [x] Redesigned curves
-- [x] Reworked data preload
-- [x] Append csrc to setup
-- [x] Build sdist Package
-
-### v1.1.0
-
-- [x] Wrap c++ code
-- [x] Get it to compile
-- [x] Add COCOEval class wraper
-- [x] Remove detectron2 dependencies
-- [x] Remove torch dependencies
-- [x] Append unittest
-- [x] Append ROC / AUC curves  
-- [x] Check if it works on windows
+Available via link [history.md](https://github.com/MiXaiLL76/faster_coco_eval/blob/main/history.md)
 
 ## License
 
