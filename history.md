@@ -1,6 +1,9 @@
 
 # history
 
+## v1.4.3
+- [x] fix [issue](https://github.com/MiXaiLL76/faster_coco_eval/issues/19)
+
 ## v1.4.2
 - [x] append Auto-formatters 
 - [x] append py36 support
