@@ -1,7 +1,7 @@
 import logging
 
 from ..core import COCOeval_faster
-from .draw import plot_pre_rec
+from .draw import plot_f1_confidence, plot_pre_rec
 from .extra import ExtraEval
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,7 @@ class Curves(ExtraEval):
                     recall_list=recall_list,
                     precision_list=precision_list,
                     name="{}auc: {:.3f}".format(_label, auc),
+                    label=_label,
                     scores=scores,
                     auc=auc,
                     category_id=category_id,
@@ -52,3 +53,11 @@ class Curves(ExtraEval):
             curves = self.build_curve(label)
 
         return plot_pre_rec(curves, return_fig=return_fig)
+
+    def plot_f1_confidence(
+        self, curves=None, label: str = "category_id", return_fig: bool = False
+    ):
+        if curves is None:
+            curves = self.build_curve(label)
+
+        return plot_f1_confidence(curves, return_fig=return_fig)
