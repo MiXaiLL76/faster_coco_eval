@@ -305,3 +305,56 @@ def plot_pre_rec(curves, return_fig: bool = False):
         return fig
 
     fig.show()
+
+
+def plot_f1_confidence(curves, return_fig: bool = False):
+    fig = go.Figure()
+    eps = 1e-16
+    for _curve in curves:
+        recall_list = _curve["recall_list"]
+        precision_list = _curve["precision_list"]
+        scores = _curve["scores"]
+        f1_curve = (
+            2
+            * precision_list
+            * recall_list
+            / (precision_list + recall_list + eps)
+        )
+
+        name = _curve["label"] if len(_curve["label"]) > 0 else "F1-Confidence"
+
+        fig.add_trace(
+            go.Scatter(
+                x=scores,
+                y=f1_curve,
+                name=name,
+                hovertemplate="F1: %{y:.3f}<br>"
+                + "Confidence: %{x:.3f}<br><extra></extra>",
+                showlegend=True,
+                mode="lines",
+            )
+        )
+
+    margin = 0.01
+    fig.layout.yaxis.range = [0 - margin, 1 + margin]
+    fig.layout.xaxis.range = [0 - margin, 1 + margin]
+
+    fig.layout.yaxis.title = "F1"
+    fig.layout.xaxis.title = "Confidence"
+
+    fig.update_xaxes(showspikes=True)
+    fig.update_yaxes(showspikes=True)
+
+    layout = {
+        "title": "F1-Confidence",
+        "autosize": True,
+        "height": 600,
+        "width": 1200,
+    }
+
+    fig.update_layout(layout)
+
+    if return_fig:
+        return fig
+
+    fig.show()
