@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 
-import setuptools
-from setuptools import Extension, setup
-
 import glob
-import numpy as np
 import platform
+
+import numpy as np
+import setuptools
 from pybind11.setup_helpers import Pybind11Extension, build_ext
+from setuptools import Extension, setup
 
 
 def readme():
@@ -27,6 +27,7 @@ def get_version():
 def parse_requirements(fname="requirements/runtime.txt", with_version=True):
     """Parse the package dependencies listed in a requirements file but strips
     specific versioning information.
+
     Args:
         fname (str): path to requirements file
         with_version (bool, default=False): if True include version specs
@@ -34,6 +35,7 @@ def parse_requirements(fname="requirements/runtime.txt", with_version=True):
         List[str]: list of requirements items
     CommandLine:
         python -c "import setup; print(setup.parse_requirements())"
+
     """
     import re
     import sys
@@ -67,7 +69,7 @@ def parse_requirements(fname="requirements/runtime.txt", with_version=True):
                         version, platform_deps = map(str.strip, rest.split(";"))
                         info["platform_deps"] = platform_deps
                     else:
-                        version = rest  # NOQA
+                        version = rest
                     info["version"] = (op, version)
             yield info
 
