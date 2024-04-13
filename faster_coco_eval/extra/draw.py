@@ -1,10 +1,11 @@
 import logging
-import numpy as np
 import os.path as osp
+from typing import Optional
+
+import numpy as np
 import plotly.express as px
 import plotly.graph_objs as go
 from PIL import Image
-from typing import Optional
 
 from ..core import COCO
 
@@ -139,7 +140,13 @@ def display_image(
                             ann,
                             color=DT_COLOR,
                             iouType=iouType,
-                            text="<b>DT</b><br>id={}<br>category={}<br>score={:.2f}<br>IoU={:.2f}".format(
+                            text=(
+                                "<b>DT</b><br>"
+                                "id={}<br>"
+                                "category={}<br>"
+                                "score={:.2f}<br>"
+                                "IoU={:.2f}"
+                            ).format(
                                 ann["id"],
                                 categories_labels[ann["category_id"]],
                                 ann["score"],
@@ -154,7 +161,12 @@ def display_image(
                             ann,
                             color=FP_COLOR,
                             iouType=iouType,
-                            text="<b>FP</b><br>id={}<br>category={}<br>score={:.2f}".format(
+                            text=(
+                                "<b>FP</b><br>"
+                                "id={}<br>"
+                                "category={}<br>"
+                                "score={:.2f}"
+                            ).format(
                                 ann["id"],
                                 categories_labels[ann["category_id"]],
                                 ann["score"],
@@ -199,18 +211,18 @@ def display_image(
 def display_matrix(
     conf_matrix: np.ndarray,
     labels: list,
-    in_percent: bool = False,
+    normalize: bool = False,
     return_fig: bool = False,
 ):
     _labels = labels + ["fp", "fn"]
 
-    if in_percent:
+    if normalize:
         conf_matrix /= conf_matrix.sum(axis=1).reshape(-1, 1)
         conf_matrix *= 100
 
-    hovertemplate = "Real: %{y}<br>" "Predict: %{x}<br>"
+    hovertemplate = "Real: %{y}<br>Predict: %{x}<br>"
 
-    if in_percent:
+    if normalize:
         hovertemplate += "Percent: %{z:.0f}<extra></extra>"
     else:
         hovertemplate += "Count: %{z:.0f}<extra></extra>"
@@ -227,7 +239,7 @@ def display_matrix(
     for j, row in enumerate(conf_matrix):
         for i, value in enumerate(row):
             text_value = "{:.0f}".format(value)
-            if in_percent:
+            if normalize:
                 text_value += "%"
 
             annotations.append(
@@ -242,8 +254,12 @@ def display_matrix(
                 }
             )
 
+    title = "Confusion Matrix"
+    if normalize:
+        title = "Normalized " + title
+
     layout = {
-        "title": "Confusion Matrix",
+        "title": title,
         "xaxis": {"title": "Predicted value"},
         "yaxis": {"title": "Real value"},
         "annotations": annotations,

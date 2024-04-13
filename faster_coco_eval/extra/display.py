@@ -1,6 +1,7 @@
 import logging
-import numpy as np
 from typing import Optional
+
+import numpy as np
 
 from .draw import display_image, display_matrix
 from .extra import ExtraEval
@@ -57,9 +58,7 @@ class PreviewResults(ExtraEval):
                 )
 
     def _compute_confusion_matrix(self, y_true, y_pred, fp={}, fn={}):
-        """
-        return classes*(classes + fp col + fn col)
-        """
+        """Return classes*(classes + fp col + fn col)"""
         categories_real_ids = list(self.cocoGt.cats)
         categories_enum_ids = {
             category_id: _i
@@ -82,9 +81,8 @@ class PreviewResults(ExtraEval):
 
         if self.useCats:
             logger.warning(
-                "The calculation may not be accurate. No intersection of classes. useCats={}".format(
-                    self.useCats
-                )
+                "The calculation may not be accurate. No intersection of"
+                " classes. useCats={}".format(self.useCats)
             )
 
         y_true = []
@@ -116,7 +114,7 @@ class PreviewResults(ExtraEval):
         return cm
 
     def display_matrix(
-        self, in_percent=False, conf_matrix=None, return_fig: bool = False
+        self, normalize=False, conf_matrix=None, return_fig: bool = False
     ):
         if conf_matrix is None:
             conf_matrix = self.compute_confusion_matrix()
@@ -124,5 +122,5 @@ class PreviewResults(ExtraEval):
         labels = [category["name"] for _, category in self.cocoGt.cats.items()]
 
         return display_matrix(
-            conf_matrix, labels, in_percent=in_percent, return_fig=return_fig
+            conf_matrix, labels, normalize=normalize, return_fig=return_fig
         )

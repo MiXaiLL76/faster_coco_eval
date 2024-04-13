@@ -1,5 +1,6 @@
 import copy
 import logging
+
 import numpy as np
 
 from ..core import COCO, COCOeval_faster

@@ -3,10 +3,12 @@
 
 import copy
 import logging
-import numpy as np
 import time
 
+import numpy as np
+
 import faster_coco_eval.faster_eval_api_cpp as _C
+
 from . import mask as maskUtils
 from .cocoeval import COCOeval
 
@@ -14,18 +16,20 @@ logger = logging.getLogger(__name__)
 
 
 class COCOeval_faster(COCOeval):
-    """
-    This is a slightly modified version of the original COCO API, where the functions evaluateImg()
-    and accumulate() are implemented in C++ to speedup evaluation
-    """
+    """This is a slightly modified version of the original COCO API, where the
+    functions evaluateImg() and accumulate() are implemented in C++ to speedup
+    evaluation."""
 
     def evaluate(self):
-        """
-        Run per image evaluation on given images and store results in self.evalImgs_cpp, a
-        datastructure that isn't readable from Python but is used by a c++ implementation of
-        accumulate().  Unlike the original COCO PythonAPI, we don't populate the datastructure
-        self.evalImgs because this datastructure is a computational bottleneck.
+        """Run per image evaluation on given images and store results in
+        self.evalImgs_cpp, a datastructure that isn't readable from Python but
+        is used by a c++ implementation of accumulate().
+
+        Unlike the original COCO PythonAPI, we don't populate the
+        datastructure self.evalImgs because this datastructure is a
+        computational bottleneck.
         :return: None
+
         """
         tic = time.time()
 
@@ -61,7 +65,7 @@ class COCOeval_faster(COCOeval):
 
         # <<<< Beginning of code differences with original COCO API
         def convert_instances_to_cpp(instances, is_det=False):
-            # Convert annotations for a list of instances in an image to a format that's fast
+            # Convert annotations for a list of instances in an image to a format that's fast # noqa: E501
             # to access in C++
             instances_cpp = []
             for instance in instances:
@@ -75,7 +79,7 @@ class COCOeval_faster(COCOeval):
                 instances_cpp.append(instance_cpp)
             return instances_cpp
 
-        # Convert GT annotations, detections, and IOUs to a format that's fast to access in C++
+        # Convert GT annotations, detections, and IOUs to a format that's fast to access in C++ # noqa: E501
         ground_truth_instances = [
             [
                 convert_instances_to_cpp(self._gts[imgId, catId])
@@ -122,9 +126,12 @@ class COCOeval_faster(COCOeval):
         self.print_function("DONE (t={:0.2f}s).".format(toc - tic))
 
     def accumulate(self):
-        """
-        Accumulate per image evaluation results and store the result in self.eval.  Does not
-        support changing parameter settings from those used by self.evaluate()
+        """Accumulate per image evaluation results and store the result in
+        self.eval.
+
+        Does not support changing parameter settings from those used by
+        self.evaluate()
+
         """
         self.print_function("Accumulating evaluation results...")
         tic = time.time()
@@ -134,13 +141,12 @@ class COCOeval_faster(COCOeval):
 
         self.eval = _C.COCOevalAccumulate(self._paramsEval, self._evalImgs_cpp)
 
-        # recall is num_iou_thresholds X num_categories X num_area_ranges X num_max_detections
+        # recall is num_iou_thresholds X num_categories X num_area_ranges X num_max_detections # noqa: E501
         self.eval["recall"] = np.array(self.eval["recall"]).reshape(
             self.eval["counts"][:1] + self.eval["counts"][2:]
         )
 
-        # precision and scores are num_iou_thresholds X num_recall_thresholds X num_categories X
-        # num_area_ranges X num_max_detections
+        # precision and scores are num_iou_thresholds X num_recall_thresholds X num_categories X num_area_ranges X num_max_detections # noqa: E501
         self.eval["precision"] = np.array(self.eval["precision"]).reshape(
             self.eval["counts"]
         )
