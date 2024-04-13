@@ -2,9 +2,10 @@ __author__ = "tsungyi"
 
 import copy
 import logging
-import numpy as np
 import time
 from collections import defaultdict
+
+import numpy as np
 
 from . import mask as maskUtils
 from .coco import COCO
@@ -70,11 +71,12 @@ class COCOeval:
         print_function=logger.debug,
         extra_calc=False,
     ):
-        """
-        Initialize CocoEval using coco APIs for gt and dt
-        :param cocoGt: coco object with ground truth annotations
+        """Initialize CocoEval using coco APIs for gt and dt :param cocoGt:
+
+        coco object with ground truth annotations
         :param cocoDt: coco object with detection results
-        :return: None
+        :return: None.
+
         """
         if not iouType:
             logger.warning("iouType not specified. use default iouType segm")
@@ -101,9 +103,10 @@ class COCOeval:
         self.print_function = print_function  # output print function
 
     def _prepare(self):
-        """
-        Prepare ._gts and ._dts for evaluation based on params
+        """Prepare ._gts and ._dts for evaluation based on params.
+
         :return: None
+
         """
 
         def _toMask(anns, coco):
@@ -145,9 +148,11 @@ class COCOeval:
         self.eval = {}  # accumulated evaluation results
 
     def evaluate(self):
-        """
-        Run per image evaluation on given images and store results (a list of dict) in self.evalImgs
+        """Run per image evaluation on given images and store results (a list
+        of dict) in self.evalImgs.
+
         :return: None
+
         """
         tic = time.time()
         self.print_function("Running per image evaluation...")
@@ -156,9 +161,8 @@ class COCOeval:
         if p.useSegm is not None:
             p.iouType = "segm" if p.useSegm == 1 else "bbox"
             logger.warning(
-                "useSegm (deprecated) is not None. Running {} evaluation".format(
-                    p.iouType
-                )
+                "useSegm (deprecated) is not None. Running {} evaluation"
+                .format(p.iouType)
             )
         self.print_function("Evaluate annotation type *{}*".format(p.iouType))
         p.imgIds = list(np.unique(p.imgIds))
@@ -275,9 +279,10 @@ class COCOeval:
         return ious
 
     def evaluateImg(self, imgId, catId, aRng, maxDet):
-        """
-        perform evaluation for single category and image
+        """Perform evaluation for single category and image.
+
         :return: dict (single image results)
+
         """
         p = self.params
         if p.useCats:
@@ -331,7 +336,7 @@ class COCOeval:
                         # continue to next gt unless better match made
                         if ious[dind, gind] < iou:
                             continue
-                        # if match successful and best so far, store appropriately
+                        # if match successful and best so far, store appropriately # noqa: E501
                         iou = ious[dind, gind]
                         m = gind
                     # if match made store id of match for both dt and gt
@@ -364,14 +369,19 @@ class COCOeval:
         raise DeprecationWarning("deprecated")
 
     def summarize(self):
-        """
-        Compute and display summary metrics for evaluation results.
-        Note this functin can *only* be applied on the default parameter setting
+        """Compute and display summary metrics for evaluation results.
+
+        Note this functin can *only* be applied on the default parameter
+        setting
+
         """
 
         def _summarize(ap=1, iouThr=None, areaRng="all", maxDets=100):
             p = self.params
-            iStr = " {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} ] = {:0.3f}"
+            iStr = (
+                " {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} ] ="
+                " {:0.3f}"
+            )
             titleStr = "Average Precision" if ap == 1 else "Average Recall"
             typeStr = "(AP)" if ap == 1 else "(AR)"
             iouStr = (
@@ -484,14 +494,12 @@ class COCOeval:
 
 
 class Params:
-    """
-    Params for coco evaluation api
-    """
+    """Params for coco evaluation api."""
 
     def setDetParams(self):
         self.imgIds = []
         self.catIds = []
-        # np.arange causes trouble.  the data point on arange is slightly larger than the true value
+        # np.arange causes trouble.  the data point on arange is slightly larger than the true value # noqa: E501
         self.iouThrs = np.linspace(
             0.5, 0.95, int(np.round((0.95 - 0.5) / 0.05)) + 1, endpoint=True
         )
@@ -511,7 +519,7 @@ class Params:
     def setKpParams(self):
         self.imgIds = []
         self.catIds = []
-        # np.arange causes trouble.  the data point on arange is slightly larger than the true value
+        # np.arange causes trouble.  the data point on arange is slightly larger than the true value # noqa: E501
         self.iouThrs = np.linspace(
             0.5, 0.95, int(np.round((0.95 - 0.5) / 0.05)) + 1, endpoint=True
         )

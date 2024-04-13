@@ -1,7 +1,7 @@
 import logging
-import plotly.graph_objects as go
 
 from ..core import COCOeval_faster
+from .draw import plot_f1_confidence, plot_pre_rec
 from .extra import ExtraEval
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,7 @@ class Curves(ExtraEval):
                     recall_list=recall_list,
                     precision_list=precision_list,
                     name="{}auc: {:.3f}".format(_label, auc),
+                    label=_label,
                     scores=scores,
                     auc=auc,
                     category_id=category_id,
@@ -51,48 +52,12 @@ class Curves(ExtraEval):
         if curves is None:
             curves = self.build_curve(label)
 
-        fig = go.Figure()
+        return plot_pre_rec(curves, return_fig=return_fig)
 
-        for _curve in curves:
-            recall_list = _curve["recall_list"]
-            precision_list = _curve["precision_list"]
-            scores = _curve["scores"]
-            name = _curve["name"]
+    def plot_f1_confidence(
+        self, curves=None, label: str = "category_id", return_fig: bool = False
+    ):
+        if curves is None:
+            curves = self.build_curve(label)
 
-            fig.add_trace(
-                go.Scatter(
-                    x=recall_list,
-                    y=precision_list,
-                    name=name,
-                    text=scores,
-                    hovertemplate="Pre: %{y:.3f}<br>"
-                    + "Rec: %{x:.3f}<br>"
-                    + "Score: %{text:.3f}<extra></extra>",
-                    showlegend=True,
-                    mode="lines",
-                )
-            )
-
-        margin = 0.01
-        fig.layout.yaxis.range = [0 - margin, 1 + margin]
-        fig.layout.xaxis.range = [0 - margin, 1 + margin]
-
-        fig.layout.yaxis.title = "Precision"
-        fig.layout.xaxis.title = "Recall"
-
-        fig.update_xaxes(showspikes=True)
-        fig.update_yaxes(showspikes=True)
-
-        layout = {
-            "title": "Precision-Recall",
-            "autosize": True,
-            "height": 600,
-            "width": 1200,
-        }
-
-        fig.update_layout(layout)
-
-        if return_fig:
-            return fig
-
-        fig.show()
+        return plot_f1_confidence(curves, return_fig=return_fig)

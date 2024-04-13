@@ -8,7 +8,7 @@ __version__ = "2.0"
 # Please visit http://mscoco.org/ for more information on COCO, including
 # for the data, paper, and tutorials. The exact format of the annotations
 # is also described on the COCO website. For example usage of the pycocotools
-# please see pycocotools_demo.ipynb. In addition to this API, please download both
+# please see pycocotools_demo.ipynb. In addition to this API, please download both # noqa: E501
 # the COCO images and annotations in order to run the demo.
 
 # An alternative to using the API is to load the annotations directly
@@ -18,7 +18,7 @@ __version__ = "2.0"
 # captions not all functions are defined (e.g. categories are undefined).
 
 # The following API functions are defined:
-#  COCO       - COCO api class that loads COCO annotation file and prepare data structures.
+#  COCO       - COCO api class that loads COCO annotation file and prepare data structures. # noqa: E501
 #  decodeMask - Decode binary mask M encoded via run-length encoding.
 #  encodeMask - Encode binary mask M using run-length encoding.
 #  getAnnIds  - Get ann ids that satisfy given filter conditions.
@@ -48,10 +48,11 @@ import copy
 import itertools
 import json
 import logging
-import numpy as np
 import time
 import warnings
 from collections import defaultdict
+
+import numpy as np
 
 from . import mask as maskUtils
 
@@ -64,11 +65,14 @@ def _isArrayLike(obj):
 
 class COCO:
     def __init__(self, annotation_file=None):
-        """
-        Constructor of Microsoft COCO helper class for reading and visualizing annotations.
+        """Constructor of Microsoft COCO helper class for reading and
+        visualizing annotations.
+
         :param annotation_file (str): location of annotation file
-        :param image_folder (str): location to the folder that hosts images.
+        :param image_folder (str): location to the folder that hosts
+            images.
         :return:
+
         """
         # load dataset
         self.dataset, self.anns, self.cats, self.imgs = (
@@ -84,8 +88,7 @@ class COCO:
             logger.debug("loading annotations into memory...")
             tic = time.time()
             if type(annotation_file) is str:
-                with open(annotation_file, "r") as f:
-                    self.dataset = json.load(f)
+                self.dataset = self.load_json(annotation_file)
             elif type(annotation_file) is dict:
                 self.dataset = annotation_file
             else:
@@ -136,21 +139,26 @@ class COCO:
         self.cats = cats
 
     def info(self):
-        """
-        Print information about the annotation file.
+        """Print information about the annotation file.
+
         :return:
+
         """
         for key, value in self.dataset["info"].items():
             logger.debug("{}: {}".format(key, value))
 
     def getAnnIds(self, imgIds=[], catIds=[], areaRng=[], iscrowd=None):
-        """
-        Get ann ids that satisfy given filter conditions. default skips that filter
-        :param imgIds  (int array)     : get anns for given imgs
-               catIds  (int array)     : get anns for given cats
-               areaRng (float array)   : get anns for given area range (e.g. [0 inf])
-               iscrowd (boolean)       : get anns for given crowd label (False or True)
+        """Get ann ids that satisfy given filter conditions.
+
+        default skips that filter
+        :param imgIds (int array) : get anns for given imgs :param
+            catIds (int array) : get anns for given cats
+        :param areaRng (float array) : get anns for given area range
+            (e.g. [0 inf])
+        :param iscrowd (boolean) : get anns for given crowd label (False
+            or True)
         :return: ids (int array)       : integer array of ann ids
+
         """
         imgIds = imgIds if _isArrayLike(imgIds) else [imgIds]
         catIds = catIds if _isArrayLike(catIds) else [catIds]
@@ -188,12 +196,15 @@ class COCO:
         return ids
 
     def getCatIds(self, catNms=[], supNms=[], catIds=[]):
-        """
-        filtering parameters. default skips that filter.
+        """Filtering parameters.
+
+        default skips that filter.
         :param catNms (str array)  : get cats for given cat names
-        :param supNms (str array)  : get cats for given supercategory names
+        :param supNms (str array) : get cats for given supercategory
+            names
         :param catIds (int array)  : get cats for given cat ids
         :return: ids (int array)   : integer array of cat ids
+
         """
         catNms = catNms if _isArrayLike(catNms) else [catNms]
         supNms = supNms if _isArrayLike(supNms) else [supNms]
@@ -222,11 +233,12 @@ class COCO:
         return ids
 
     def getImgIds(self, imgIds=[], catIds=[]):
-        """
-        Get img ids that satisfy given filter conditions.
+        """Get img ids that satisfy given filter conditions.
+
         :param imgIds (int array) : get imgs for given ids
         :param catIds (int array) : get imgs with all given cats
         :return: ids (int array)  : integer array of img ids
+
         """
         imgIds = imgIds if _isArrayLike(imgIds) else [imgIds]
         catIds = catIds if _isArrayLike(catIds) else [catIds]
@@ -243,10 +255,11 @@ class COCO:
         return list(ids)
 
     def loadAnns(self, ids=[]):
-        """
-        Load anns with the specified ids.
+        """Load anns with the specified ids.
+
         :param ids (int array)       : integer ids specifying anns
         :return: anns (object array) : loaded ann objects
+
         """
         if _isArrayLike(ids):
             return [self.anns[id] for id in ids]
@@ -254,10 +267,11 @@ class COCO:
             return [self.anns[ids]]
 
     def loadCats(self, ids=[]):
-        """
-        Load cats with the specified ids.
+        """Load cats with the specified ids.
+
         :param ids (int array)       : integer ids specifying cats
         :return: cats (object array) : loaded cat objects
+
         """
         if _isArrayLike(ids):
             return [self.cats[id] for id in ids]
@@ -265,21 +279,29 @@ class COCO:
             return [self.cats[ids]]
 
     def loadImgs(self, ids=[]):
-        """
-        Load anns with the specified ids.
+        """Load anns with the specified ids.
+
         :param ids (int array)       : integer ids specifying img
         :return: imgs (object array) : loaded img objects
+
         """
         if _isArrayLike(ids):
             return [self.imgs[id] for id in ids]
         elif type(ids) is int:
             return [self.imgs[ids]]
 
+    @staticmethod
+    def load_json(json_file):
+        with open(json_file) as io:
+            _data = json.load(io)
+        return _data
+
     def loadRes(self, resFile, min_score=0):
-        """
-        Load result file and return a result api object.
+        """Load result file and return a result api object.
+
         :param   resFile (str)     : file name of result file
         :return: res (obj)         : result api object
+
         """
         self.score_tresh = min_score
         res = COCO()
@@ -288,7 +310,7 @@ class COCO:
         logger.debug("Loading and preparing results...")
         tic = time.time()
         if type(resFile) is str:
-            anns = json.load(open(resFile))
+            anns = self.load_json(resFile)
         elif type(resFile) is np.ndarray:
             anns = self.loadNumpyAnnotations(resFile)
         else:
@@ -361,11 +383,14 @@ class COCO:
         warnings.warn("download deprecated in 1.3.0", DeprecationWarning)
 
     def loadNumpyAnnotations(self, data):
-        """
-        Convert result data from a numpy array [Nx7] where each row contains {imageID,x1,y1,w,h,score,class}
-        :param  data (numpy.ndarray)
+        """Convert result data from array to anns.
+
+        :param data (numpy.ndarray): array [Nx7] where each row contains
+            [imageID,x1,y1,w,h,score,class]
         :return: annotations (python nested list)
+
         """
+
         logger.debug("Converting ndarray to lists...")
         assert type(data) is np.ndarray
         logger.debug(data.shape)
@@ -386,9 +411,10 @@ class COCO:
         return ann
 
     def annToRLE(self, ann):
-        """
-        Convert annotation which can be polygons, uncompressed RLE to RLE.
+        """Convert annotation which can be polygons, uncompressed RLE to RLE.
+
         :return: binary mask (numpy 2D array)
+
         """
         t = self.imgs[ann["image_id"]]
         h, w = t["height"], t["width"]
@@ -407,10 +433,38 @@ class COCO:
         return rle
 
     def annToMask(self, ann):
-        """
-        Convert annotation which can be polygons, uncompressed RLE, or RLE to binary mask.
+        """Convert annotation which can be polygons, uncompressed RLE, or RLE
+        to binary mask.
+
         :return: binary mask (numpy 2D array)
+
         """
         rle = self.annToRLE(ann)
         m = maskUtils.decode(rle)
         return m
+
+    def get_ann_ids(self, img_ids=[], cat_ids=[], area_rng=[], iscrowd=None):
+        return self.getAnnIds(img_ids, cat_ids, area_rng, iscrowd)
+
+    def get_cat_ids(self, cat_names=[], sup_names=[], cat_ids=[]):
+        return self.getCatIds(cat_names, sup_names, cat_ids)
+
+    def get_img_ids(self, img_ids=[], cat_ids=[]):
+        return self.getImgIds(img_ids, cat_ids)
+
+    def load_anns(self, ids):
+        return self.loadAnns(ids)
+
+    def load_cats(self, ids):
+        return self.loadCats(ids)
+
+    def load_imgs(self, ids):
+        return self.loadImgs(ids)
+
+    @property
+    def img_ann_map(self):
+        return self.imgToAnns
+
+    @property
+    def cat_img_map(self):
+        return self.catToImgs

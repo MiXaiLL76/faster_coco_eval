@@ -1,8 +1,11 @@
 
 # history
 
-## v1.4.3
-- [x] fix [issue](https://github.com/MiXaiLL76/faster_coco_eval/issues/19)
+## v1.5.1
+- [x] **breaking change** | new static function COCO.load_json
+- [x] new curve f1_confidence with ```cur.plot_f1_confidence()```
+- [x] **breaking change** | replace display_matrix arg ```in_percent``` to ```normalize```
+- [x] **breaking change** | rework draw functions
 
 ## v1.4.2
 - [x] append Auto-formatters 
