@@ -1,5 +1,12 @@
 # Faster-COCO-Eval
 
+[![PyPI](https://img.shields.io/pypi/v/faster-coco-eval)](https://pypi.org/project/faster-coco-eval)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/faster-coco-eval.svg?label=PyPI%20downloads)](
+https://pypi.org/project/faster-coco-eval/)
+
+[![docs](https://img.shields.io/badge/docs-latest-blue)](https://github.com/MiXaiLL76/faster_coco_eval/wiki)
+[![license](https://img.shields.io/github/license/MiXaiLL76/faster_coco_eval.svg)](https://github.com/MiXaiLL76/faster_coco_eval/blob/main/LICENSE)
+
 ## Disclaimer
 
 I often use this project, but I saw it abandoned and without a public repository on github.
@@ -51,3 +58,15 @@ Available via link [history.md](https://github.com/MiXaiLL76/faster_coco_eval/bl
 
 The original module was licensed with apache 2, I will continue with the same license.
 Distributed under the apache version 2.0 license, see [license](LICENSE) for more information.
+
+## Citation
+
+If you use this benchmark in your research, please cite this project.
+
+```
+@article{faster-coco-eval,
+  title   = {{Faster-COCO-Eval}: Faster interpretation of the original COCOEval},
+  author  = {MiXaiLL76},
+  year    = {2024}
+}
+```
