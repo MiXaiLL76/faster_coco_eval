@@ -31,6 +31,7 @@ class ExtraEval:
         assert self.cocoGt is not None, "cocoGt is empty"
 
         if (self.cocoGt is not None) and (self.cocoDt is not None):
+            self.drop_cocodt_by_score(min_score=min_score)
             self.evaluate()
 
     def evaluate(self):
@@ -54,3 +55,29 @@ class ExtraEval:
         cocoEval.accumulate()
 
         self.eval = cocoEval.eval
+
+    def drop_cocodt_by_score(self, min_score: float):
+        assert self.cocoDt is not None, "cocoDt is empty"
+
+        if min_score > 0:
+            bad_keys = {}
+            bad_images_keys = []
+
+            for key, ann in self.cocoDt.anns.items():
+                if ann["score"] < min_score:
+                    if bad_keys.get(ann["image_id"]) is None:
+                        bad_keys[ann["image_id"]] = {}
+
+                    bad_keys[ann["image_id"]][key] = True
+
+                    bad_images_keys.append(ann["image_id"])
+
+            for image_id in set(bad_images_keys):
+                self.cocoDt.imgToAnns[image_id] = [
+                    ann
+                    for ann in self.cocoDt.imgToAnns[image_id]
+                    if bad_keys.get(image_id, {}).get(ann["id"]) is None
+                ]
+
+                for ann_id in bad_keys.get(image_id, {}).keys():
+                    del self.cocoDt.anns[ann_id]

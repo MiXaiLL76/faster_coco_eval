@@ -8,6 +8,7 @@ import plotly.graph_objs as go
 from PIL import Image
 
 from ..core import COCO
+from .utils import convert_ann_rle_to_poly
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,8 @@ def generate_ann_polygon(
         all_x = [x1, x1 + w, x1 + w, x1, x1, None]
         all_y = [y1, y1, y1 + h, y1 + h, y1, None]
     else:
+        ann = convert_ann_rle_to_poly(ann)
+
         for poly in ann["segmentation"]:
             if len(poly) > 3:
                 poly += poly[:2]
