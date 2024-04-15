@@ -7,6 +7,9 @@ https://pypi.org/project/faster-coco-eval/)
 [![docs](https://img.shields.io/badge/docs-latest-blue)](https://github.com/MiXaiLL76/faster_coco_eval/wiki)
 [![license](https://img.shields.io/github/license/MiXaiLL76/faster_coco_eval.svg)](https://github.com/MiXaiLL76/faster_coco_eval/blob/main/LICENSE)
 
+[![CI - Test](https://github.com/MiXaiLL76/faster_coco_eval/actions/workflows/unittest.yml/badge.svg)](https://github.com/MiXaiLL76/faster_coco_eval/actions/workflows/unittest.yml)
+<!-- [![Coverage](https://codecov.io/github/MiXaiLL76/faster_coco_eval/coverage.svg?branch=main)](https://codecov.io/gh/MiXaiLL76/faster_coco_eval)       -->
+
 ## Disclaimer
 
 I often use this project, but I saw it abandoned and without a public repository on github.
