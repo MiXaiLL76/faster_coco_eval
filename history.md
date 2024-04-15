@@ -1,6 +1,11 @@
 
 # history
 
+## v1.5.2
+- [x] Change comparison to colab_example
+- [x] append utils with opencv **conver_mask_to_poly** (extra)
+- [x] append **drop_cocodt_by_score** for extra eval
+
 ## v1.5.1
 - [x] **breaking change** | new static function COCO.load_json
 - [x] new curve f1_confidence with ```cur.plot_f1_confidence()```

@@ -24,22 +24,16 @@ for coco's AP metrics, especially when dealing with a high number of instances i
 For our use case with a test dataset of 5000 images from the coco val dataset.
 Testing was carried out using the mmdetection framework and the eval_metric.py script. The indicators are presented below.
 
-Visualization of testing **comparison.ipynb** available in directory [examples/comparison](https://github.com/MiXaiLL76/faster_coco_eval/blob/main/examples/comparison/mmdet/comparison.ipynb)
-Tested with yolo3 model (bbox eval) and yoloact model (segm eval)
+Visualization of testing **colab_example.ipynb** available in directory [examples/comparison](https://github.com/MiXaiLL76/faster_coco_eval/blob/main/examples/comparison/mmdet/colab_example.ipynb)
+[colab_example.ipynb in google collab](https://drive.google.com/file/d/13raC0nRsil797ITJSv3FTRvUvfEK9SD-/view?usp=sharing)
+Tested with rtmdet model bbox + segm
 
 ### Summary for 5000 imgs
 
-| Type | COCOeval    | COCOeval_faster | Profit       |
-| ---- | ----------- | --------------- | ------------ |
-| bbox | 18.477 sec. | 7.345 sec.      | ~2.5x faster |
-| segm | 29.819 sec. | 15.840 sec.     | ~1.7x faster |
-
-## Summary for 500 imgs
-
-| Type | COCOeval  | COCOeval_faster | Profit       |
-| ---- | --------- | --------------- | ------------ |
-| bbox | 3.57 sec. | 2.03 sec.       | ~1.7x faster |
-| segm | 4.16 sec. | 2.41 sec.       | ~1.7x faster |
+| Type | faster-coco-eval | pycocotools | Profit |
+| :--- | ---------------: | ----------: | -----: |
+| bbox |            5.812 |       22.72 |  3.909 |
+| segm |            7.413 |      24.434 |  3.296 |
 
 ## Feautures
 
