@@ -214,21 +214,29 @@ class COCO:
             cats = self.dataset["categories"]
         else:
             cats = self.dataset["categories"]
-            cats = (
-                cats
-                if len(catNms) == 0
-                else [cat for cat in cats if cat["name"] in catNms]
-            )
-            cats = (
-                cats
-                if len(supNms) == 0
-                else [cat for cat in cats if cat["supercategory"] in supNms]
-            )
-            cats = (
-                cats
-                if len(catIds) == 0
-                else [cat for cat in cats if cat["id"] in catIds]
-            )
+
+            if len(catNms) > 0:
+                name_to_cat = {cat.get("name"): cat for cat in cats}
+                cats = [
+                    name_to_cat[label]
+                    for label in catNms
+                    if name_to_cat.get(label)
+                ]
+
+            if len(supNms) > 0:
+                supercategory_to_cat = {
+                    cat.get("supercategory"): cat for cat in cats
+                }
+                cats = [
+                    supercategory_to_cat[label]
+                    for label in supNms
+                    if supercategory_to_cat.get(label)
+                ]
+
+            if len(catIds) > 0:
+                id_to_cat = {cat.get("id"): cat for cat in cats}
+                cats = [id_to_cat[idx] for idx in catIds if id_to_cat.get(idx)]
+
         ids = [cat["id"] for cat in cats]
         return ids
 
