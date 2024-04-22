@@ -70,6 +70,7 @@ class COCOeval:
         iouType="segm",
         print_function=logger.debug,
         extra_calc=False,
+        kpt_oks_sigmas=None,
     ):
         """Initialize CocoEval using coco APIs for gt and dt :param cocoGt:
 
@@ -88,7 +89,9 @@ class COCOeval:
         self.eval: dict = {}  # accumulated evaluation results
         self._gts = defaultdict(list)  # gt for evaluation
         self._dts = defaultdict(list)  # dt for evaluation
-        self.params = Params(iouType=iouType)  # parameters
+        self.params = Params(
+            iouType=iouType, kpt_sigmas=kpt_oks_sigmas
+        )  # parameters
         self._paramsEval: dict = {}  # parameters for evaluation
         self.stats: list = []  # result summarization
         self.ious: dict = {}  # ious between all gts and dts
@@ -99,6 +102,18 @@ class COCOeval:
         if cocoGt is not None:
             self.params.imgIds = sorted(cocoGt.getImgIds())
             self.params.catIds = sorted(cocoGt.getCatIds())
+
+            if iouType == "keypoints":
+                if cocoDt is not None:
+                    self.params.catIds = sorted(list(cocoDt.cat_img_map.keys()))
+                else:
+                    self.params.catIds = sorted(
+                        [
+                            category_id
+                            for category_id, category in cocoGt.cats.items()
+                            if len(category.get("keypoints", []))
+                        ]
+                    )
 
         self.print_function = print_function  # output print function
 
@@ -136,7 +151,7 @@ class COCOeval:
             gt["ignore"] = gt["ignore"] if "ignore" in gt else 0
             gt["ignore"] = "iscrowd" in gt and gt["iscrowd"]
             if p.iouType == "keypoints":
-                gt["ignore"] = (gt["num_keypoints"] == 0) or gt["ignore"]
+                gt["ignore"] = (gt.get("num_keypoints") == 0) or gt["ignore"]
         self._gts = defaultdict(list)  # gt for evaluation
         self._dts = defaultdict(list)  # dt for evaluation
         for gt in gts:
@@ -466,16 +481,32 @@ class COCOeval:
 
         def _summarizeKps():
             stats = np.zeros((10,))
-            stats[0] = _summarize(1, maxDets=20)
-            stats[1] = _summarize(1, maxDets=20, iouThr=0.5)
-            stats[2] = _summarize(1, maxDets=20, iouThr=0.75)
-            stats[3] = _summarize(1, maxDets=20, areaRng="medium")
-            stats[4] = _summarize(1, maxDets=20, areaRng="large")
-            stats[5] = _summarize(0, maxDets=20)
-            stats[6] = _summarize(0, maxDets=20, iouThr=0.5)
-            stats[7] = _summarize(0, maxDets=20, iouThr=0.75)
-            stats[8] = _summarize(0, maxDets=20, areaRng="medium")
-            stats[9] = _summarize(0, maxDets=20, areaRng="large")
+            stats[0] = _summarize(1, maxDets=self.params.maxDets[-1])
+            stats[1] = _summarize(
+                1, maxDets=self.params.maxDets[-1], iouThr=0.5
+            )
+            stats[2] = _summarize(
+                1, maxDets=self.params.maxDets[-1], iouThr=0.75
+            )
+            stats[3] = _summarize(
+                1, maxDets=self.params.maxDets[-1], areaRng="medium"
+            )
+            stats[4] = _summarize(
+                1, maxDets=self.params.maxDets[-1], areaRng="large"
+            )
+            stats[5] = _summarize(0, maxDets=self.params.maxDets[-1])
+            stats[6] = _summarize(
+                0, maxDets=self.params.maxDets[-1], iouThr=0.5
+            )
+            stats[7] = _summarize(
+                0, maxDets=self.params.maxDets[-1], iouThr=0.75
+            )
+            stats[8] = _summarize(
+                0, maxDets=self.params.maxDets[-1], areaRng="medium"
+            )
+            stats[9] = _summarize(
+                0, maxDets=self.params.maxDets[-1], areaRng="large"
+            )
             return stats
 
         if not self.eval:
@@ -534,6 +565,7 @@ class Params:
         ]
         self.areaRngLbl = ["all", "medium", "large"]
         self.useCats = 1
+
         self.kpt_oks_sigmas = (
             np.array(
                 [
@@ -559,11 +591,13 @@ class Params:
             / 10.0
         )
 
-    def __init__(self, iouType="segm"):
+    def __init__(self, iouType="segm", kpt_sigmas=None):
         if iouType == "segm" or iouType == "bbox":
             self.setDetParams()
         elif iouType == "keypoints":
             self.setKpParams()
+            if kpt_sigmas is not None:
+                self.kpt_oks_sigmas = np.array(kpt_sigmas)
         else:
             raise Exception("iouType not supported")
         self.iouType = iouType

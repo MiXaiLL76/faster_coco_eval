@@ -90,7 +90,7 @@ class COCO:
             if type(annotation_file) is str:
                 self.dataset = self.load_json(annotation_file)
             elif type(annotation_file) is dict:
-                self.dataset = annotation_file
+                self.dataset = copy.deepcopy(annotation_file)
             else:
                 self.dataset = None
 
@@ -322,7 +322,8 @@ class COCO:
         elif type(resFile) is np.ndarray:
             anns = self.loadNumpyAnnotations(resFile)
         else:
-            anns = resFile
+            anns = copy.deepcopy(resFile)
+
         assert type(anns) is list, "results in not an array of objects"
 
         anns = [ann for ann in anns if ann.get("score", 1) >= self.score_tresh]
