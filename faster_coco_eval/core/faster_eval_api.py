@@ -169,7 +169,7 @@ class COCOeval_faster(COCOeval):
                         self.eval["counts"][0], self.eval["counts"][3], -1
                     )
                 )
-                assert self.ground_truth_matches.shape[1] == len(
+                assert self.ground_truth_matches.shape[1] <= len(
                     self.cocoGt.anns
                 )
 
@@ -178,7 +178,7 @@ class COCOeval_faster(COCOeval):
                         self.eval["counts"][0], self.eval["counts"][3], -1
                     )
                 )
-                assert self.ground_truth_orig_id.shape[1] == len(
+                assert self.ground_truth_orig_id.shape[1] <= len(
                     self.cocoGt.anns
                 )
                 self.math_matches()
@@ -262,9 +262,21 @@ class COCOeval_faster(COCOeval):
             g.append(gt_ann["bbox"])
             d.append(dt_ann["bbox"])
 
-        return maskUtils.iou(d, g, [0]).max()
+        iscrowd = [0 for _ in g]
+
+        _iou = maskUtils.iou(d, g, iscrowd)
+
+        if len(_iou) == 0:
+            return 0
+        else:
+            return _iou.max()
 
     def compute_mIoU(self, categories=None, raw=False):
+        if self.params.iouType == "keypoints":
+            return np.array(
+                [val.max() for val in self.ious.values() if len(val)]
+            ).mean()
+
         g = []
         d = []
         s = []
@@ -283,7 +295,7 @@ class COCOeval_faster(COCOeval):
                     else:
                         raise Exception("unknown iouType for iou computation")
 
-        iscrowd = [0 for o in g]
+        iscrowd = [0 for _ in g]
 
         ious = maskUtils.iou(d, g, iscrowd)
         if raw:

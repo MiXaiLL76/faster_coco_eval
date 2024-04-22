@@ -18,6 +18,7 @@ class ExtraEval:
         iou_tresh: float = 0.0,
         recall_count: int = 100,
         useCats: bool = False,
+        kpt_oks_sigmas: list = None,
     ):
         self.iouType = iouType
         self.min_score = min_score
@@ -27,6 +28,12 @@ class ExtraEval:
         self.cocoGt = copy.deepcopy(cocoGt)
         self.cocoDt = copy.deepcopy(cocoDt)
         self.eval = None
+
+        if iouType == "keypoints":
+            self.useCats = True
+            self.kpt_oks_sigmas = np.array(kpt_oks_sigmas)
+        else:
+            self.kpt_oks_sigmas = None
 
         assert self.cocoGt is not None, "cocoGt is empty"
 
@@ -38,7 +45,11 @@ class ExtraEval:
         assert self.cocoDt is not None, "cocoDt is empty"
 
         cocoEval = COCOeval_faster(
-            self.cocoGt, self.cocoDt, self.iouType, extra_calc=True
+            self.cocoGt,
+            self.cocoDt,
+            self.iouType,
+            extra_calc=True,
+            kpt_oks_sigmas=self.kpt_oks_sigmas,
         )
         cocoEval.params.maxDets = [len(self.cocoGt.anns)]
 

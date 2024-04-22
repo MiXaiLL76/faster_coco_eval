@@ -26,6 +26,7 @@ def generate_ann_polygon(
     iouType: str = "bbox",
     text: Optional[str] = None,
     legendgroup: Optional[str] = None,
+    category_id_to_skeleton: Optional[dict] = None,
 ):
     all_x = []
     all_y = []
@@ -34,7 +35,7 @@ def generate_ann_polygon(
         x1, y1, w, h = ann["bbox"]
         all_x = [x1, x1 + w, x1 + w, x1, x1, None]
         all_y = [y1, y1, y1 + h, y1 + h, y1, None]
-    else:
+    elif iouType == "segm":
         ann = convert_ann_rle_to_poly(ann)
 
         for poly in ann["segmentation"]:
@@ -43,6 +44,23 @@ def generate_ann_polygon(
                 poly = np.array(poly).reshape(-1, 2)
                 all_x += poly[:, 0].tolist() + [None]
                 all_y += poly[:, 1].tolist() + [None]
+    elif iouType == "keypoints":
+        skeleton = category_id_to_skeleton.get(ann.get("category_id"))
+        keypoints = ann.get("keypoints")
+
+        if (skeleton is None) or (keypoints is None):
+            return
+
+        xyz = np.int0(keypoints).reshape(-1, 3)
+        ready_bones = {i: True for i in range(xyz.shape[0])}
+        for p1, p2 in skeleton:
+            if ready_bones.get(p1 - 1, False) and ready_bones.get(
+                p2 - 1, False
+            ):
+                all_x += [xyz[int(p1 - 1), 0], xyz[int(p2 - 1), 0], None]
+                all_y += [xyz[int(p1 - 1), 1], xyz[int(p2 - 1), 1], None]
+    else:
+        raise ValueError()
 
     return go.Scatter(
         x=all_x,
@@ -103,6 +121,10 @@ def display_image(
     categories_labels = {
         category["id"]: category["name"] for _, category in cocoGt.cats.items()
     }
+    category_id_to_skeleton = {
+        category["id"]: category.get("skeleton")
+        for _, category in cocoGt.cats.items()
+    }
 
     if len(gt_anns) > 0:
         for ann in gt_anns.values():
@@ -118,8 +140,10 @@ def display_image(
                                 categories_labels[ann["category_id"]],
                             ),
                             legendgroup="fn",
+                            category_id_to_skeleton=category_id_to_skeleton,
                         )
-                        polygons.append(poly)
+                        if poly is not None:
+                            polygons.append(poly)
                 else:
                     if display_gt:
                         poly = generate_ann_polygon(
@@ -131,8 +155,10 @@ def display_image(
                                 categories_labels[ann["category_id"]],
                             ),
                             legendgroup="gt",
+                            category_id_to_skeleton=category_id_to_skeleton,
                         )
-                        polygons.append(poly)
+                        if poly is not None:
+                            polygons.append(poly)
 
     if len(dt_anns) > 0:
         for ann in dt_anns.values():
@@ -156,8 +182,10 @@ def display_image(
                                 ann["iou"],
                             ),
                             legendgroup="tp",
+                            category_id_to_skeleton=category_id_to_skeleton,
                         )
-                        polygons.append(poly)
+                        if poly is not None:
+                            polygons.append(poly)
                 else:
                     if display_fp:
                         poly = generate_ann_polygon(
@@ -175,8 +203,10 @@ def display_image(
                                 ann["score"],
                             ),
                             legendgroup="fp",
+                            category_id_to_skeleton=category_id_to_skeleton,
                         )
-                        polygons.append(poly)
+                        if poly is not None:
+                            polygons.append(poly)
 
     fig = px.imshow(
         im,
