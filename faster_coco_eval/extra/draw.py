@@ -47,19 +47,21 @@ def generate_ann_polygon(
     elif iouType == "keypoints":
         skeleton = category_id_to_skeleton.get(ann.get("category_id"))
         keypoints = ann.get("keypoints")
-        
+
         if (skeleton is None) or (keypoints is None):
             return
 
         xyz = np.int0(keypoints).reshape(-1, 3)
-        ready_bones = {i : True for i in range(xyz.shape[0])}
+        ready_bones = {i: True for i in range(xyz.shape[0])}
         for p1, p2 in skeleton:
-            if ready_bones.get(p1 - 1, False) and ready_bones.get(p2 - 1, False):
+            if ready_bones.get(p1 - 1, False) and ready_bones.get(
+                p2 - 1, False
+            ):
                 all_x += [xyz[int(p1 - 1), 0], xyz[int(p2 - 1), 0], None]
                 all_y += [xyz[int(p1 - 1), 1], xyz[int(p2 - 1), 1], None]
     else:
         raise ValueError()
-    
+
     return go.Scatter(
         x=all_x,
         y=all_y,

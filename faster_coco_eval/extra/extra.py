@@ -34,7 +34,7 @@ class ExtraEval:
             self.kpt_oks_sigmas = np.array(kpt_oks_sigmas)
         else:
             self.kpt_oks_sigmas = None
-        
+
         assert self.cocoGt is not None, "cocoGt is empty"
 
         if (self.cocoGt is not None) and (self.cocoDt is not None):
