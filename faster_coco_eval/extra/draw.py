@@ -59,6 +59,12 @@ def generate_ann_polygon(
             ):
                 all_x += [xyz[int(p1 - 1), 0], xyz[int(p2 - 1), 0], None]
                 all_y += [xyz[int(p1 - 1), 1], xyz[int(p2 - 1), 1], None]
+
+        if ann.get("bbox"):
+            x1, y1, w, h = ann.get("bbox")
+            all_x += [x1, x1 + w, x1 + w, x1, x1, None]
+            all_y += [y1, y1, y1 + h, y1 + h, y1, None]
+
     else:
         raise ValueError()
 
@@ -218,9 +224,10 @@ def display_image(
 
     legends = {}
     for poly in polygons:
-        if legends.get(poly.legendgroup) is None:
-            poly.showlegend = True
-            legends[poly.legendgroup] = True
+        if poly is not None:
+            if legends.get(poly.legendgroup) is None:
+                poly.showlegend = True
+                legends[poly.legendgroup] = True
 
         fig.add_trace(poly)
 

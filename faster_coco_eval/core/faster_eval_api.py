@@ -334,11 +334,6 @@ class COCOeval_faster(COCOeval):
 
     @property
     def stats_as_dict(self):
-        iouType = self.params.iouType
-        assert (
-            iouType == "segm" or iouType == "bbox"
-        ), "iouType={} not supported".format(iouType)
-
         labels = [
             "AP_all",
             "AP_50",
@@ -352,9 +347,12 @@ class COCOeval_faster(COCOeval):
             "AR_small",
             "AR_medium",
             "AR_large",
-            "AR_50",
-            "AR_75",
         ]
+
+        if self.params.iouType in ["segm", "bbox"]:
+            labels += ["AR_50", "AR_75"]
+        else:
+            labels = [label for label in labels if "small" not in label]
 
         if self.matched:
             labels += [

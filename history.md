@@ -1,6 +1,10 @@
 
 # history
 
+## v1.5.3 - v1.5.4
+- [x] Worked out the ability to work with skeletons and various key points
+- [x] ```eval.state_as_dict``` Now works for key points
+
 ## v1.5.2
 - [x] Change comparison to colab_example
 - [x] append utils with opencv **conver_mask_to_poly** (extra)
