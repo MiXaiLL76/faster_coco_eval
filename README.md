@@ -28,7 +28,7 @@ For our use case with a test dataset of 5000 images from the coco val dataset.
 Testing was carried out using the mmdetection framework and the eval_metric.py script. The indicators are presented below.
 
 Visualization of testing **colab_example.ipynb** available in directory [examples/comparison](https://github.com/MiXaiLL76/faster_coco_eval/blob/main/examples/comparison/mmdet/colab_example.ipynb)
-[colab_example.ipynb in google collab](https://drive.google.com/file/d/1qj392oIU8fmeyIFHCtxCrLA8PQQAMoIs/view?usp=sharing)
+[colab_example.ipynb in google collab](https://colab.research.google.com/drive/1qj392oIU8fmeyIFHCtxCrLA8PQQAMoIs)
 Tested with rtmdet model bbox + segm
 
 ### Summary for 5000 imgs
