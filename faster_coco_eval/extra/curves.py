@@ -8,7 +8,8 @@ logger = logging.getLogger(__name__)
 
 
 class Curves(ExtraEval):
-    def build_curve(self, label):
+    def build_curve(self, label: str):
+        """Build the curve for a given label."""
         assert self.eval is not None, "Run first self.evaluate()"
 
         curve = []
@@ -49,6 +50,13 @@ class Curves(ExtraEval):
     def plot_pre_rec(
         self, curves=None, label: str = "category_id", return_fig: bool = False
     ):
+        """Plot the precision-recall curve.
+
+        curves: list of curves to plot
+        label: label of the curves
+        return_fig: return the figure
+
+        """
         if curves is None:
             curves = self.build_curve(label)
 
@@ -57,6 +65,13 @@ class Curves(ExtraEval):
     def plot_f1_confidence(
         self, curves=None, label: str = "category_id", return_fig: bool = False
     ):
+        """Plot the F1 confidence curve.
+
+        curves: list of curves to plot
+        label: label of the curves
+        return_fig: return the figure
+
+        """
         if curves is None:
             curves = self.build_curve(label)
 

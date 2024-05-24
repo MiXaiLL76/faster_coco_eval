@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 class ExtraEval:
+    """Extra evaluation for coco dataset."""
+
     def __init__(
         self,
         cocoGt: COCO = None,
@@ -20,6 +22,16 @@ class ExtraEval:
         useCats: bool = False,
         kpt_oks_sigmas: list = None,
     ):
+        """
+        :param cocoGt (COCO):
+        :param cocoDt (COCO):
+        :param iouType (str): bbox, segm, keypoints
+        :param min_score (float):
+        :param iou_tresh (float):
+        :param recall_count (int):
+        :param useCats (bool):
+        :param kpt_oks_sigmas (list):
+        """
         self.iouType = iouType
         self.min_score = min_score
         self.iou_tresh = iou_tresh
@@ -68,6 +80,10 @@ class ExtraEval:
         self.eval = cocoEval.eval
 
     def drop_cocodt_by_score(self, min_score: float):
+        """
+        :param min_score:
+        :return:
+        """
         assert self.cocoDt is not None, "cocoDt is empty"
 
         if min_score > 0:

@@ -192,6 +192,8 @@ class COCOeval_faster(COCOeval):
         self.print_function("DONE (t={:0.2f}s).".format(toc - tic))
 
     def math_matches(self):
+        """For each ground truth, find the best matching detection and set the
+        detection as matched."""
         for gidx, ground_truth_matches in enumerate(self.ground_truth_matches):
             gt_ids = self.ground_truth_orig_id[gidx]
 
@@ -252,6 +254,12 @@ class COCOeval_faster(COCOeval):
                 self.cocoGt.anns[gt_id]["fn"] = True
 
     def computeAnnIoU(self, gt_ann, dt_ann):
+        """Compute the IoU of a ground truth and a detection.
+
+        gt_ann: ground truth annotation
+        dt_ann: detection annotation
+
+        """
         g = []
         d = []
 
@@ -271,7 +279,13 @@ class COCOeval_faster(COCOeval):
         else:
             return _iou.max()
 
-    def compute_mIoU(self, categories=None, raw=False):
+    def compute_mIoU(self, categories: list = None, raw: bool = False):
+        """Compute the mIoU metric.
+
+        categories: if not None, only include images with categories in
+        raw: if True, return the raw ious.
+
+        """
         if self.params.iouType == "keypoints":
             return np.array(
                 [val.max() for val in self.ious.values() if len(val)]
@@ -308,6 +322,7 @@ class COCOeval_faster(COCOeval):
             return ious.mean()
 
     def compute_mAUC(self):
+        """Compute the mAUC metric."""
         aucs = []
 
         for K in range(self.eval["counts"][2]):
@@ -376,6 +391,11 @@ class COCOeval_faster(COCOeval):
 
     @staticmethod
     def calc_auc(recall_list, precision_list):
+        """
+        Calculate area under precision recall curve
+        recall_list: list of recall values
+        precision_list: list of precision values
+        """
         # https://towardsdatascience.com/how-to-efficiently-implement-area-under-precision-recall-curve-pr-auc-a85872fd7f14
         # mrec = np.concatenate(([0.], recall_list, [1.]))
         # mpre = np.concatenate(([0.], precision_list, [0.]))
