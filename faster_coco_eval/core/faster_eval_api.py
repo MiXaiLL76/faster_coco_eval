@@ -9,7 +9,6 @@ import numpy as np
 
 import faster_coco_eval.faster_eval_api_cpp as _C
 
-from . import mask as maskUtils
 from .cocoeval import COCOeval
 
 logger = logging.getLogger(__name__)
@@ -157,16 +156,21 @@ class COCOeval_faster(COCOeval):
         self.matched = False
         try:
             if self.extra_calc:
+
+                num_iou_thresholds, _, _, num_area_ranges, _ = self.eval[
+                    "counts"
+                ]
+
                 self.detection_matches = np.vstack(
                     np.array(self.eval["detection_matches"]).reshape(
-                        self.eval["counts"][0], self.eval["counts"][3], -1
+                        num_iou_thresholds, num_area_ranges, -1
                     )
                 )
                 assert self.detection_matches.shape[1] <= len(self.cocoDt.anns)
 
                 self.ground_truth_matches = np.vstack(
                     np.array(self.eval["ground_truth_matches"]).reshape(
-                        self.eval["counts"][0], self.eval["counts"][3], -1
+                        num_iou_thresholds, num_area_ranges, -1
                     )
                 )
                 assert self.ground_truth_matches.shape[1] <= len(
@@ -175,7 +179,7 @@ class COCOeval_faster(COCOeval):
 
                 self.ground_truth_orig_id = np.vstack(
                     np.array(self.eval["ground_truth_orig_id"]).reshape(
-                        self.eval["counts"][0], self.eval["counts"][3], -1
+                        num_iou_thresholds, num_area_ranges, -1
                     )
                 )
                 assert self.ground_truth_orig_id.shape[1] <= len(
@@ -205,24 +209,29 @@ class COCOeval_faster(COCOeval):
                 if gt_id <= -1:
                     continue
 
-                _gt_ann = self.cocoGt.anns.get(gt_id)
-                if _gt_ann is None:
+                _gt_ann = self.cocoGt.anns[gt_id]
+                _dt_ann = self.cocoDt.anns[dt_id]
+                _img_id = self.cocoGt.ann_img_map[gt_id]
+                _catId = _gt_ann["category_id"] if self.params.useCats else -1
+
+                if self.params.useCats:
+                    _catId = _gt_ann["category_id"]
+                    _map_gt_dict = self.cocoGt.img_cat_ann_idx_map
+                    _map_dt_dict = self.cocoDt.img_cat_ann_idx_map
+                    _map_id = (_img_id, _catId)
+                else:
+                    _catId = -1
+                    _map_gt_dict = self.cocoGt.img_ann_idx_map
+                    _map_dt_dict = self.cocoDt.img_ann_idx_map
+                    _map_id = _img_id
+
+                iou_gt_id = _map_gt_dict[_map_id].get(gt_id)
+                iou_dt_id = _map_dt_dict[_map_id].get(dt_id)
+
+                if iou_gt_id is None or iou_dt_id is None:
                     continue
 
-                _dt_ann = self.cocoDt.anns.get(dt_id)
-                if _dt_ann is None:
-                    continue
-
-                if int(_gt_ann["image_id"]) != int(_dt_ann["image_id"]):
-                    continue
-
-                if self.params.useCats == 1:
-                    if int(_gt_ann["category_id"]) != int(
-                        _dt_ann["category_id"]
-                    ):
-                        continue
-
-                iou = self.computeAnnIoU(_gt_ann, _dt_ann)
+                iou = self.ious[(_img_id, _catId)][iou_dt_id, iou_gt_id]
 
                 if not _gt_ann.get("matched", False):
                     _dt_ann["tp"] = True
@@ -253,73 +262,13 @@ class COCOeval_faster(COCOeval):
             if self.cocoGt.anns[gt_id].get("matched") is None:
                 self.cocoGt.anns[gt_id]["fn"] = True
 
-    def computeAnnIoU(self, gt_ann, dt_ann):
-        """Compute the IoU of a ground truth and a detection.
-
-        gt_ann: ground truth annotation
-        dt_ann: detection annotation
-
-        """
-        g = []
-        d = []
-
-        if self.params.iouType == "segm":
-            g.append(gt_ann["rle"])
-            d.append(dt_ann["rle"])
-        elif self.params.iouType == "bbox":
-            g.append(gt_ann["bbox"])
-            d.append(dt_ann["bbox"])
-
-        iscrowd = [0 for _ in g]
-
-        _iou = maskUtils.iou(d, g, iscrowd)
-
-        if len(_iou) == 0:
-            return 0
-        else:
-            return _iou.max()
-
-    def compute_mIoU(self, categories: list = None, raw: bool = False):
-        """Compute the mIoU metric.
-
-        categories: if not None, only include images with categories in
-        raw: if True, return the raw ious.
-
-        """
-        if self.params.iouType == "keypoints":
-            return np.array(
-                [val.max() for val in self.ious.values() if len(val)]
-            ).mean()
-
-        g = []
-        d = []
-        s = []
-
+    def compute_mIoU(self):
+        """Compute the mIoU metric."""
+        ious = []
         for _, dt_ann in self.cocoDt.anns.items():
-            if dt_ann.get("tp", False):
-                gt_ann = self.cocoGt.anns[dt_ann["gt_id"]]
-                if categories is None or gt_ann["category_id"] in categories:
-                    s.append(dt_ann.get("score", 1))
-                    if self.params.iouType == "segm":
-                        g.append(gt_ann["rle"])
-                        d.append(dt_ann["rle"])
-                    elif self.params.iouType == "bbox":
-                        g.append(gt_ann["bbox"])
-                        d.append(dt_ann["bbox"])
-                    else:
-                        raise Exception("unknown iouType for iou computation")
-
-        iscrowd = [0 for _ in g]
-
-        ious = maskUtils.iou(d, g, iscrowd)
-        if raw:
-            return ious
-
-        if len(ious) == 0:
-            return 0
-        else:
-            ious = ious.diagonal()
-            return ious.mean()
+            if dt_ann.get("iou", False):
+                ious.append(dt_ann["iou"])
+        return sum(ious) / len(ious)
 
     def compute_mAUC(self):
         """Compute the mAUC metric."""
