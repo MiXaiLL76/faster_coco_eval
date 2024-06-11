@@ -21,6 +21,17 @@ class PreviewResults(ExtraEval):
         categories: Optional[list] = None,
         return_fig: bool = False,
     ):
+        """
+        Display the image with the results
+        image_id: image id
+        display_fp: display false positive
+        display_fn: display false negative
+        display_tp: display true positive
+        display_gt: display ground truth
+        data_folder: data folder
+        categories: categories to display
+        return_fig: return the figure
+        """
         return display_image(
             self.cocoGt,
             self.cocoDt,
@@ -58,7 +69,13 @@ class PreviewResults(ExtraEval):
                 )
 
     def _compute_confusion_matrix(self, y_true, y_pred, fp={}, fn={}):
-        """Return classes*(classes + fp col + fn col)"""
+        """
+        Compute the confusion matrix
+        y_true: true labels
+        y_pred: predicted labels
+        fp: false positive
+        fn: false negative
+        """
         categories_real_ids = list(self.cocoGt.cats)
         categories_enum_ids = {
             category_id: _i
@@ -77,6 +94,7 @@ class PreviewResults(ExtraEval):
         return cm
 
     def compute_confusion_matrix(self):
+        """Compute the confusion matrix."""
         assert self.eval is not None, "Run first self.evaluate()"
 
         if self.useCats:
@@ -116,6 +134,12 @@ class PreviewResults(ExtraEval):
     def display_matrix(
         self, normalize=False, conf_matrix=None, return_fig: bool = False
     ):
+        """
+        Display the confusion matrix
+        normalize: normalize the matrix
+        conf_matrix: confusion matrix to display
+        return_fig: return the figure
+        """
         if conf_matrix is None:
             conf_matrix = self.compute_confusion_matrix()
 

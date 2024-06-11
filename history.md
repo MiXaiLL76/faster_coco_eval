@@ -1,6 +1,13 @@
 
 # history
 
+## v1.5.5
+- [x] Add CED MSE curve
+- [x] Review tests
+- [x] Review **COCOeval_faster.math_matches** function and **COCOeval_faster.compute_mIoU** function
+- [x] Add img+category to ann ids mapping via **COCO.img_cat_ann_idx_map**
+- [x] Add img to ann ids mapping via **COCO.img_ann_idx_map**
+
 ## v1.5.3 - v1.5.4
 - [x] Worked out the ability to work with skeletons and various key points
 - [x] ```eval.state_as_dict``` Now works for key points

@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import os
 import unittest
 
 import numpy as np
@@ -9,11 +10,29 @@ from faster_coco_eval import COCO, COCOeval_faster
 from faster_coco_eval.extra import PreviewResults
 
 
-class TestBaseCoco(unittest.TestCase):
-    def test_coco(self):
-        prepared_coco_in_dict = COCO.load_json("tests/dataset/gt_dataset.json")
-        prepared_anns = COCO.load_json("tests/dataset/dt_dataset.json")
+def _encode(x):
+    """Encode a binary mask into a run-length encoded string."""
+    return mask_util.encode(np.asfortranarray(x, np.uint8))
 
+
+class TestBaseCoco(unittest.TestCase):
+    """Test basic COCO functionality."""
+
+    prepared_coco_in_dict = None
+    prepared_anns = None
+
+    def setUp(self):
+        gt_file = "dataset/gt_dataset.json"
+        dt_file = "dataset/dt_dataset.json"
+
+        if not os.path.exists(gt_file):
+            gt_file = os.path.join("tests", gt_file)
+            dt_file = os.path.join("tests", dt_file)
+
+        self.prepared_coco_in_dict = COCO.load_json(gt_file)
+        self.prepared_anns = COCO.load_json(dt_file)
+
+    def test_coco_eval(self):
         stats_as_dict = {
             "AP_all": 0.7832783278327835,
             "AP_50": 0.7832783278327836,
@@ -36,8 +55,8 @@ class TestBaseCoco(unittest.TestCase):
         iouType = "segm"
         useCats = False
 
-        cocoGt = COCO(prepared_coco_in_dict)
-        cocoDt = cocoGt.loadRes(prepared_anns)
+        cocoGt = COCO(self.prepared_coco_in_dict)
+        cocoDt = cocoGt.loadRes(self.prepared_anns)
 
         cocoEval = COCOeval_faster(cocoGt, cocoDt, iouType, extra_calc=True)
         cocoEval.params.maxDets = [len(cocoGt.anns)]
@@ -51,12 +70,7 @@ class TestBaseCoco(unittest.TestCase):
 
         self.assertEqual(cocoEval.stats_as_dict, stats_as_dict)
 
-
-class TestConfusionMatrix(unittest.TestCase):
-    def test_coco(self):
-        prepared_coco_in_dict = COCO.load_json("tests/dataset/gt_dataset.json")
-        prepared_anns = COCO.load_json("tests/dataset/dt_dataset.json")
-
+    def test_confusion_matrix(self):
         prepared_result = [
             [2.0, 1.0, 0.0, 0.0, 1.0, 0.0],
             [1.0, 1.0, 0.0, 0.0, 0.0, 1.0],
@@ -67,8 +81,8 @@ class TestConfusionMatrix(unittest.TestCase):
         iouType = "segm"
         useCats = False
 
-        cocoGt = COCO(prepared_coco_in_dict)
-        cocoDt = cocoGt.loadRes(prepared_anns)
+        cocoGt = COCO(self.prepared_coco_in_dict)
+        cocoDt = cocoGt.loadRes(self.prepared_anns)
 
         results = PreviewResults(
             cocoGt=cocoGt,
@@ -81,12 +95,6 @@ class TestConfusionMatrix(unittest.TestCase):
 
         self.assertEqual(result_cm, prepared_result)
 
-
-def _encode(x):
-    return mask_util.encode(np.asfortranarray(x, np.uint8))
-
-
-class TestToBBox(unittest.TestCase):
     def testToBboxFullImage(self):
         mask = np.array([[0, 1], [1, 1]])
         bbox = mask_util.toBbox(_encode(mask))
@@ -103,8 +111,6 @@ class TestToBBox(unittest.TestCase):
             (bbox == np.array([3, 2, 3, 2], dtype="float32")).all(), bbox
         )
 
-
-class TestMaskUtil(unittest.TestCase):
     def testInvalidRLECounts(self):
         rle = {
             "size": [1024, 1024],

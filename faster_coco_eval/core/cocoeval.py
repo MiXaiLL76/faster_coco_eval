@@ -592,6 +592,13 @@ class Params:
         )
 
     def __init__(self, iouType="segm", kpt_sigmas=None):
+        """Params for coco evaluation api.
+
+        IouType: the type of iou to use for evaluation, can be 'segm', 'bbox',
+            or 'keypoints'
+        kpt_sigmas: list of keypoint sigma values.
+
+        """
         if iouType == "segm" or iouType == "bbox":
             self.setDetParams()
         elif iouType == "keypoints":

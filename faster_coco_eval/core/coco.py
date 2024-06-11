@@ -105,8 +105,11 @@ class COCO:
     def createIndex(self):
         # create index
         logger.debug("creating index...")
-        anns, cats, imgs = {}, {}, {}
+        anns, cats, imgs, annToImgs = {}, {}, {}, {}
         imgToAnns, catToImgs = defaultdict(list), defaultdict(list)
+        imgCatToAnnsIdx = defaultdict(dict)
+        imgToAnnsIdx = defaultdict(dict)
+
         annsImgIds_dict = {}
         if "images" in self.dataset:
             for img in self.dataset["images"]:
@@ -120,6 +123,15 @@ class COCO:
                 if annsImgIds_dict.get(ann["image_id"]):
                     imgToAnns[ann["image_id"]].append(ann)
                     anns[ann["id"]] = ann
+                    annToImgs[ann["id"]] = ann["image_id"]
+                    imgCatToAnnsIdx[(ann["image_id"], ann["category_id"])][
+                        ann["id"]
+                    ] = len(
+                        imgCatToAnnsIdx[(ann["image_id"], ann["category_id"])]
+                    )
+                    imgToAnnsIdx[ann["image_id"]][ann["id"]] = len(
+                        imgToAnnsIdx[ann["image_id"]]
+                    )
 
         if "categories" in self.dataset:
             for cat in self.dataset["categories"]:
@@ -135,6 +147,9 @@ class COCO:
         self.anns = anns
         self.imgToAnns = imgToAnns
         self.catToImgs = catToImgs
+        self.annToImgs = annToImgs
+        self.imgCatToAnnsIdx = imgCatToAnnsIdx
+        self.imgToAnnsIdx = imgToAnnsIdx
         self.imgs = imgs
         self.cats = cats
 
@@ -453,21 +468,64 @@ class COCO:
         return m
 
     def get_ann_ids(self, img_ids=[], cat_ids=[], area_rng=[], iscrowd=None):
+        """Get ann ids that satisfy given filter conditions.
+
+        :param img_ids (int array) : get anns for given imgs
+        :param cat_ids (int array) : get anns for given cats
+        :param area_rng (float array) : get anns for given area range
+            (e.g. [0 inf])
+        :return: ids (int array)  : integer array of ann ids
+
+        """
         return self.getAnnIds(img_ids, cat_ids, area_rng, iscrowd)
 
     def get_cat_ids(self, cat_names=[], sup_names=[], cat_ids=[]):
+        """Get cat ids that satisfy given filter conditions.
+
+        :param cat_names (str array) : get cats for given cat names
+        :param sup_names (str array) : get cats for given supercategory
+            names
+        :param cat_ids (int array) : get cats for given cat ids
+        :return: ids (int array)  : integer array of cat ids
+
+        """
         return self.getCatIds(cat_names, sup_names, cat_ids)
 
     def get_img_ids(self, img_ids=[], cat_ids=[]):
+        """Get img ids that satisfy given filter conditions.
+
+        :param img_ids (int array) : get imgs for given ids
+        :param cat_ids (int array) : get imgs with all given cats
+        :return: ids (int array)  : integer array of img ids
+
+        """
         return self.getImgIds(img_ids, cat_ids)
 
     def load_anns(self, ids):
+        """Load anns with the specified ids.
+
+        :param ids (int array)       : integer ids specifying anns
+        :return: anns (object array) : loaded ann objects
+
+        """
         return self.loadAnns(ids)
 
     def load_cats(self, ids):
+        """Load cats with the specified ids.
+
+        :param ids (int array)       : integer ids specifying cats
+        :return: cats (object array) : loaded cat objects
+
+        """
         return self.loadCats(ids)
 
     def load_imgs(self, ids):
+        """Load anns with the specified ids.
+
+        :param ids (int array)       : integer ids specifying img
+        :return: imgs (object array) : loaded img objects
+
+        """
         return self.loadImgs(ids)
 
     @property
@@ -477,3 +535,15 @@ class COCO:
     @property
     def cat_img_map(self):
         return self.catToImgs
+
+    @property
+    def ann_img_map(self):
+        return self.annToImgs
+
+    @property
+    def img_ann_idx_map(self):
+        return self.imgToAnnsIdx
+
+    @property
+    def img_cat_ann_idx_map(self):
+        return self.imgCatToAnnsIdx
