@@ -105,8 +105,11 @@ class COCO:
     def createIndex(self):
         # create index
         logger.debug("creating index...")
-        anns, cats, imgs = {}, {}, {}
+        anns, cats, imgs, annToImgs = {}, {}, {}, {}
         imgToAnns, catToImgs = defaultdict(list), defaultdict(list)
+        imgCatToAnnsIdx = defaultdict(dict)
+        imgToAnnsIdx = defaultdict(dict)
+
         annsImgIds_dict = {}
         if "images" in self.dataset:
             for img in self.dataset["images"]:
@@ -120,6 +123,15 @@ class COCO:
                 if annsImgIds_dict.get(ann["image_id"]):
                     imgToAnns[ann["image_id"]].append(ann)
                     anns[ann["id"]] = ann
+                    annToImgs[ann["id"]] = ann["image_id"]
+                    imgCatToAnnsIdx[(ann["image_id"], ann["category_id"])][
+                        ann["id"]
+                    ] = len(
+                        imgCatToAnnsIdx[(ann["image_id"], ann["category_id"])]
+                    )
+                    imgToAnnsIdx[ann["image_id"]][ann["id"]] = len(
+                        imgToAnnsIdx[ann["image_id"]]
+                    )
 
         if "categories" in self.dataset:
             for cat in self.dataset["categories"]:
@@ -135,6 +147,9 @@ class COCO:
         self.anns = anns
         self.imgToAnns = imgToAnns
         self.catToImgs = catToImgs
+        self.annToImgs = annToImgs
+        self.imgCatToAnnsIdx = imgCatToAnnsIdx
+        self.imgToAnnsIdx = imgToAnnsIdx
         self.imgs = imgs
         self.cats = cats
 
@@ -520,3 +535,15 @@ class COCO:
     @property
     def cat_img_map(self):
         return self.catToImgs
+
+    @property
+    def ann_img_map(self):
+        return self.annToImgs
+
+    @property
+    def img_ann_idx_map(self):
+        return self.imgToAnnsIdx
+
+    @property
+    def img_cat_ann_idx_map(self):
+        return self.imgCatToAnnsIdx
