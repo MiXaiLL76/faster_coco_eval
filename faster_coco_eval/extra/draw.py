@@ -409,7 +409,7 @@ def plot_f1_confidence(curves, return_fig: bool = False):
     eps = 1e-16
     for _curve in curves:
         recall_list = _curve["recall_list"]
-        precision_list = _curve["precision_list"]
+        precision_list = _curve["precision_list"][: len(recall_list)]
         scores = _curve["scores"]
         f1_curve = (
             2
@@ -447,6 +447,82 @@ def plot_f1_confidence(curves, return_fig: bool = False):
         "autosize": True,
         "height": 600,
         "width": 1200,
+    }
+
+    fig.update_layout(layout)
+
+    if return_fig:
+        return fig
+
+    fig.show()
+
+
+def plot_ced_metric(curves, normalize: bool = False, return_fig: bool = False):
+    fig = go.Figure()
+
+    if normalize:
+        fig.layout.yaxis.title = (
+            "The proportion of the sample to the total sample [%]"
+        )
+        _hovertemplate_y = "%{y:.2f}%<br>"
+    else:
+        fig.layout.yaxis.title = "Number of samples"
+        _hovertemplate_y = "n=%{y}<br>"
+
+    for ced_curve in curves:
+        if normalize:
+            y = (np.array(ced_curve["count"]) / ced_curve["total_count"]) * 100
+        else:
+            y = ced_curve["count"]
+
+        fig.layout.xaxis.title = "Mean squared error"
+
+        category_name = ced_curve["category"]["name"]
+        fig.add_trace(
+            go.Scatter(
+                x=ced_curve["mse"],
+                y=y,
+                name=f"CED Curve [{category_name}]",
+                hovertemplate=_hovertemplate_y
+                + "mse: %{x:.2f}<br><extra></extra>",
+                showlegend=True,
+                mode="lines",
+            )
+        )
+
+    fig.update_xaxes(showspikes=True)
+    fig.update_yaxes(showspikes=True)
+
+    updatemenus = [
+        dict(
+            type="dropdown",
+            direction="down",
+            y=1.1,
+            x=1,
+            buttons=list(
+                [
+                    dict(
+                        args=[{"xaxis.type": "linear"}],
+                        label="Linear Scale",
+                        method="relayout",
+                    ),
+                    dict(
+                        args=[{"xaxis.type": "log"}],
+                        label="Log Scale",
+                        method="relayout",
+                    ),
+                ]
+            ),
+        ),
+    ]
+
+    layout = {
+        "title": "Cumulative Error Distribution",
+        "autosize": True,
+        "height": 600,
+        "width": 1200,
+        # "xaxis_type" : "log",
+        "updatemenus": updatemenus,
     }
 
     fig.update_layout(layout)

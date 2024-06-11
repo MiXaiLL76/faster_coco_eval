@@ -65,11 +65,14 @@ class ExtraEval:
         )
         cocoEval.params.maxDets = [len(self.cocoGt.anns)]
 
-        cocoEval.params.iouThrs = [self.iou_tresh]
-        cocoEval.params.areaRng = [[0, 10000000000]]
         self.recThrs = np.linspace(0, 1, self.recall_count + 1, endpoint=True)
+
         cocoEval.params.recThrs = self.recThrs
 
+        if self.iouType != "keypoints":
+            cocoEval.params.iouThrs = [self.iou_tresh]
+
+        cocoEval.params.areaRng = [[0, 10000000000]]
         cocoEval.params.useCats = int(self.useCats)  # Выключение labels
 
         self.cocoEval = cocoEval
