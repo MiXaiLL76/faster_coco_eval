@@ -56,17 +56,23 @@ class PreviewResults(ExtraEval):
         data_folder=None,
         categories=None,
     ):
-        for image_id, _ in self.cocoGt.imgToAnns.items():
-            if (image_id in image_ids) or "all" in image_ids:
-                self.display_image(
-                    image_id,
-                    display_fp=display_fp,
-                    display_fn=display_fn,
-                    display_tp=display_tp,
-                    display_gt=display_gt,
-                    data_folder=data_folder,
-                    categories=categories,
-                )
+        if image_ids == ["all"]:
+            image_ids = list(self.cocoGt.imgs.keys())
+
+        for image_id in image_ids:
+            if self.cocoGt.imgs.get(image_id) is None:
+                logger.warning("Image {} not found".format(image_id))
+                continue
+
+            self.display_image(
+                image_id,
+                display_fp=display_fp,
+                display_fn=display_fn,
+                display_tp=display_tp,
+                display_gt=display_gt,
+                data_folder=data_folder,
+                categories=categories,
+            )
 
     def _compute_confusion_matrix(self, y_true, y_pred, fp={}, fn={}):
         """
