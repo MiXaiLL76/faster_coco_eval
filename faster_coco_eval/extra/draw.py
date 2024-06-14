@@ -495,6 +495,7 @@ def plot_ced_metric(curves, normalize: bool = False, return_fig: bool = False):
                     ),
                     showlegend=True,
                     mode="lines",
+                    legendgroup=legendgrouptitle,
                     legendgrouptitle={
                         "text": legendgrouptitle,
                     },
