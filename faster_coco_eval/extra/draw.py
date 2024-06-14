@@ -159,16 +159,18 @@ def display_image(
     if len(gt_anns) > 0:
         for ann in gt_anns.values():
             if categories is None or ann["category_id"] in categories:
+                _text = [
+                    "id={}".format(ann["id"]),
+                    "category={}".format(categories_labels[ann["category_id"]]),
+                ]
                 if ann.get("fn", False):
                     if display_fn:
+                        fn_text = ["<b>FN</b>"] + _text
                         poly = generate_ann_polygon(
                             ann,
                             color=FN_COLOR,
                             iouType=iouType,
-                            text="<b>FN</b><br>id={}<br>category={}".format(
-                                ann["id"],
-                                categories_labels[ann["category_id"]],
-                            ),
+                            text="<br>".join(fn_text),
                             legendgroup="fn",
                             category_id_to_skeleton=category_id_to_skeleton,
                         )
@@ -176,14 +178,12 @@ def display_image(
                             polygons.append(poly)
                 else:
                     if display_gt:
+                        gt_text = ["<b>GT</b>"] + _text
                         poly = generate_ann_polygon(
                             ann,
                             color=GT_COLOR,
                             iouType=iouType,
-                            text="<b>GT</b><br>id={}<br>category={}".format(
-                                ann["id"],
-                                categories_labels[ann["category_id"]],
-                            ),
+                            text="<br>".join(gt_text),
                             legendgroup="gt",
                             category_id_to_skeleton=category_id_to_skeleton,
                         )
@@ -193,24 +193,26 @@ def display_image(
     if len(dt_anns) > 0:
         for ann in dt_anns.values():
             if categories is None or ann["category_id"] in categories:
+                _text = [
+                    "id={}".format(ann["id"]),
+                    "category={}".format(categories_labels[ann["category_id"]]),
+                    "score={:.2f}".format(ann["score"]),
+                ]
                 if ann.get("tp", False):
                     if display_tp:
+                        tp_text = ["<b>DT</b>"] + _text
+
+                        if ann.get("mae") is not None:
+                            tp_text.append("MAE={:.2f}".format(ann["mae"]))
+
+                        if ann.get("iou") is not None:
+                            tp_text.append("IoU={:.2f}".format(ann["iou"]))
+
                         poly = generate_ann_polygon(
                             ann,
                             color=DT_COLOR,
                             iouType=iouType,
-                            text=(
-                                "<b>DT</b><br>"
-                                "id={}<br>"
-                                "category={}<br>"
-                                "score={:.2f}<br>"
-                                "IoU={:.2f}"
-                            ).format(
-                                ann["id"],
-                                categories_labels[ann["category_id"]],
-                                ann["score"],
-                                ann["iou"],
-                            ),
+                            text="<br>".join(tp_text),
                             legendgroup="tp",
                             category_id_to_skeleton=category_id_to_skeleton,
                         )
@@ -218,20 +220,13 @@ def display_image(
                             polygons.append(poly)
                 else:
                     if display_fp:
+                        fp_text = ["<b>FP</b>"] + _text
+
                         poly = generate_ann_polygon(
                             ann,
                             color=FP_COLOR,
                             iouType=iouType,
-                            text=(
-                                "<b>FP</b><br>"
-                                "id={}<br>"
-                                "category={}<br>"
-                                "score={:.2f}"
-                            ).format(
-                                ann["id"],
-                                categories_labels[ann["category_id"]],
-                                ann["score"],
-                            ),
+                            text="<br>".join(fp_text),
                             legendgroup="fp",
                             category_id_to_skeleton=category_id_to_skeleton,
                         )
@@ -469,27 +464,45 @@ def plot_ced_metric(curves, normalize: bool = False, return_fig: bool = False):
         fig.layout.yaxis.title = "Number of samples"
         _hovertemplate_y = "n=%{y}<br>"
 
+    fig.layout.xaxis.title = "Mean Absolute error"
+
+    traces = []
     for ced_curve in curves:
-        if normalize:
-            y = (np.array(ced_curve["count"]) / ced_curve["total_count"]) * 100
-        else:
-            y = ced_curve["count"]
+        for key, val in ced_curve["mae"].items():
+            if normalize:
+                y = (np.array(val["y"]) / max(val["y"])) * 100
+            else:
+                y = val["y"]
 
-        fig.layout.xaxis.title = "Mean squared error"
+            category_name = ced_curve["category"]["name"]
 
-        category_name = ced_curve["category"]["name"]
-        fig.add_trace(
-            go.Scatter(
-                x=ced_curve["mse"],
-                y=y,
-                name=f"CED Curve [{category_name}]",
-                hovertemplate=_hovertemplate_y
-                + "mse: %{x:.2f}<br><extra></extra>",
-                showlegend=True,
-                mode="lines",
+            legendgrouptitle = "CED Curve [{}]".format(category_name)
+            if ced_curve.get("label") is not None:
+                legendgrouptitle = (
+                    "[{}] ".format(ced_curve["label"]) + legendgrouptitle
+                )
+
+            traces.append(
+                go.Scatter(
+                    x=val["x"],
+                    y=y,
+                    name=key,
+                    hovertemplate=(
+                        _hovertemplate_y
+                        + "mae: %{x:.2f}<br>"
+                        + "{} -> {}<br>".format(category_name, key)
+                        + "<extra></extra>"
+                    ),
+                    showlegend=True,
+                    mode="lines",
+                    legendgrouptitle={
+                        "text": legendgrouptitle,
+                    },
+                    visible=True if key == "MEAN" else False,  # "legendonly",
+                )
             )
-        )
 
+    fig.add_traces(traces)
     fig.update_xaxes(showspikes=True)
     fig.update_yaxes(showspikes=True)
 
@@ -510,6 +523,40 @@ def plot_ced_metric(curves, normalize: bool = False, return_fig: bool = False):
                         args=[{"xaxis.type": "log"}],
                         label="Log Scale",
                         method="relayout",
+                    ),
+                ]
+            ),
+        ),
+        dict(
+            type="dropdown",
+            direction="down",
+            y=1.1,
+            x=0.85,
+            buttons=list(
+                [
+                    dict(
+                        args=[
+                            {
+                                "visible": [
+                                    x.name == "MEAN"
+                                    for i, x in enumerate(traces)
+                                ]
+                            },
+                        ],
+                        label="Display MEAN",
+                        method="restyle",
+                    ),
+                    dict(
+                        args=[
+                            {
+                                "visible": [
+                                    x.name != "MEAN"
+                                    for i, x in enumerate(traces)
+                                ]
+                            },
+                        ],
+                        label="Display ALL",
+                        method="restyle",
                     ),
                 ]
             ),

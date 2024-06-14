@@ -79,13 +79,17 @@ class Curves(ExtraEval):
 
         return plot_f1_confidence(curves, return_fig=return_fig)
 
-    def build_ced_curve(self, mse_count: int = 1000):
+    def build_ced_curve(self, mae_count: int = 1000):
         """Build the curve for all categories."""
         assert self.eval is not None, "Run first self.evaluate()"
 
         curves = []
         for category_id, category in self.cocoGt.cats.items():
-            all_mse = []
+            _curve = {
+                "all_mae": [],
+                "mae": {},
+                "category": category,
+            }
             for ann_id in self.cocoGt.get_ann_ids(cat_ids=[category_id]):
                 gt_ann = self.cocoGt.anns[ann_id]
                 if gt_ann.get("keypoints", False) and gt_ann.get(
@@ -93,50 +97,75 @@ class Curves(ExtraEval):
                 ):
                     dt_ann = self.cocoDt.anns[gt_ann["dt_id"]]
 
-                    # https://en.wikipedia.org/wiki/Mean_squared_error
                     if self.iouType == "keypoints":
-                        gt_kps = np.array(gt_ann["keypoints"]).reshape(-1, 3)[
-                            :, :2
-                        ]
-                        dt_kps = np.array(dt_ann["keypoints"]).reshape(-1, 3)[
-                            :, :2
-                        ]
-                    elif self.iouType == "bbox":
-                        gt_kps = np.array(gt_ann["bbox"])  # xywh
-                        gt_kps[2:] += gt_kps[:2]  # xyxy
-                        dt_kps = np.array(dt_ann["bbox"])  # xywh
-                        dt_kps[2:] += dt_kps[:2]  # xyxy
+                        gt_xyv = np.array(gt_ann["keypoints"]).reshape(-1, 3)
+                        dt_xyv = np.array(dt_ann["keypoints"]).reshape(-1, 3)
+
+                        dt_ann["mae_keypoints"] = []
+                        for _id, kp_name in enumerate(category["keypoints"]):
+                            dt_ann["mae_keypoints"].append(
+                                np.mean(
+                                    np.abs(
+                                        np.subtract(
+                                            gt_xyv[_id, :2], dt_xyv[_id, :2]
+                                        )
+                                    )
+                                )
+                            )
+
+                            if _curve["mae"].get(kp_name) is None:
+                                _curve["mae"][kp_name] = {
+                                    "all_mae": [],
+                                }
+
+                            _curve["mae"][kp_name]["all_mae"].append(
+                                dt_ann["mae_keypoints"][_id]
+                            )
+
+                        dt_ann["mae"] = np.mean(dt_ann["mae_keypoints"])
+                        _curve["all_mae"].append(dt_ann["mae"])
+
                     else:
                         raise ValueError(
-                            f"not supported iouType {self.iouType} for CED"
+                            "not supported iouType {} for CED".format(
+                                self.iouType
+                            )
                         )
 
-                    mse = np.square(gt_kps - dt_kps).mean()
-                    all_mse.append(mse)
-
-            if len(all_mse) == 0:
+            if len(_curve["all_mae"]) == 0:
                 continue
 
-            all_mse = np.array(all_mse)
-            _median = np.median(all_mse)
-            _q3 = np.sqrt(np.var(all_mse))
+            def create_curve(x, count):
+                x = np.array(x)
+                _median = np.median(x)
+                _q3 = np.sqrt(np.var(x))
+                result = {
+                    "x": [0],
+                    "y": [0],
+                }
 
-            _curve = {
-                "mse": [0],
-                "count": [0],
-                "total_count": len(all_mse),
-                "category": category,
+                for val in np.linspace(x.min(), (_median + _q3), count):
+                    _mask = x < val
+                    result["y"].append(_mask.sum())
+                    result["x"].append(val)
+
+                result["y"].append(len(x))
+                result["x"].append(x.max())
+                return result
+
+            all_result = create_curve(_curve["all_mae"], mae_count)
+            _curve["mae"]["MEAN"] = {
+                "x": all_result["x"],
+                "y": all_result["y"],
             }
 
-            for max_mse in np.linspace(
-                all_mse.min(), (_median + _q3), mse_count
-            ):
-                _mask = all_mse < max_mse
-                _curve["count"].append(_mask.sum())
-                _curve["mse"].append(max_mse)
+            for _id, kp_name in enumerate(category["keypoints"]):
+                _result = create_curve(
+                    _curve["mae"][kp_name]["all_mae"], mae_count
+                )
+                _curve["mae"][kp_name]["x"] = _result["x"]
+                _curve["mae"][kp_name]["y"] = _result["y"]
 
-            _curve["count"].append(_curve["total_count"])
-            _curve["mse"].append(all_mse.max())
             curves.append(_curve)
         return curves
 
