@@ -54,6 +54,8 @@ class COCOeval_faster(COCOeval):
             computeIoU = self.computeIoU
         elif p.iouType == "keypoints":
             computeIoU = self.computeOks
+        elif p.iouType == 'boundary':
+            computeIoU = self.computeBoundaryIoU
         self.ious = {
             (imgId, catId): computeIoU(imgId, catId)
             for imgId in p.imgIds
