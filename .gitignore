@@ -7,3 +7,4 @@ __pycache__
 examples/comparison/mmdet/COCO
 examples/comparison/mmdet/model
 csrc/mask/pycocotools/_mask.c
+*.so
