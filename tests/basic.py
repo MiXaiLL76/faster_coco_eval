@@ -1,11 +1,15 @@
 #!/usr/bin/python3
 
+import io
 import os
+import copy
 import unittest
+from contextlib import redirect_stdout
 
 import numpy as np
 
 import faster_coco_eval.core.mask as mask_util
+from faster_coco_eval.core.boundary_utils import add_boundary_multi_core
 from faster_coco_eval import COCO, COCOeval_faster
 from faster_coco_eval.extra import PreviewResults
 
@@ -69,6 +73,87 @@ class TestBaseCoco(unittest.TestCase):
         cocoEval.summarize()
 
         self.assertEqual(cocoEval.stats_as_dict, stats_as_dict)
+
+    def test_boundary_eval(self):
+        stats_as_dict = {
+            # the following values (except for mIoU and mAUC_50) have been
+            # obtained by running the original boundary_iou_api on
+            # gt_dataset and dt_dataset
+            "AP_all": 0.6947194719471946,
+            "AP_50": 0.6947194719471946,
+            "AP_75": 0.6947194719471946,
+            "AP_small": -1.0,
+            "AP_medium": 0.7920792079207921,
+            "AP_large": 0.0,
+            "AR_1": 0.6666666666666666,
+            "AR_10": 0.75,
+            "AR_100": 0.75,
+            "AR_small": -1.0,
+            "AR_medium": 0.7916666666666666,
+            "AR_large": 0.0,
+            "AR_50": 0.75,
+            "AR_75": 0.75,
+            "mIoU": 1.0,
+            "mAUC_50": 0.8518518518518519
+        }
+
+        iouType = "boundary"
+
+        cocoGt = COCO(self.prepared_coco_in_dict)
+        cocoDt = cocoGt.loadRes(self.prepared_anns)
+        with redirect_stdout(io.StringIO()):
+            add_boundary_multi_core(cocoGt)
+            add_boundary_multi_core(cocoDt)
+
+        cocoEval = COCOeval_faster(cocoGt, cocoDt, iouType, extra_calc=True)
+
+        cocoEval.evaluate()
+        cocoEval.accumulate()
+        cocoEval.summarize()
+
+        self.assertEqual(cocoEval.stats_as_dict, stats_as_dict)
+
+    def test_gts_as_dts(self):
+        # a simple sanity check
+        stats_as_dict = {
+            "AP_all": 1.0,
+            "AP_50": 1.0,
+            "AP_75": 1.0,
+            "AP_small": -1.0,
+            "AP_medium": 1.0,
+            "AP_large": 1.0,
+            "AR_1": 1.0,
+            "AR_10": 1.0,
+            "AR_100": 1.0,
+            "AR_small": -1.0,
+            "AR_medium": 1.0,
+            "AR_large": 1.0,
+            "AR_50": 1.0,
+            "AR_75": 1.0,
+            "mIoU": 1.0,
+            "mAUC_50": 1.0
+        }
+        # load gt annotations as predictions
+        gts_as_dts = copy.deepcopy(
+            self.prepared_coco_in_dict
+            )['annotations']
+        for p in gts_as_dts:
+            p['score'] = 1  # fake score
+
+        for iouType in ['bbox', 'segm', 'boundary']:
+            cocoGt = COCO(self.prepared_coco_in_dict)
+            cocoDt = cocoGt.loadRes(gts_as_dts)
+            if iouType == 'boundary':
+                with redirect_stdout(io.StringIO()):
+                    add_boundary_multi_core(cocoGt)
+                    add_boundary_multi_core(cocoDt)
+            cocoEval = COCOeval_faster(cocoGt, cocoDt, iouType,
+                                       extra_calc=True)
+            cocoEval.evaluate()
+            cocoEval.accumulate()
+            cocoEval.summarize()
+
+            self.assertEqual(cocoEval.stats_as_dict, stats_as_dict)
 
     def test_confusion_matrix(self):
         prepared_result = [
