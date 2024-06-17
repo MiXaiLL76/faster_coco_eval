@@ -32,7 +32,7 @@ import time
 import cv2
 import numpy as np
 
-import pycocotools.mask as mask_utils
+from . import mask as mask_utils
 
 
 # General util function to get the boundary of a binary mask.
