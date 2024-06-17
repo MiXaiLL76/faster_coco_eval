@@ -551,7 +551,7 @@ class COCOeval:
         if not self.eval:
             raise Exception("Please run accumulate() first")
         iouType = self.params.iouType
-        if iouType == "segm" or iouType == "bbox" or iouType == "boundary":
+        if iouType in ["segm", "bbox", "boundary"]:
             summarize = _summarizeDets
         elif iouType == "keypoints":
             summarize = _summarizeKps
@@ -638,7 +638,7 @@ class Params:
         kpt_sigmas: list of keypoint sigma values.
 
         """
-        if iouType == "segm" or iouType == "bbox" or iouType == "boundary":
+        if iouType in ["segm", "bbox", "boundary"]:
             self.setDetParams()
         elif iouType == "keypoints":
             self.setKpParams()
