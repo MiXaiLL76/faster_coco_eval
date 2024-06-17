@@ -27,7 +27,7 @@ for coco's AP metrics, especially when dealing with a high number of instances i
 For our use case with a test dataset of 5000 images from the coco val dataset.
 Testing was carried out using the mmdetection framework and the eval_metric.py script. The indicators are presented below.
 
-Visualization of testing **colab_example.ipynb** available in directory [examples/comparison](https://github.com/MiXaiLL76/faster_coco_eval/blob/main/examples/comparison/mmdet/colab_example.ipynb)
+Visualization of testing **colab_example.ipynb** available in directory [examples/comparison](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/comparison/mmdet/colab_example.ipynb)
 [colab_example.ipynb in google collab](https://colab.research.google.com/drive/1qj392oIU8fmeyIFHCtxCrLA8PQQAMoIs)
 Tested with rtmdet model bbox + segm
 
@@ -46,6 +46,12 @@ You can study in more detail in the [examples](https://github.com/MiXaiLL76/fast
 ## Usage
 
 Code examples for using the library are available on the [Wiki](https://github.com/MiXaiLL76/faster_coco_eval/wiki)
+
+### Examples
+
+- [Eval example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/eval_example.ipynb)
+- [Curve example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/curve_example.ipynb)
+- [CED Keypoint example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/ced_example.ipynb)
 
 ## Update history
 
