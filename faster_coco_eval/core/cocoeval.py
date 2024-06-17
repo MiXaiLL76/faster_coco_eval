@@ -244,17 +244,17 @@ class COCOeval:
     def computeBoundaryIoU(self, imgId, catId):
         p = self.params
         if p.useCats:
-            gt = self._gts[imgId,catId]
-            dt = self._dts[imgId,catId]
+            gt = self._gts[imgId, catId]
+            dt = self._dts[imgId, catId]
         else:
-            gt = [_ for cId in p.catIds for _ in self._gts[imgId,cId]]
-            dt = [_ for cId in p.catIds for _ in self._dts[imgId,cId]]
-        if len(gt) == 0 and len(dt) ==0:
+            gt = [_ for cId in p.catIds for _ in self._gts[imgId, cId]]
+            dt = [_ for cId in p.catIds for _ in self._dts[imgId, cId]]
+        if len(gt) == 0 and len(dt) == 0:
             return []
         inds = np.argsort([-d['score'] for d in dt], kind='mergesort')
         dt = [dt[i] for i in inds]
         if len(dt) > p.maxDets[-1]:
-            dt=dt[0:p.maxDets[-1]]
+            dt = dt[0:p.maxDets[-1]]
 
         assert p.iouType == 'boundary'
 
@@ -266,15 +266,16 @@ class COCOeval:
 
         # compute iou between each dt and gt region
         iscrowd = [int(o['iscrowd']) for o in gt]
-        mask_ious = maskUtils.iou(d_m,g_m,iscrowd)
-        boundary_ious = maskUtils.iou(d_b,g_b,iscrowd)
+        mask_ious = maskUtils.iou(d_m, g_m, iscrowd)
+        boundary_ious = maskUtils.iou(d_b, g_b, iscrowd)
         # combine mask and boundary iou
         mask_ious = np.array(mask_ious)
         boundary_ious = np.array(boundary_ious)
         iscrowd = np.array(iscrowd)
         ious = mask_ious
         if len(gt) and len(dt):
-            ious[:, iscrowd == 0] = np.minimum(mask_ious[:, iscrowd == 0], boundary_ious[:, iscrowd == 0])
+            ious[:, iscrowd == 0] = np.minimum(mask_ious[:, iscrowd == 0],
+                                               boundary_ious[:, iscrowd == 0])
         else:
             ious = np.minimum(mask_ious, boundary_ious)
         return ious
