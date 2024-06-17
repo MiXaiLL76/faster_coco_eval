@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <numeric>
-
 using namespace pybind11::literals;
 
 namespace coco_eval
@@ -85,7 +84,7 @@ namespace coco_eval
       std::vector<uint64_t> &ground_truth_matches = results->ground_truth_matches;
       ground_truth_matches.resize(num_iou_thresholds * num_ground_truth, 0);
 
-      std::vector<int> &ground_truth_orig_id = results->ground_truth_orig_id;
+      std::vector<uint64_t> &ground_truth_orig_id = results->ground_truth_orig_id;
       ground_truth_orig_id.resize(num_iou_thresholds * num_ground_truth, -1);
 
       std::vector<uint64_t> &detection_matches = results->detection_matches;
@@ -142,7 +141,7 @@ namespace coco_eval
                 ground_truth_instances[ground_truth_sorted_indices[match]].id;
             ground_truth_matches[t * num_ground_truth + match] =
                 detection_instances[detection_sorted_indices[d]].id;
-            ground_truth_orig_id[t * num_ground_truth + match] = (int)ground_truth_instances[ground_truth_sorted_indices[match]].id;
+            ground_truth_orig_id[t * num_ground_truth + match] = (long)ground_truth_instances[ground_truth_sorted_indices[match]].id;
           }
 
           // set unmatched detections outside of area range to ignore
@@ -548,7 +547,7 @@ namespace coco_eval
 
       std::vector<uint64_t> out_detection_matches = {};
       std::vector<uint64_t> out_ground_truth_matches = {};
-      std::vector<int> out_ground_truth_orig_id = {};
+      std::vector<uint64_t> out_ground_truth_orig_id = {};
       for (auto eval : evaluations)
       {
         out_detection_matches.insert(out_detection_matches.end(), eval.detection_matches.begin(), eval.detection_matches.end());
