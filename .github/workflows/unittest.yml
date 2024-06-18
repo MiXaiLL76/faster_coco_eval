@@ -34,7 +34,7 @@ jobs:
         run: |
           pipx run build --sdist .
           source_file=$(ls ./dist/*.tar.gz)
-          pip install "$(source_file)[tests]"
+          pip install "${source_file}[tests]"
 
       - name: Run test cases
         run: pytest tests/*
