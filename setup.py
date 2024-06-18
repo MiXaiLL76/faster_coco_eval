@@ -177,4 +177,10 @@ setup(
     python_requires=">=3.6",
     data_files=glob.glob("requirements/*"),
     install_requires=parse_requirements("requirements/runtime.txt"),
+    extras_require={
+        "extra": parse_requirements("requirements/runtime.txt")
+        + parse_requirements("requirements/extra.txt"),
+        "tests": parse_requirements("requirements/runtime.txt")
+        + parse_requirements("requirements/tests.txt"),
+    },
 )
