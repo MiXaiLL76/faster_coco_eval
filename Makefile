@@ -7,10 +7,12 @@ wheel:
 sdist:
 	pipx run build --sdist .
 
-install: clean wheel
-	pip3 install dist/*.whl
+whl_file = $(shell ls dist/*.whl)
 
-FORMAT_DIRS = ./faster_coco_eval ./tests ./examples setup.py
+install: clean wheel 
+	pip3 install "$(whl_file)[tests]"
+
+FORMAT_DIRS = ./faster_coco_eval ./tests setup.py
 LINE_LENGTH = 80
 BLACK_CONFIG = --preview --enable-unstable-feature string_processing
 
