@@ -1,7 +1,14 @@
 
 # history
 
+## v1.5.6
+
+- [x] Replace CED MSE curve with MAE (px) curve
+- [x] Add CED examples
+- [x] Display IoU and MAE for keypoints
+
 ## v1.5.5
+
 - [x] Add CED MSE curve
 - [x] Review tests
 - [x] Review **COCOeval_faster.math_matches** function and **COCOeval_faster.compute_mIoU** function
@@ -9,21 +16,25 @@
 - [x] Add img to ann ids mapping via **COCO.img_ann_idx_map**
 
 ## v1.5.3 - v1.5.4
+
 - [x] Worked out the ability to work with skeletons and various key points
 - [x] ```eval.state_as_dict``` Now works for key points
 
 ## v1.5.2
+
 - [x] Change comparison to colab_example
 - [x] append utils with opencv **conver_mask_to_poly** (extra)
 - [x] append **drop_cocodt_by_score** for extra eval
 
 ## v1.5.1
+
 - [x] **breaking change** | new static function COCO.load_json
 - [x] new curve f1_confidence with ```cur.plot_f1_confidence()```
 - [x] **breaking change** | replace display_matrix arg ```in_percent``` to ```normalize```
 - [x] **breaking change** | rework draw functions
 
 ## v1.4.2
+
 - [x] append Auto-formatters 
 - [x] append py36 support
 - [x] append pandas to requirements for plotly[express]
