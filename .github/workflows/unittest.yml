@@ -26,14 +26,15 @@ jobs:
 
       - name: Install from source
         if: matrix.install_from == 'source'
-        run: pip install .
+        run: pip install .[tests]
 
       - name: Install from sdist
         if: matrix.install_from == 'sdist'
         shell: bash
         run: |
           pipx run build --sdist .
-          pip install ./dist/*.tar.gz
+          source_file=$(ls ./dist/*.tar.gz)
+          pip install "${source_file}[tests]"
 
       - name: Run test cases
-        run: python tests/basic.py
+        run: pytest tests/*
