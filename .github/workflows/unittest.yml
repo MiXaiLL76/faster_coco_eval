@@ -33,7 +33,8 @@ jobs:
         shell: bash
         run: |
           pipx run build --sdist .
-          pip install ./dist/*.tar.gz
+          source_file=$(./dist/*.tar.gz)
+          pip install "$(source_file)[tests]"
 
       - name: Run test cases
-        run: python tests/basic.py
+        run: pytest tests/*
