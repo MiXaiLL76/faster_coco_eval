@@ -54,6 +54,8 @@ class COCOeval_faster(COCOeval):
             computeIoU = self.computeIoU
         elif p.iouType == "keypoints":
             computeIoU = self.computeOks
+        elif p.iouType == 'boundary':
+            computeIoU = self.computeBoundaryIoU
         self.ious = {
             (imgId, catId): computeIoU(imgId, catId)
             for imgId in p.imgIds
@@ -313,7 +315,7 @@ class COCOeval_faster(COCOeval):
             "AR_large",
         ]
 
-        if self.params.iouType in ["segm", "bbox"]:
+        if self.params.iouType in ["segm", "bbox", "boundary"]:
             labels += ["AR_50", "AR_75"]
         else:
             labels = [label for label in labels if "small" not in label]

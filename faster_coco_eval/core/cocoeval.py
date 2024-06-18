@@ -143,7 +143,7 @@ class COCOeval:
             dts = self.cocoDt.loadAnns(self.cocoDt.getAnnIds(imgIds=p.imgIds))
 
         # convert ground truth to mask if iouType == 'segm'
-        if p.iouType == "segm":
+        if p.iouType == "segm" or p.iouType == "boundary":
             _toMask(gts, self.cocoGt)
             _toMask(dts, self.cocoDt)
         # set ignore flag
@@ -239,6 +239,45 @@ class COCOeval:
         # compute iou between each dt and gt region
         iscrowd = [int(o["iscrowd"]) for o in gt]
         ious = maskUtils.iou(d, g, iscrowd)
+        return ious
+
+    def computeBoundaryIoU(self, imgId, catId):
+        p = self.params
+        if p.useCats:
+            gt = self._gts[imgId, catId]
+            dt = self._dts[imgId, catId]
+        else:
+            gt = [_ for cId in p.catIds for _ in self._gts[imgId, cId]]
+            dt = [_ for cId in p.catIds for _ in self._dts[imgId, cId]]
+        if len(gt) == 0 and len(dt) == 0:
+            return []
+        inds = np.argsort([-d['score'] for d in dt], kind='mergesort')
+        dt = [dt[i] for i in inds]
+        if len(dt) > p.maxDets[-1]:
+            dt = dt[0:p.maxDets[-1]]
+
+        assert p.iouType == 'boundary'
+
+        g_m = [g['rle'] for g in gt]
+        d_m = [d['rle'] for d in dt]
+
+        g_b = [g['boundary'] for g in gt]
+        d_b = [d['boundary'] for d in dt]
+
+        # compute iou between each dt and gt region
+        iscrowd = [int(o['iscrowd']) for o in gt]
+        mask_ious = maskUtils.iou(d_m, g_m, iscrowd)
+        boundary_ious = maskUtils.iou(d_b, g_b, iscrowd)
+        # combine mask and boundary iou
+        mask_ious = np.array(mask_ious)
+        boundary_ious = np.array(boundary_ious)
+        iscrowd = np.array(iscrowd)
+        ious = mask_ious
+        if len(gt) and len(dt):
+            ious[:, iscrowd == 0] = np.minimum(mask_ious[:, iscrowd == 0],
+                                               boundary_ious[:, iscrowd == 0])
+        else:
+            ious = np.minimum(mask_ious, boundary_ious)
         return ious
 
     def computeOks(self, imgId, catId):
@@ -512,7 +551,7 @@ class COCOeval:
         if not self.eval:
             raise Exception("Please run accumulate() first")
         iouType = self.params.iouType
-        if iouType == "segm" or iouType == "bbox":
+        if iouType in ["segm", "bbox", "boundary"]:
             summarize = _summarizeDets
         elif iouType == "keypoints":
             summarize = _summarizeKps
@@ -599,7 +638,7 @@ class Params:
         kpt_sigmas: list of keypoint sigma values.
 
         """
-        if iouType == "segm" or iouType == "bbox":
+        if iouType in ["segm", "bbox", "boundary"]:
             self.setDetParams()
         elif iouType == "keypoints":
             self.setKpParams()
