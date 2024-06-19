@@ -25,14 +25,6 @@ class COCOeval_faster(COCOeval):
         # to access in C++
         instances_cpp = []
         for instance in instances:
-            if self.lvis_style:
-                lvis_mark = bool(
-                    instance["category_id"]
-                    in self.img_nel[instance["image_id"]]
-                )
-            else:
-                lvis_mark = False
-
             instance_cpp = _C.InstanceAnnotation(
                 int(instance["id"]),
                 float(
@@ -41,7 +33,7 @@ class COCOeval_faster(COCOeval):
                 float(instance["area"]),
                 bool(instance.get("iscrowd", 0)),
                 bool(instance.get("ignore", 0)),
-                bool(lvis_mark),
+                bool(instance.get("lvis_mark", False)) if is_det else False,
             )
             instances_cpp.append(instance_cpp)
         return instances_cpp
@@ -60,9 +52,6 @@ class COCOeval_faster(COCOeval):
         tic = time.time()
 
         p = self.params
-        # add backward compatibility if useSegm is specified in params
-        if p.useSegm is not None:
-            p.iouType = "segm" if p.useSegm == 1 else "bbox"
 
         self.print_function("Evaluate annotation type *{}*".format(p.iouType))
 
@@ -72,7 +61,7 @@ class COCOeval_faster(COCOeval):
         p.maxDets = sorted(p.maxDets)
         self.params = p
 
-        self._prepare()  # bottleneck
+        self._prepare()  # not more bottleneck!
 
         # loop through images, area range, max detection number
         catIds = p.catIds if p.useCats else [-1]
@@ -87,8 +76,6 @@ class COCOeval_faster(COCOeval):
             for imgId in p.imgIds
             for catId in catIds
         }  # bottleneck
-
-        maxDet = p.maxDets[-1]
 
         # Convert GT annotations, detections, and IOUs to a format that's fast to access in C++ # noqa: E501
         ground_truth_instances = [
@@ -128,7 +115,7 @@ class COCOeval_faster(COCOeval):
             # Call C++ implementation of self.evaluateImgs()
             self._evalImgs_cpp = _C.COCOevalEvaluateImages(
                 p.areaRng,
-                maxDet,
+                p.maxDets[-1],
                 p.iouThrs,
                 ious,
                 ground_truth_instances,

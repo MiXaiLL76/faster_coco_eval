@@ -125,47 +125,52 @@ class COCOeval:
         self.load_data_time = []
         self.iou_data_time = []
 
+    def _toMask(self, anns, coco):
+        # modify ann['segmentation'] by reference
+        for ann in anns:
+            rle = coco.annToRLE(ann)
+            ann["rle"] = rle
+
     def _prepare(self):
         """Prepare ._gts and ._dts for evaluation based on params.
 
         :return: None
 
         """
-
-        def _toMask(anns, coco):
-            # modify ann['segmentation'] by reference
-            for ann in anns:
-                rle = coco.annToRLE(ann)
-                ann["rle"] = rle
-
         p = self.params
-        if p.useCats:
-            gts = self.cocoGt.loadAnns(
-                self.cocoGt.getAnnIds(imgIds=p.imgIds, catIds=p.catIds)
-            )
-            dts = self.cocoDt.loadAnns(
-                self.cocoDt.getAnnIds(imgIds=p.imgIds, catIds=p.catIds)
-            )
-        else:
-            gts = self.cocoGt.loadAnns(self.cocoGt.getAnnIds(imgIds=p.imgIds))
-            dts = self.cocoDt.loadAnns(self.cocoDt.getAnnIds(imgIds=p.imgIds))
+
+        cat_ids = p.catIds if p.catIds else None
+
+        gts = self.cocoGt.loadAnns(
+            self.cocoGt.getAnnIds(imgIds=p.imgIds, catIds=cat_ids)
+        )
+        dts = self.cocoDt.loadAnns(
+            self.cocoDt.getAnnIds(imgIds=p.imgIds, catIds=cat_ids)
+        )
 
         # convert ground truth to mask if iouType == 'segm'
         if p.iouType == "segm":
-            _toMask(gts, self.cocoGt)
-            _toMask(dts, self.cocoDt)
+            self._toMask(gts, self.cocoGt)
+            self._toMask(dts, self.cocoDt)
+
         # set ignore flag
         for gt in gts:
-            gt["ignore"] = gt["ignore"] if "ignore" in gt else 0
-            gt["ignore"] = "iscrowd" in gt and gt["iscrowd"]
-            if p.iouType == "keypoints":
-                gt["ignore"] = (gt.get("num_keypoints") == 0) or gt["ignore"]
+            if "ignore" not in gt:
+                gt["ignore"] = 0
+
+            if ("iscrowd" in gt) and (gt["ignore"] != 0):
+                gt["ignore"] = gt["iscrowd"]
+
+            if p.iouType == "keypoints" and (gt["ignore"] == 0):
+                gt["ignore"] = int(gt.get("num_keypoints", 0) == 0)
+
         self._gts = defaultdict(list)  # gt for evaluation
         self._dts = defaultdict(list)  # dt for evaluation
-        for gt in gts:
-            self._gts[gt["image_id"], gt["category_id"]].append(gt)
+        img_pl = defaultdict(
+            set
+        )  # per image list of categories present in image
+        img_nl = {}  # per image map of categories not present in image
 
-        img_pl = defaultdict(set)
         if self.lvis_style:
             # For federated dataset evaluation we will filter out all dt for
             # an image which belong to categories not present in gt and not
@@ -187,8 +192,9 @@ class COCOeval:
             }
 
             self.freq_groups = self._prepare_freq_group()
-        else:
-            img_nl = {}
+
+        for gt in gts:
+            self._gts[gt["image_id"], gt["category_id"]].append(gt)
 
         for dt in dts:
             img_id, cat_id = dt["image_id"], dt["category_id"]
@@ -198,11 +204,12 @@ class COCOeval:
             ) and self.lvis_style:
                 continue
 
-            self._dts[img_id, cat_id].append(dt)
+            if self.lvis_style:
+                dt["lvis_mark"] = (
+                    dt["category_id"] in self.img_nel[dt["image_id"]]
+                )
 
-        # per-image per-category evaluation results
-        self.evalImgs = defaultdict(list)
-        self.eval = {}  # accumulated evaluation results
+            self._dts[img_id, cat_id].append(dt)
 
     def _prepare_freq_group(self):
         p = self.params
@@ -295,13 +302,22 @@ class COCOeval:
         return ious
 
     def evaluateImg(self, imgId, catId, aRng, maxDet):
-        raise DeprecationWarning("deprecated")
+        raise DeprecationWarning(
+            "COCOeval.evaluateImg deprecated! Use COCOeval_faster.evaluateImg"
+            " instead."
+        )
 
     def accumulate(self, p=None):
-        raise DeprecationWarning("deprecated")
+        raise DeprecationWarning(
+            "COCOeval.accumulate deprecated! Use COCOeval_faster.accumulate"
+            " instead."
+        )
 
     def evaluate(self):
-        raise DeprecationWarning("deprecated")
+        raise DeprecationWarning(
+            "COCOeval.evaluate deprecated! Use COCOeval_faster.evaluate"
+            " instead."
+        )
 
     def summarize(self):
         """Compute and display summary metrics for evaluation results.
@@ -561,8 +577,6 @@ class Params:
         else:
             raise Exception("iouType not supported")
         self.iouType = iouType
-        # useSegm is deprecated
-        self.useSegm = None
 
         # We bin categories in three bins based how many images of the training
         # set the category is present in.
@@ -570,6 +584,18 @@ class Params:
         # c: Common  : >= 10 and < 100
         # f: Frequent: >= 100
         self.imgCountLbl = ["r", "c", "f"]
+
+    @property
+    def useSegm(self):
+        return int(self.iouType == "segm")
+
+    @useSegm.setter
+    def useSegm(self, value):
+        # add backward compatibility if useSegm is specified in params
+        self.iouType = "segm" if value == 1 else "bbox"
+        logger.warning(
+            "useSegm is deprecated. Please use iouType (string) instead."
+        )
 
     @property
     def iou_type(self):

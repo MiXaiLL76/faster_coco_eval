@@ -45,7 +45,6 @@ __version__ = "2.0"
 # Licensed under the Simplified BSD License [see bsd.txt]
 
 import copy
-import itertools
 import json
 import logging
 import time
@@ -175,40 +174,40 @@ class COCO:
         :return: ids (int array)       : integer array of ann ids
 
         """
+
+        anns = []
+
+        if len(imgIds) != 0:
+            for img_id in imgIds:
+                anns.extend(self.img_ann_map[img_id])
+        else:
+            anns = self.dataset["annotations"]
+
+        # return early if no more filtering required
+        if (len(catIds) == 0) and (len(areaRng) == 0) and (iscrowd is None):
+            return [_ann["id"] for _ann in anns]
+
+        cat_ids = set(catIds)
+
+        if len(areaRng) == 0:
+            areaRng = [0, float("inf")]
+
         imgIds = imgIds if _isArrayLike(imgIds) else [imgIds]
         catIds = catIds if _isArrayLike(catIds) else [catIds]
 
-        if len(imgIds) == len(catIds) == len(areaRng) == 0:
-            anns = self.dataset["annotations"]
-        else:
-            if not len(imgIds) == 0:
-                lists = [
-                    self.imgToAnns[imgId]
-                    for imgId in imgIds
-                    if imgId in self.imgToAnns
-                ]
-                anns = list(itertools.chain.from_iterable(lists))
-            else:
-                anns = self.dataset["annotations"]
-            anns = (
-                anns
-                if len(catIds) == 0
-                else [ann for ann in anns if ann["category_id"] in catIds]
-            )
-            anns = (
-                anns
-                if len(areaRng) == 0
-                else [
-                    ann
-                    for ann in anns
-                    if ann["area"] > areaRng[0] and ann["area"] < areaRng[1]
-                ]
-            )
-        if iscrowd is not None:
-            ids = [ann["id"] for ann in anns if ann["iscrowd"] == iscrowd]
-        else:
-            ids = [ann["id"] for ann in anns]
-        return ids
+        if iscrowd is None:
+            iscrowd = False
+
+        ann_ids = [
+            _ann["id"]
+            for _ann in anns
+            if _ann["category_id"] in cat_ids
+            and _ann["area"] > areaRng[0]
+            and _ann["area"] < areaRng[1]
+            and int(_ann.get("iscrowd", 0)) == int(iscrowd)
+        ]
+
+        return ann_ids
 
     def getCatIds(self, catNms=[], supNms=[], catIds=[]):
         """Filtering parameters.
