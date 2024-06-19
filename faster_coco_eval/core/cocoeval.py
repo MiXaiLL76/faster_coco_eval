@@ -1,8 +1,6 @@
 __author__ = "tsungyi"
 
-import copy
 import logging
-import time
 from collections import defaultdict
 
 import numpy as np
@@ -71,6 +69,8 @@ class COCOeval:
         print_function=logger.debug,
         extra_calc=False,
         kpt_oks_sigmas=None,
+        lvis_style=False,
+        separate_eval=False,
     ):
         """Initialize CocoEval using coco APIs for gt and dt :param cocoGt:
 
@@ -98,6 +98,12 @@ class COCOeval:
 
         self.extra_calc = extra_calc
         self.matched = False
+        self.lvis_style = lvis_style
+        self.separate_eval = separate_eval
+
+        if iouType == "keypoints" and self.lvis_style:
+            logger.warning("lvis_style not supported for keypoint evaluation")
+            self.lvis_style = False
 
         if cocoGt is not None:
             self.params.imgIds = sorted(cocoGt.getImgIds())
@@ -116,6 +122,14 @@ class COCOeval:
                     )
 
         self.print_function = print_function  # output print function
+        self.load_data_time = []
+        self.iou_data_time = []
+
+    def _toMask(self, anns, coco):
+        # modify ann['segmentation'] by reference
+        for ann in anns:
+            rle = coco.annToRLE(ann)
+            ann["rle"] = rle
 
     def _prepare(self):
         """Prepare ._gts and ._dts for evaluation based on params.
@@ -123,94 +137,88 @@ class COCOeval:
         :return: None
 
         """
-
-        def _toMask(anns, coco):
-            # modify ann['segmentation'] by reference
-            for ann in anns:
-                rle = coco.annToRLE(ann)
-                ann["rle"] = rle
-
         p = self.params
-        if p.useCats:
-            gts = self.cocoGt.loadAnns(
-                self.cocoGt.getAnnIds(imgIds=p.imgIds, catIds=p.catIds)
-            )
-            dts = self.cocoDt.loadAnns(
-                self.cocoDt.getAnnIds(imgIds=p.imgIds, catIds=p.catIds)
-            )
-        else:
-            gts = self.cocoGt.loadAnns(self.cocoGt.getAnnIds(imgIds=p.imgIds))
-            dts = self.cocoDt.loadAnns(self.cocoDt.getAnnIds(imgIds=p.imgIds))
+
+        cat_ids = p.catIds if p.catIds else None
+
+        gts = self.cocoGt.loadAnns(
+            self.cocoGt.getAnnIds(imgIds=p.imgIds, catIds=cat_ids)
+        )
+        dts = self.cocoDt.loadAnns(
+            self.cocoDt.getAnnIds(imgIds=p.imgIds, catIds=cat_ids)
+        )
 
         # convert ground truth to mask if iouType == 'segm'
         if p.iouType == "segm":
-            _toMask(gts, self.cocoGt)
-            _toMask(dts, self.cocoDt)
+            self._toMask(gts, self.cocoGt)
+            self._toMask(dts, self.cocoDt)
+
         # set ignore flag
         for gt in gts:
-            gt["ignore"] = gt["ignore"] if "ignore" in gt else 0
-            gt["ignore"] = "iscrowd" in gt and gt["iscrowd"]
-            if p.iouType == "keypoints":
-                gt["ignore"] = (gt.get("num_keypoints") == 0) or gt["ignore"]
+            if "ignore" not in gt:
+                gt["ignore"] = 0
+
+            if ("iscrowd" in gt) and (gt["ignore"] != 0):
+                gt["ignore"] = gt["iscrowd"]
+
+            if p.iouType == "keypoints" and (gt["ignore"] == 0):
+                gt["ignore"] = int(gt.get("num_keypoints", 0) == 0)
+
         self._gts = defaultdict(list)  # gt for evaluation
         self._dts = defaultdict(list)  # dt for evaluation
+        img_pl = defaultdict(
+            set
+        )  # per image list of categories present in image
+        img_nl = {}  # per image map of categories not present in image
+
+        if self.lvis_style:
+            # For federated dataset evaluation we will filter out all dt for
+            # an image which belong to categories not present in gt and not
+            # present in the negative list for an image.
+            # In other words detector is not penalized for categories
+            # about which we don't have gt information about their
+            # presence or absence in an image.
+            img_data = self.cocoGt.load_imgs(ids=p.imgIds)
+            # per image map of categories not present in image
+            img_nl = {d["id"]: d.get("neg_category_ids", []) for d in img_data}
+            # per image list of categories present in image
+            for ann in gts:
+                img_pl[ann["image_id"]].add(ann["category_id"])
+            # per image map of categoires which have missing gt. For these
+            # categories we don't penalize the detector for flase positives.
+            self.img_nel = {
+                d["id"]: d.get("not_exhaustive_category_ids", [])
+                for d in img_data
+            }
+
+            self.freq_groups = self._prepare_freq_group()
+
         for gt in gts:
             self._gts[gt["image_id"], gt["category_id"]].append(gt)
+
         for dt in dts:
-            self._dts[dt["image_id"], dt["category_id"]].append(dt)
-        # per-image per-category evaluation results
-        self.evalImgs = defaultdict(list)
-        self.eval = {}  # accumulated evaluation results
+            img_id, cat_id = dt["image_id"], dt["category_id"]
+            if (
+                cat_id not in img_nl.get(img_id, [])
+                and cat_id not in img_pl[img_id]
+            ) and self.lvis_style:
+                continue
 
-    def evaluate(self):
-        """Run per image evaluation on given images and store results (a list
-        of dict) in self.evalImgs.
+            if self.lvis_style:
+                dt["lvis_mark"] = (
+                    dt["category_id"] in self.img_nel[dt["image_id"]]
+                )
 
-        :return: None
+            self._dts[img_id, cat_id].append(dt)
 
-        """
-        tic = time.time()
-        self.print_function("Running per image evaluation...")
+    def _prepare_freq_group(self):
         p = self.params
-        # add backward compatibility if useSegm is specified in params
-        if p.useSegm is not None:
-            p.iouType = "segm" if p.useSegm == 1 else "bbox"
-            logger.warning(
-                "useSegm (deprecated) is not None. Running {} evaluation"
-                .format(p.iouType)
-            )
-        self.print_function("Evaluate annotation type *{}*".format(p.iouType))
-        p.imgIds = list(np.unique(p.imgIds))
-        if p.useCats:
-            p.catIds = list(np.unique(p.catIds))
-        p.maxDets = sorted(p.maxDets)
-        self.params = p
-
-        self._prepare()
-        # loop through images, area range, max detection number
-        catIds = p.catIds if p.useCats else [-1]
-
-        if p.iouType == "segm" or p.iouType == "bbox":
-            computeIoU = self.computeIoU
-        elif p.iouType == "keypoints":
-            computeIoU = self.computeOks
-        self.ious = {
-            (imgId, catId): computeIoU(imgId, catId)
-            for imgId in p.imgIds
-            for catId in catIds
-        }
-
-        evaluateImg = self.evaluateImg
-        maxDet = p.maxDets[-1]
-        self.evalImgs = [
-            evaluateImg(imgId, catId, areaRng, maxDet)
-            for catId in catIds
-            for areaRng in p.areaRng
-            for imgId in p.imgIds
-        ]
-        self._paramsEval = copy.deepcopy(self.params)
-        toc = time.time()
-        self.print_function("DONE (t={:0.2f}s).".format(toc - tic))
+        freq_groups = [[] for _ in p.img_count_lbl]
+        cat_data = self.cocoGt.load_cats(p.cat_ids)
+        for idx, _cat_data in enumerate(cat_data):
+            frequency = _cat_data["frequency"]
+            freq_groups[p.img_count_lbl.index(frequency)].append(idx)
+        return freq_groups
 
     def computeIoU(self, imgId, catId):
         p = self.params
@@ -218,8 +226,8 @@ class COCOeval:
             gt = self._gts[imgId, catId]
             dt = self._dts[imgId, catId]
         else:
-            gt = [_ for cId in p.catIds for _ in self._gts[imgId, cId]]
-            dt = [_ for cId in p.catIds for _ in self._dts[imgId, cId]]
+            gt = [ann for cId in p.catIds for ann in self._gts[imgId, cId]]
+            dt = [ann for cId in p.catIds for ann in self._dts[imgId, cId]]
         if len(gt) == 0 and len(dt) == 0:
             return []
         inds = np.argsort([-d["score"] for d in dt], kind="mergesort")
@@ -237,7 +245,7 @@ class COCOeval:
             raise Exception("unknown iouType for iou computation")
 
         # compute iou between each dt and gt region
-        iscrowd = [int(o["iscrowd"]) for o in gt]
+        iscrowd = [int(o.get("iscrowd", 0)) for o in gt]
         ious = maskUtils.iou(d, g, iscrowd)
         return ious
 
@@ -294,94 +302,22 @@ class COCOeval:
         return ious
 
     def evaluateImg(self, imgId, catId, aRng, maxDet):
-        """Perform evaluation for single category and image.
-
-        :return: dict (single image results)
-
-        """
-        p = self.params
-        if p.useCats:
-            gt = self._gts[imgId, catId]
-            dt = self._dts[imgId, catId]
-        else:
-            gt = [_ for cId in p.catIds for _ in self._gts[imgId, cId]]
-            dt = [_ for cId in p.catIds for _ in self._dts[imgId, cId]]
-        if len(gt) == 0 and len(dt) == 0:
-            return None
-
-        for g in gt:
-            if g["ignore"] or (g["area"] < aRng[0] or g["area"] > aRng[1]):
-                g["_ignore"] = 1
-            else:
-                g["_ignore"] = 0
-
-        # sort dt highest score first, sort gt ignore last
-        gtind = np.argsort([g["_ignore"] for g in gt], kind="mergesort")
-        gt = [gt[i] for i in gtind]
-        dtind = np.argsort([-d["score"] for d in dt], kind="mergesort")
-        dt = [dt[i] for i in dtind[0:maxDet]]
-        iscrowd = [int(o["iscrowd"]) for o in gt]
-        # load computed ious
-        ious = (
-            self.ious[imgId, catId][:, gtind]
-            if len(self.ious[imgId, catId]) > 0
-            else self.ious[imgId, catId]
+        raise DeprecationWarning(
+            "COCOeval.evaluateImg deprecated! Use COCOeval_faster.evaluateImg"
+            " instead."
         )
 
-        T = len(p.iouThrs)
-        G = len(gt)
-        D = len(dt)
-        gtm = np.zeros((T, G))
-        dtm = np.zeros((T, D))
-        gtIg = np.array([g["_ignore"] for g in gt])
-        dtIg = np.zeros((T, D))
-        if not len(ious) == 0:
-            for tind, t in enumerate(p.iouThrs):
-                for dind, d in enumerate(dt):
-                    # information about best match so far (m=-1 -> unmatched)
-                    iou = min([t, 1 - 1e-10])
-                    m = -1
-                    for gind, g in enumerate(gt):
-                        # if this gt already matched, and not a crowd, continue
-                        if gtm[tind, gind] > 0 and not iscrowd[gind]:
-                            continue
-                        # if dt matched to reg gt, and on ignore gt, stop
-                        if m > -1 and gtIg[m] == 0 and gtIg[gind] == 1:
-                            break
-                        # continue to next gt unless better match made
-                        if ious[dind, gind] < iou:
-                            continue
-                        # if match successful and best so far, store appropriately # noqa: E501
-                        iou = ious[dind, gind]
-                        m = gind
-                    # if match made store id of match for both dt and gt
-                    if m == -1:
-                        continue
-                    dtIg[tind, dind] = gtIg[m]
-                    dtm[tind, dind] = gt[m]["id"]
-                    gtm[tind, m] = d["id"]
-        # set unmatched detections outside of area range to ignore
-        a = np.array(
-            [d["area"] < aRng[0] or d["area"] > aRng[1] for d in dt]
-        ).reshape((1, len(dt)))
-        dtIg = np.logical_or(dtIg, np.logical_and(dtm == 0, np.repeat(a, T, 0)))
-        # store results for given image and category
-        return {
-            "image_id": imgId,
-            "category_id": catId,
-            "aRng": aRng,
-            "maxDet": maxDet,
-            "dtIds": [d["id"] for d in dt],
-            "gtIds": [g["id"] for g in gt],
-            "dtMatches": dtm,
-            "gtMatches": gtm,
-            "dtScores": [d["score"] for d in dt],
-            "gtIgnore": gtIg,
-            "dtIgnore": dtIg,
-        }
-
     def accumulate(self, p=None):
-        raise DeprecationWarning("deprecated")
+        raise DeprecationWarning(
+            "COCOeval.accumulate deprecated! Use COCOeval_faster.accumulate"
+            " instead."
+        )
+
+    def evaluate(self):
+        raise DeprecationWarning(
+            "COCOeval.evaluate deprecated! Use COCOeval_faster.evaluate"
+            " instead."
+        )
 
     def summarize(self):
         """Compute and display summary metrics for evaluation results.
@@ -391,12 +327,17 @@ class COCOeval:
 
         """
 
-        def _summarize(ap=1, iouThr=None, areaRng="all", maxDets=100):
+        def _summarize(
+            ap=1, iouThr=None, areaRng="all", maxDets=100, freq_group_idx=None
+        ):
             p = self.params
             iStr = (
-                " {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} ] ="
+                " {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} {}] ="
                 " {:0.3f}"
             )
+
+            freq_str = "catIds={:>3s}".format("all") if self.lvis_style else ""
+
             titleStr = "Average Precision" if ap == 1 else "Average Recall"
             typeStr = "(AP)" if ap == 1 else "(AR)"
             iouStr = (
@@ -414,7 +355,14 @@ class COCOeval:
                 if iouThr is not None:
                     t = np.where(iouThr == p.iouThrs)[0]
                     s = s[t]
-                s = s[:, :, :, aind, mind]
+
+                if self.lvis_style and (freq_group_idx is not None):
+                    s = s[:, :, self.freq_groups[freq_group_idx], aind, mind]
+                    freq_str = "catIds={:>3s}".format(
+                        p.imgCountLbl[freq_group_idx]
+                    )
+                else:
+                    s = s[:, :, :, aind, mind]
             else:
                 # dimension of recall: [TxKxAxM]
                 s = self.eval["recall"]
@@ -427,12 +375,21 @@ class COCOeval:
             else:
                 mean_s = np.mean(s[s > -1])
             self.print_function(
-                iStr.format(titleStr, typeStr, iouStr, areaRng, maxDets, mean_s)
+                iStr.format(
+                    titleStr,
+                    typeStr,
+                    iouStr,
+                    areaRng,
+                    maxDets,
+                    freq_str,
+                    mean_s,
+                )
             )
             return mean_s
 
         def _summarizeDets():
-            stats = np.zeros((14,))
+            _count = 17 if self.lvis_style else 14
+            stats = np.zeros((_count,))
             stats[0] = _summarize(1, maxDets=self.params.maxDets[-1])  # AP_all
             stats[1] = _summarize(
                 1, iouThr=0.5, maxDets=self.params.maxDets[-1]
@@ -449,6 +406,17 @@ class COCOeval:
             stats[5] = _summarize(
                 1, areaRng="large", maxDets=self.params.maxDets[-1]
             )  # AP_large
+
+            if self.lvis_style:
+                stats[14] = _summarize(
+                    1, maxDets=self.params.maxDets[-1], freq_group_idx=0
+                )  # APr
+                stats[15] = _summarize(
+                    1, maxDets=self.params.maxDets[-1], freq_group_idx=1
+                )  # APc
+                stats[16] = _summarize(
+                    1, maxDets=self.params.maxDets[-1], freq_group_idx=2
+                )  # APf
 
             # AR_first or AR_all
             stats[6] = _summarize(0, maxDets=self.params.maxDets[0])
@@ -477,6 +445,7 @@ class COCOeval:
             stats[13] = _summarize(
                 0, iouThr=0.75, maxDets=self.params.maxDets[-1]
             )  # AR_75
+
             return stats
 
         def _summarizeKps():
@@ -608,5 +577,62 @@ class Params:
         else:
             raise Exception("iouType not supported")
         self.iouType = iouType
-        # useSegm is deprecated
-        self.useSegm = None
+
+        # We bin categories in three bins based how many images of the training
+        # set the category is present in.
+        # r: Rare    :  < 10
+        # c: Common  : >= 10 and < 100
+        # f: Frequent: >= 100
+        self.imgCountLbl = ["r", "c", "f"]
+
+    @property
+    def useSegm(self):
+        return int(self.iouType == "segm")
+
+    @useSegm.setter
+    def useSegm(self, value):
+        # add backward compatibility if useSegm is specified in params
+        self.iouType = "segm" if value == 1 else "bbox"
+        logger.warning(
+            "useSegm is deprecated. Please use iouType (string) instead."
+        )
+
+    @property
+    def iou_type(self):
+        return self.iouType
+
+    @property
+    def img_ids(self):
+        return self.imgIds
+
+    @property
+    def cat_ids(self):
+        return self.catIds
+
+    @property
+    def iou_thrs(self):
+        return self.iouThrs
+
+    @property
+    def rec_thrs(self):
+        return self.recThrs
+
+    @property
+    def max_dets(self):
+        return self.maxDets
+
+    @property
+    def area_rng(self):
+        return self.areaRng
+
+    @property
+    def area_rng_lbl(self):
+        return self.areaRngLbl
+
+    @property
+    def use_cats(self):
+        return self.useCats
+
+    @property
+    def img_count_lbl(self):
+        return self.imgCountLbl

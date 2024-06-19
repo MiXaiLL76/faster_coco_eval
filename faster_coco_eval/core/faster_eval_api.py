@@ -19,6 +19,25 @@ class COCOeval_faster(COCOeval):
     functions evaluateImg() and accumulate() are implemented in C++ to speedup
     evaluation."""
 
+    # <<<< Beginning of code differences with original COCO API
+    def convert_instances_to_cpp(self, instances, is_det=False):
+        # Convert annotations for a list of instances in an image to a format that's fast # noqa: E501
+        # to access in C++
+        instances_cpp = []
+        for instance in instances:
+            instance_cpp = _C.InstanceAnnotation(
+                int(instance["id"]),
+                float(
+                    instance["score"] if is_det else instance.get("score", 0.0)
+                ),
+                float(instance["area"]),
+                bool(instance.get("iscrowd", 0)),
+                bool(instance.get("ignore", 0)),
+                bool(instance.get("lvis_mark", False)) if is_det else False,
+            )
+            instances_cpp.append(instance_cpp)
+        return instances_cpp
+
     def evaluate(self):
         """Run per image evaluation on given images and store results in
         self.evalImgs_cpp, a datastructure that isn't readable from Python but
@@ -33,9 +52,6 @@ class COCOeval_faster(COCOeval):
         tic = time.time()
 
         p = self.params
-        # add backward compatibility if useSegm is specified in params
-        if p.useSegm is not None:
-            p.iouType = "segm" if p.useSegm == 1 else "bbox"
 
         self.print_function("Evaluate annotation type *{}*".format(p.iouType))
 
@@ -45,7 +61,7 @@ class COCOeval_faster(COCOeval):
         p.maxDets = sorted(p.maxDets)
         self.params = p
 
-        self._prepare()  # bottleneck
+        self._prepare()  # not more bottleneck!
 
         # loop through images, area range, max detection number
         catIds = p.catIds if p.useCats else [-1]
@@ -54,45 +70,32 @@ class COCOeval_faster(COCOeval):
             computeIoU = self.computeIoU
         elif p.iouType == "keypoints":
             computeIoU = self.computeOks
+
         self.ious = {
             (imgId, catId): computeIoU(imgId, catId)
             for imgId in p.imgIds
             for catId in catIds
         }  # bottleneck
 
-        maxDet = p.maxDets[-1]
-
-        # <<<< Beginning of code differences with original COCO API
-        def convert_instances_to_cpp(instances, is_det=False):
-            # Convert annotations for a list of instances in an image to a format that's fast # noqa: E501
-            # to access in C++
-            instances_cpp = []
-            for instance in instances:
-                instance_cpp = _C.InstanceAnnotation(
-                    int(instance["id"]),
-                    instance["score"] if is_det else instance.get("score", 0.0),
-                    instance["area"],
-                    bool(instance.get("iscrowd", 0)),
-                    bool(instance.get("ignore", 0)),
-                )
-                instances_cpp.append(instance_cpp)
-            return instances_cpp
-
         # Convert GT annotations, detections, and IOUs to a format that's fast to access in C++ # noqa: E501
         ground_truth_instances = [
             [
-                convert_instances_to_cpp(self._gts[imgId, catId])
+                self.convert_instances_to_cpp(self._gts[imgId, catId])
                 for catId in p.catIds
             ]
             for imgId in p.imgIds
         ]
+
         detected_instances = [
             [
-                convert_instances_to_cpp(self._dts[imgId, catId], is_det=True)
+                self.convert_instances_to_cpp(
+                    self._dts[imgId, catId], is_det=True
+                )
                 for catId in p.catIds
             ]
             for imgId in p.imgIds
         ]
+
         ious = [
             [self.ious[imgId, catId] for catId in catIds] for imgId in p.imgIds
         ]
@@ -106,18 +109,25 @@ class COCOeval_faster(COCOeval):
                 [[o for c in i for o in c]] for i in detected_instances
             ]
 
-        # Call C++ implementation of self.evaluateImgs()
-        self._evalImgs_cpp = _C.COCOevalEvaluateImages(
-            p.areaRng,
-            maxDet,
-            p.iouThrs,
-            ious,
-            ground_truth_instances,
-            detected_instances,
-        )
-        self._evalImgs = None
-
         self._paramsEval = copy.deepcopy(self.params)
+
+        if self.separate_eval:
+            # Call C++ implementation of self.evaluateImgs()
+            self._evalImgs_cpp = _C.COCOevalEvaluateImages(
+                p.areaRng,
+                p.maxDets[-1],
+                p.iouThrs,
+                ious,
+                ground_truth_instances,
+                detected_instances,
+            )
+        else:
+            self.eval = _C.COCOevalEvaluateAccumulate(
+                self._paramsEval,
+                ious,
+                ground_truth_instances,
+                detected_instances,
+            )
 
         toc = time.time()
 
@@ -134,54 +144,26 @@ class COCOeval_faster(COCOeval):
         """
         self.print_function("Accumulating evaluation results...")
         tic = time.time()
-        assert hasattr(
-            self, "_evalImgs_cpp"
-        ), "evaluate() must be called before accmulate() is called."
-
-        self.eval = _C.COCOevalAccumulate(self._paramsEval, self._evalImgs_cpp)
-
-        # recall is num_iou_thresholds X num_categories X num_area_ranges X num_max_detections # noqa: E501
-        self.eval["recall"] = np.array(self.eval["recall"]).reshape(
-            self.eval["counts"][:1] + self.eval["counts"][2:]
-        )
-
-        # precision and scores are num_iou_thresholds X num_recall_thresholds X num_categories X num_area_ranges X num_max_detections # noqa: E501
-        self.eval["precision"] = np.array(self.eval["precision"]).reshape(
-            self.eval["counts"]
-        )
-        self.eval["scores"] = np.array(self.eval["scores"]).reshape(
-            self.eval["counts"]
-        )
+        if self.separate_eval:
+            assert hasattr(
+                self, "_evalImgs_cpp"
+            ), "evaluate() must be called before accmulate() is called."
+            self.eval = _C.COCOevalAccumulate(
+                self._paramsEval, self._evalImgs_cpp
+            )
 
         self.matched = False
         try:
             if self.extra_calc:
-
-                num_iou_thresholds, _, _, num_area_ranges, _ = self.eval[
-                    "counts"
-                ]
-
-                self.detection_matches = np.vstack(
-                    np.array(self.eval["detection_matches"]).reshape(
-                        num_iou_thresholds, num_area_ranges, -1
-                    )
-                )
+                self.detection_matches = self.eval["detection_matches"]
                 assert self.detection_matches.shape[1] <= len(self.cocoDt.anns)
 
-                self.ground_truth_matches = np.vstack(
-                    np.array(self.eval["ground_truth_matches"]).reshape(
-                        num_iou_thresholds, num_area_ranges, -1
-                    )
-                )
+                self.ground_truth_matches = self.eval["ground_truth_matches"]
                 assert self.ground_truth_matches.shape[1] <= len(
                     self.cocoGt.anns
                 )
 
-                self.ground_truth_orig_id = np.vstack(
-                    np.array(self.eval["ground_truth_orig_id"]).reshape(
-                        num_iou_thresholds, num_area_ranges, -1
-                    )
-                )
+                self.ground_truth_orig_id = self.eval["ground_truth_orig_id"]
                 assert self.ground_truth_orig_id.shape[1] <= len(
                     self.cocoGt.anns
                 )
@@ -296,6 +278,11 @@ class COCOeval_faster(COCOeval):
             self.all_stats = np.append(self.all_stats, self.compute_mIoU())
             self.all_stats = np.append(self.all_stats, self.compute_mAUC())
 
+    def run(self):
+        self.evaluate()
+        self.accumulate()
+        self.summarize()
+
     @property
     def stats_as_dict(self):
         labels = [
@@ -317,6 +304,9 @@ class COCOeval_faster(COCOeval):
             labels += ["AR_50", "AR_75"]
         else:
             labels = [label for label in labels if "small" not in label]
+
+        if self.lvis_style:
+            labels += ["APr", "APc", "APf"]
 
         if self.matched:
             labels += [

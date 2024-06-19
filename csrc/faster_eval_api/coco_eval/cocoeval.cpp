@@ -81,13 +81,13 @@ namespace coco_eval
       const int num_detections = detection_sorted_indices.size();
       // std::vector<uint64_t> ground_truth_matches(
       // num_iou_thresholds * num_ground_truth, 0);
-      std::vector<uint64_t> &ground_truth_matches = results->ground_truth_matches;
+      std::vector<int64_t> &ground_truth_matches = results->ground_truth_matches;
       ground_truth_matches.resize(num_iou_thresholds * num_ground_truth, 0);
 
-      std::vector<uint64_t> &ground_truth_orig_id = results->ground_truth_orig_id;
+      std::vector<int64_t> &ground_truth_orig_id = results->ground_truth_orig_id;
       ground_truth_orig_id.resize(num_iou_thresholds * num_ground_truth, -1);
 
-      std::vector<uint64_t> &detection_matches = results->detection_matches;
+      std::vector<int64_t> &detection_matches = results->detection_matches;
 
       std::vector<bool> &detection_ignores = results->detection_ignores;
       std::vector<bool> &ground_truth_ignores = results->ground_truth_ignores;
@@ -150,7 +150,7 @@ namespace coco_eval
           detection_ignores[t * num_detections + d] =
               detection_ignores[t * num_detections + d] ||
               (detection_matches[t * num_detections + d] == 0 &&
-               (detection.area < area_range[0] || detection.area > area_range[1]));
+               (detection.area < area_range[0] || detection.area > area_range[1] || detection.lvis_mark));
         }
       }
 
@@ -532,7 +532,7 @@ namespace coco_eval
 
       time_t rawtime;
       struct tm local_time;
-      std::array<char, 200> buffer;
+      char buffer[200];
       time(&rawtime);
 
 #ifdef _WIN32
@@ -540,14 +540,13 @@ namespace coco_eval
 #else
       localtime_r(&rawtime, &local_time);
 #endif
-      strftime(
-          buffer.data(), 200, "%Y-%m-%d %H:%num_max_detections:%S", &local_time);
+      strftime(buffer, 200, "%Y-%m-%d %H:%S", &local_time);
 
       int evaluations_size = static_cast<int>(evaluations.size());
 
-      std::vector<uint64_t> out_detection_matches = {};
-      std::vector<uint64_t> out_ground_truth_matches = {};
-      std::vector<uint64_t> out_ground_truth_orig_id = {};
+      std::vector<int64_t> out_detection_matches = {};
+      std::vector<int64_t> out_ground_truth_matches = {};
+      std::vector<int64_t> out_ground_truth_orig_id = {};
       for (auto eval : evaluations)
       {
         out_detection_matches.insert(out_detection_matches.end(), eval.detection_matches.begin(), eval.detection_matches.end());
@@ -555,24 +554,53 @@ namespace coco_eval
         out_ground_truth_orig_id.insert(out_ground_truth_orig_id.end(), eval.ground_truth_orig_id.begin(), eval.ground_truth_orig_id.end());
       }
 
+      std::vector<int64_t> counts = {
+          num_iou_thresholds,
+          num_recall_thresholds,
+          num_categories,
+          num_area_ranges,
+          num_max_detections};
+
+      std::vector<int64_t> recall_counts = {
+          num_iou_thresholds,
+          num_categories,
+          num_area_ranges,
+          num_max_detections};
+      std::vector<int64_t> matches_shape = {num_iou_thresholds * num_area_ranges, -1};
+
       return py::dict(
           "params"_a = params,
-          "counts"_a = std::vector<int64_t>({num_iou_thresholds,
-                                             num_recall_thresholds,
-                                             num_categories,
-                                             num_area_ranges,
-                                             num_max_detections}),
-          "date"_a = buffer,
-          "precision"_a = precisions_out,
-          "recall"_a = recalls_out,
-          "scores"_a = scores_out,
-          "detection_matches"_a = out_detection_matches,
-          // "detection_ignores"_a = out_detection_ignores,
-          "ground_truth_matches"_a = out_ground_truth_matches,
-          "ground_truth_orig_id"_a = out_ground_truth_orig_id,
+          "counts"_a = counts,
+          "date"_a = py::str(buffer),
+
+          // precision and scores are num_iou_thresholds X num_recall_thresholds X num_categories X num_area_ranges X num_max_detections
+          "precision"_a = py::array(precisions_out.size(), precisions_out.data()).reshape(counts),
+          "scores"_a = py::array(scores_out.size(), scores_out.data()).reshape(counts),
+
+          // recall is num_iou_thresholds X num_categories X num_area_ranges X num_max_detections
+          "recall"_a = py::array(recalls_out.size(), recalls_out.data()).reshape(recall_counts),
+
+          "detection_matches"_a = py::array(out_detection_matches.size(), out_detection_matches.data()).reshape(matches_shape),
+          "ground_truth_matches"_a = py::array(out_ground_truth_matches.size(), out_ground_truth_matches.data()).reshape(matches_shape),
+          "ground_truth_orig_id"_a = py::array(out_ground_truth_orig_id.size(), out_ground_truth_orig_id.data()).reshape(matches_shape),
           "evaluations_size"_a = evaluations_size);
     }
 
+    py::dict EvaluateAccumulate(
+        const py::object &params,
+        const ImageCategoryInstances<std::vector<double>> &image_category_ious,
+        const ImageCategoryInstances<InstanceAnnotation> &
+            image_category_ground_truth_instances,
+        const ImageCategoryInstances<InstanceAnnotation> &
+            image_category_detection_instances)
+    {
+      const std::vector<int> max_detections = list_to_vec<int>(params.attr("maxDets"));
+      const std::vector<std::array<double, 2>> area_ranges = list_to_vec<std::array<double, 2>>(params.attr("areaRng"));
+      const std::vector<double> iou_thresholds = list_to_vec<double>(params.attr("iouThrs"));
+
+      std::vector<ImageEvaluation> result = EvaluateImages(area_ranges, max_detections.back(), iou_thresholds, image_category_ious, image_category_ground_truth_instances, image_category_detection_instances);
+      return Accumulate(params, result);
+    }
   } // namespace COCOeval
 
 } // namespace coco_eval
