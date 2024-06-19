@@ -6,6 +6,16 @@
 - [x] Replace CED MSE curve with MAE (px) curve
 - [x] Add CED examples
 - [x] Display IoU and MAE for keypoints
+- [x] Reworked eval._prepare to clear up the return flow
+- [x] Reworked the C++ part of **COCOevalEvaluateImages** and **COCOevalAccumulate**
+  - [x] Add new **COCOevalEvaluateAccumulate** to combine these two calls. You can use old style **separate_eval==True** (default=False)
+  - [x] **COCOevalAccumulate** & **COCOevalEvaluateAccumulate** -> *COCOeval_faster.eval* is now correctly created as numpy arrays.
+- [x] Append LVIS dataset support **lvis_style=True** in COCOeval_faster
+
+```py
+cocoEval = COCOeval_faster(cocoGt, cocoDt, iouType, lvis_style=True, print_function=print)
+cocoEval.params.maxDets = [300]
+```
 
 ## v1.5.5
 
