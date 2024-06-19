@@ -71,6 +71,7 @@ class COCOeval:
         print_function=logger.debug,
         extra_calc=False,
         kpt_oks_sigmas=None,
+        lvis_style=False,
     ):
         """Initialize CocoEval using coco APIs for gt and dt :param cocoGt:
 
@@ -98,6 +99,11 @@ class COCOeval:
 
         self.extra_calc = extra_calc
         self.matched = False
+        self.lvis_style = lvis_style
+
+        if iouType == "keypoints" and self.lvis_style:
+            logger.warning("lvis_style not supported for keypoint evaluation")
+            self.lvis_style = False
 
         if cocoGt is not None:
             self.params.imgIds = sorted(cocoGt.getImgIds())
@@ -156,11 +162,54 @@ class COCOeval:
         self._dts = defaultdict(list)  # dt for evaluation
         for gt in gts:
             self._gts[gt["image_id"], gt["category_id"]].append(gt)
+
+        img_pl = defaultdict(set)
+        if self.lvis_style:
+            # For federated dataset evaluation we will filter out all dt for
+            # an image which belong to categories not present in gt and not
+            # present in the negative list for an image.
+            # In other words detector is not penalized for categories
+            # about which we don't have gt information about their
+            # presence or absence in an image.
+            img_data = self.cocoGt.load_imgs(ids=p.imgIds)
+            # per image map of categories not present in image
+            img_nl = {d["id"]: d.get("neg_category_ids", []) for d in img_data}
+            # per image list of categories present in image
+            for ann in gts:
+                img_pl[ann["image_id"]].add(ann["category_id"])
+            # per image map of categoires which have missing gt. For these
+            # categories we don't penalize the detector for flase positives.
+            self.img_nel = {
+                d["id"]: d.get("not_exhaustive_category_ids", [])
+                for d in img_data
+            }
+
+            self.freq_groups = self._prepare_freq_group()
+        else:
+            img_nl = {}
+
         for dt in dts:
-            self._dts[dt["image_id"], dt["category_id"]].append(dt)
+            img_id, cat_id = dt["image_id"], dt["category_id"]
+            if (
+                cat_id not in img_nl.get(img_id, [])
+                and cat_id not in img_pl[img_id]
+            ) and self.lvis_style:
+                continue
+
+            self._dts[img_id, cat_id].append(dt)
+
         # per-image per-category evaluation results
         self.evalImgs = defaultdict(list)
         self.eval = {}  # accumulated evaluation results
+
+    def _prepare_freq_group(self):
+        p = self.params
+        freq_groups = [[] for _ in p.img_count_lbl]
+        cat_data = self.cocoGt.load_cats(p.cat_ids)
+        for idx, _cat_data in enumerate(cat_data):
+            frequency = _cat_data["frequency"]
+            freq_groups[p.img_count_lbl.index(frequency)].append(idx)
+        return freq_groups
 
     def evaluate(self):
         """Run per image evaluation on given images and store results (a list
@@ -237,7 +286,7 @@ class COCOeval:
             raise Exception("unknown iouType for iou computation")
 
         # compute iou between each dt and gt region
-        iscrowd = [int(o["iscrowd"]) for o in gt]
+        iscrowd = [int(o.get("iscrowd", 0)) for o in gt]
         ious = maskUtils.iou(d, g, iscrowd)
         return ious
 
@@ -391,12 +440,17 @@ class COCOeval:
 
         """
 
-        def _summarize(ap=1, iouThr=None, areaRng="all", maxDets=100):
+        def _summarize(
+            ap=1, iouThr=None, areaRng="all", maxDets=100, freq_group_idx=None
+        ):
             p = self.params
             iStr = (
-                " {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} ] ="
+                " {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} {}] ="
                 " {:0.3f}"
             )
+
+            freq_str = "catIds={:>3s}".format("all") if self.lvis_style else ""
+
             titleStr = "Average Precision" if ap == 1 else "Average Recall"
             typeStr = "(AP)" if ap == 1 else "(AR)"
             iouStr = (
@@ -414,7 +468,14 @@ class COCOeval:
                 if iouThr is not None:
                     t = np.where(iouThr == p.iouThrs)[0]
                     s = s[t]
-                s = s[:, :, :, aind, mind]
+
+                if self.lvis_style and (freq_group_idx is not None):
+                    s = s[:, :, self.freq_groups[freq_group_idx], aind, mind]
+                    freq_str = "catIds={:>3s}".format(
+                        p.imgCountLbl[freq_group_idx]
+                    )
+                else:
+                    s = s[:, :, :, aind, mind]
             else:
                 # dimension of recall: [TxKxAxM]
                 s = self.eval["recall"]
@@ -427,12 +488,21 @@ class COCOeval:
             else:
                 mean_s = np.mean(s[s > -1])
             self.print_function(
-                iStr.format(titleStr, typeStr, iouStr, areaRng, maxDets, mean_s)
+                iStr.format(
+                    titleStr,
+                    typeStr,
+                    iouStr,
+                    areaRng,
+                    maxDets,
+                    freq_str,
+                    mean_s,
+                )
             )
             return mean_s
 
         def _summarizeDets():
-            stats = np.zeros((14,))
+            _count = 17 if self.lvis_style else 14
+            stats = np.zeros((_count,))
             stats[0] = _summarize(1, maxDets=self.params.maxDets[-1])  # AP_all
             stats[1] = _summarize(
                 1, iouThr=0.5, maxDets=self.params.maxDets[-1]
@@ -449,6 +519,17 @@ class COCOeval:
             stats[5] = _summarize(
                 1, areaRng="large", maxDets=self.params.maxDets[-1]
             )  # AP_large
+
+            if self.lvis_style:
+                stats[14] = _summarize(
+                    1, maxDets=self.params.maxDets[-1], freq_group_idx=0
+                )  # APr
+                stats[15] = _summarize(
+                    1, maxDets=self.params.maxDets[-1], freq_group_idx=1
+                )  # APc
+                stats[16] = _summarize(
+                    1, maxDets=self.params.maxDets[-1], freq_group_idx=2
+                )  # APf
 
             # AR_first or AR_all
             stats[6] = _summarize(0, maxDets=self.params.maxDets[0])
@@ -477,6 +558,7 @@ class COCOeval:
             stats[13] = _summarize(
                 0, iouThr=0.75, maxDets=self.params.maxDets[-1]
             )  # AR_75
+
             return stats
 
         def _summarizeKps():
@@ -610,3 +692,50 @@ class Params:
         self.iouType = iouType
         # useSegm is deprecated
         self.useSegm = None
+
+        # We bin categories in three bins based how many images of the training
+        # set the category is present in.
+        # r: Rare    :  < 10
+        # c: Common  : >= 10 and < 100
+        # f: Frequent: >= 100
+        self.imgCountLbl = ["r", "c", "f"]
+
+    @property
+    def iou_type(self):
+        return self.iouType
+
+    @property
+    def img_ids(self):
+        return self.imgIds
+
+    @property
+    def cat_ids(self):
+        return self.catIds
+
+    @property
+    def iou_thrs(self):
+        return self.iouThrs
+
+    @property
+    def rec_thrs(self):
+        return self.recThrs
+
+    @property
+    def max_dets(self):
+        return self.maxDets
+
+    @property
+    def area_rng(self):
+        return self.areaRng
+
+    @property
+    def area_rng_lbl(self):
+        return self.areaRngLbl
+
+    @property
+    def use_cats(self):
+        return self.useCats
+
+    @property
+    def img_count_lbl(self):
+        return self.imgCountLbl

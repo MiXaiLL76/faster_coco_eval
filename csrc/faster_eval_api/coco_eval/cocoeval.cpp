@@ -149,8 +149,8 @@ namespace coco_eval
               detection_instances[detection_sorted_indices[d]];
           detection_ignores[t * num_detections + d] =
               detection_ignores[t * num_detections + d] ||
-              (detection_matches[t * num_detections + d] == 0 &&
-               (detection.area < area_range[0] || detection.area > area_range[1]));
+              (detection_matches[t * num_detections + d] == 0 && 
+               (detection.area < area_range[0] || detection.area > area_range[1] || detection.lvis_mark));
         }
       }
 

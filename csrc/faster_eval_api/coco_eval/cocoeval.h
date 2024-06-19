@@ -23,13 +23,15 @@ namespace coco_eval
           double score,
           double area,
           bool is_crowd,
-          bool ignore)
-          : id{id}, score{score}, area{area}, is_crowd{is_crowd}, ignore{ignore} {}
+          bool ignore,
+          bool lvis_mark)
+          : id{id}, score{score}, area{area}, is_crowd{is_crowd}, ignore{ignore}, lvis_mark{lvis_mark} {}
       uint64_t id;
       double score = 0.;
       double area = 0.;
       bool is_crowd = false;
       bool ignore = false;
+      bool lvis_mark = false;
     };
 
     // Stores intermediate results for evaluating detection results for a single

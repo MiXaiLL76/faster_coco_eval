@@ -68,12 +68,21 @@ class COCOeval_faster(COCOeval):
             # to access in C++
             instances_cpp = []
             for instance in instances:
+                if self.lvis_style:
+                    lvis_mark = bool(
+                        instance["category_id"]
+                        in self.img_nel[instance["image_id"]]
+                    )
+                else:
+                    lvis_mark = False
+
                 instance_cpp = _C.InstanceAnnotation(
                     int(instance["id"]),
                     instance["score"] if is_det else instance.get("score", 0.0),
                     instance["area"],
                     bool(instance.get("iscrowd", 0)),
                     bool(instance.get("ignore", 0)),
+                    bool(lvis_mark),
                 )
                 instances_cpp.append(instance_cpp)
             return instances_cpp
@@ -149,6 +158,7 @@ class COCOeval_faster(COCOeval):
         self.eval["precision"] = np.array(self.eval["precision"]).reshape(
             self.eval["counts"]
         )
+
         self.eval["scores"] = np.array(self.eval["scores"]).reshape(
             self.eval["counts"]
         )
@@ -296,6 +306,11 @@ class COCOeval_faster(COCOeval):
             self.all_stats = np.append(self.all_stats, self.compute_mIoU())
             self.all_stats = np.append(self.all_stats, self.compute_mAUC())
 
+    def run(self):
+        self.evaluate()
+        self.accumulate()
+        self.summarize()
+
     @property
     def stats_as_dict(self):
         labels = [
@@ -317,6 +332,9 @@ class COCOeval_faster(COCOeval):
             labels += ["AR_50", "AR_75"]
         else:
             labels = [label for label in labels if "small" not in label]
+
+        if self.lvis_style:
+            labels += ["APr", "APc", "APf"]
 
         if self.matched:
             labels += [

@@ -52,6 +52,7 @@ Code examples for using the library are available on the [Wiki](https://github.c
 - [Eval example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/eval_example.ipynb)
 - [Curve example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/curve_example.ipynb)
 - [CED Keypoint example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/ced_example.ipynb)
+- [LVIS example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/lvis_example.ipynb)
 
 ## Update history
 
