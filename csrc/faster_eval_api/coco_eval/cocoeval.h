@@ -41,10 +41,10 @@ namespace coco_eval
     {
       // For each of the D detected instances, the id of the matched ground truth
       // instance, or 0 if unmatched
-      std::vector<uint64_t> detection_matches;
+      std::vector<int64_t> detection_matches;
 
-      std::vector<uint64_t> ground_truth_matches;
-      std::vector<uint64_t> ground_truth_orig_id;
+      std::vector<int64_t> ground_truth_matches;
+      std::vector<int64_t> ground_truth_orig_id;
       // The detection score of each of the D detected instances
       std::vector<double> detection_scores;
 
@@ -91,6 +91,14 @@ namespace coco_eval
     py::dict Accumulate(
         const py::object &params,
         const std::vector<ImageEvaluation> &evalutations);
+
+    py::dict EvaluateAccumulate(
+        const py::object &params,
+        const ImageCategoryInstances<std::vector<double>> &image_category_ious,
+        const ImageCategoryInstances<InstanceAnnotation> &
+            image_category_ground_truth_instances,
+        const ImageCategoryInstances<InstanceAnnotation> &
+            image_category_detection_instances);
 
   } // namespace COCOeval
 } // namespace coco_eval

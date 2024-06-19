@@ -48,6 +48,7 @@ namespace coco_eval
     m.def("get_compiler_version", &get_compiler_version, "get_compiler_version");
     m.def("COCOevalAccumulate", &COCOeval::Accumulate, "COCOeval::Accumulate");
     m.def("COCOevalEvaluateImages", &COCOeval::EvaluateImages, "COCOeval::EvaluateImages");
+    m.def("COCOevalEvaluateAccumulate", &COCOeval::EvaluateAccumulate, "COCOeval::EvaluateAccumulate");
     pybind11::class_<COCOeval::InstanceAnnotation>(m, "InstanceAnnotation").def(pybind11::init<uint64_t, double, double, bool, bool, bool>());
     pybind11::class_<COCOeval::ImageEvaluation>(m, "ImageEvaluation").def(pybind11::init<>());
 
