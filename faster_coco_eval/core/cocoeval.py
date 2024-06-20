@@ -155,15 +155,10 @@ class COCOeval:
 
         # set ignore flag
         for gt in gts:
-            if "ignore" not in gt:
-                gt["ignore"] = 0
-
-            if ("iscrowd" in gt) and (gt["ignore"] != 0):
-                gt["ignore"] = gt["iscrowd"]
-
-            if p.iouType == "keypoints" and (gt["ignore"] == 0):
-                gt["ignore"] = int(gt.get("num_keypoints", 0) == 0)
-
+            gt["ignore"] = gt["ignore"] if "ignore" in gt else 0
+            gt["ignore"] = "iscrowd" in gt and gt["iscrowd"]
+            if p.iouType == "keypoints":
+                gt["ignore"] = (gt.get("num_keypoints") == 0) or gt["ignore"]
         self._gts = defaultdict(list)  # gt for evaluation
         self._dts = defaultdict(list)  # dt for evaluation
         img_pl = defaultdict(

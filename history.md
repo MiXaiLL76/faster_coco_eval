@@ -1,6 +1,10 @@
 
 # history
 
+## v1.5.7
+
+- [x] Compare COCOEval bug fix. 
+
 ## v1.5.6
 
 - [x] Replace CED MSE curve with MAE (px) curve
