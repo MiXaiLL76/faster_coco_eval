@@ -7,3 +7,7 @@ __pycache__
 examples/comparison/mmdet/COCO
 examples/comparison/mmdet/model
 csrc/mask/pycocotools/_mask.c
+tests/synth_test_dataset
+examples/ultralytics
+examples/comparison/ultralytics/runs/*
+examples/comparison/ultralytics/*.pt
