@@ -1,7 +1,6 @@
 # Original work Copyright (c) Facebook, Inc. and its affiliates.
 # Modified work Copyright (c) 2021 Sartorius AG
 
-import copy
 import logging
 import time
 
@@ -9,6 +8,7 @@ import numpy as np
 
 import faster_coco_eval.faster_eval_api_cpp as _C
 
+from . import mask as maskUtils
 from .cocoeval import COCOeval
 
 logger = logging.getLogger(__name__)
@@ -109,7 +109,7 @@ class COCOeval_faster(COCOeval):
                 [[o for c in i for o in c]] for i in detected_instances
             ]
 
-        self._paramsEval = copy.deepcopy(self.params)
+        self._paramsEval = maskUtils.deepcopy(self.params)
 
         if self.separate_eval:
             # Call C++ implementation of self.evaluateImgs()

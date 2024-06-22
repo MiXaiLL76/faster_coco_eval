@@ -112,6 +112,22 @@ def get_extensions(version_info):
             name="faster_coco_eval.faster_eval_api_cpp",
             sources=sources,
             define_macros=[("VERSION_INFO", version_info)],
+            extra_compile_args=["-std=c++17"],
+        )
+    ]
+
+    sources = [
+        "csrc/mask_api/src/mask.cpp",
+        "csrc/mask_api/mask_api.cpp",
+    ]
+    print("Sources: {}".format(sources))
+
+    ext_modules += [
+        Pybind11Extension(
+            name="faster_coco_eval.mask_api_new_cpp",
+            sources=sources,
+            define_macros=[("VERSION_INFO", version_info)],
+            extra_compile_args=["-std=c++17"],
         )
     ]
 

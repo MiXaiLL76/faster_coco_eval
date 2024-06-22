@@ -1,6 +1,8 @@
 __author__ = "tsungyi"
 
-import faster_coco_eval.mask_api_cpp as _mask
+# import faster_coco_eval.mask_api_cpp as _mask
+# import faster_coco_eval.mask_api_cpp as _mask_old
+import faster_coco_eval.mask_api_new_cpp as _mask
 
 # Interface for manipulating masks stored in RLE format.
 #
@@ -76,6 +78,7 @@ import faster_coco_eval.mask_api_cpp as _mask
 iou = _mask.iou
 merge = _mask.merge
 frPyObjects = _mask.frPyObjects
+deepcopy = _mask.deepcopy
 
 
 def encode(bimask):

@@ -125,7 +125,7 @@ class COCOeval:
         self.load_data_time = []
         self.iou_data_time = []
 
-    def _toMask(self, anns, coco):
+    def _toMask(self, anns: list, coco: COCO):
         # modify ann['segmentation'] by reference
         for ann in anns:
             rle = coco.annToRLE(ann)
@@ -193,13 +193,13 @@ class COCOeval:
 
         for dt in dts:
             img_id, cat_id = dt["image_id"], dt["category_id"]
-            if (
-                cat_id not in img_nl.get(img_id, [])
-                and cat_id not in img_pl[img_id]
-            ) and self.lvis_style:
-                continue
-
             if self.lvis_style:
+                if (
+                    cat_id not in img_nl.get(img_id, [])
+                    and cat_id not in img_pl[img_id]
+                ) and self.lvis_style:
+                    continue
+
                 dt["lvis_mark"] = (
                     dt["category_id"] in self.img_nel[dt["image_id"]]
                 )

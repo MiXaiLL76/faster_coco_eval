@@ -44,7 +44,6 @@ __version__ = "2.0"
 # Code written by Piotr Dollar and Tsung-Yi Lin, 2014.
 # Licensed under the Simplified BSD License [see bsd.txt]
 
-import copy
 import json
 import logging
 import time
@@ -75,10 +74,10 @@ class COCO:
         """
         # load dataset
         self.dataset, self.anns, self.cats, self.imgs = (
-            dict(),
-            dict(),
-            dict(),
-            dict(),
+            {},
+            {},
+            {},
+            {},
         )
         self.imgToAnns, self.catToImgs = defaultdict(list), defaultdict(list)
         self.score_tresh: float = 0.0
@@ -89,7 +88,7 @@ class COCO:
             if type(annotation_file) is str:
                 self.dataset = self.load_json(annotation_file)
             elif type(annotation_file) is dict:
-                self.dataset = copy.deepcopy(annotation_file)
+                self.dataset = maskUtils.deepcopy(annotation_file)
             else:
                 self.dataset = None
 
@@ -339,7 +338,7 @@ class COCO:
         elif type(resFile) is np.ndarray:
             anns = self.loadNumpyAnnotations(resFile)
         else:
-            anns = copy.deepcopy(resFile)
+            anns = maskUtils.deepcopy(resFile)
 
         assert type(anns) is list, "results in not an array of objects"
 
@@ -359,7 +358,7 @@ class COCO:
             for id, ann in enumerate(anns):
                 ann["id"] = id + 1
         elif "bbox" in anns[0] and not anns[0]["bbox"] == []:
-            res.dataset["categories"] = copy.deepcopy(
+            res.dataset["categories"] = maskUtils.deepcopy(
                 self.dataset["categories"]
             )
             for id, ann in enumerate(anns):
@@ -371,7 +370,7 @@ class COCO:
                 ann["id"] = id + 1
                 ann["iscrowd"] = 0
         elif "segmentation" in anns[0]:
-            res.dataset["categories"] = copy.deepcopy(
+            res.dataset["categories"] = maskUtils.deepcopy(
                 self.dataset["categories"]
             )
             for id, ann in enumerate(anns):
@@ -382,7 +381,7 @@ class COCO:
                 ann["id"] = id + 1
                 ann["iscrowd"] = 0
         elif "keypoints" in anns[0]:
-            res.dataset["categories"] = copy.deepcopy(
+            res.dataset["categories"] = maskUtils.deepcopy(
                 self.dataset["categories"]
             )
             for id, ann in enumerate(anns):
