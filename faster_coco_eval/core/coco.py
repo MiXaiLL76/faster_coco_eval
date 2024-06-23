@@ -103,35 +103,29 @@ class COCO:
             self.createIndex()
 
     def createIndex(self):
+        tic = time.time()
         # create index
         logger.debug("creating index...")
-        anns, cats, imgs, annToImgs = {}, {}, {}, {}
+        anns, cats, imgs = {}, {}, {}
         imgToAnns, catToImgs = defaultdict(list), defaultdict(list)
-        imgCatToAnnsIdx = defaultdict(dict)
-        imgToAnnsIdx = defaultdict(dict)
 
-        annsImgIds_dict = {}
+        annsImgIds_dict = set()
         if "images" in self.dataset:
             for img in self.dataset["images"]:
-                img["id"] = int(img["id"])
+                if type(img["id"]) is not int:
+                    img["id"] = int(img["id"])
+
                 imgs[img["id"]] = img
-                annsImgIds_dict[img["id"]] = True
+                annsImgIds_dict.add(img["id"])
 
         if "annotations" in self.dataset:
             for ann in self.dataset["annotations"]:
-                ann["image_id"] = int(ann["image_id"])
-                if annsImgIds_dict.get(ann["image_id"]):
+                if type(ann["image_id"]) is not int:
+                    ann["image_id"] = int(ann["image_id"])
+
+                if ann["image_id"] in annsImgIds_dict:
                     imgToAnns[ann["image_id"]].append(ann)
                     anns[ann["id"]] = ann
-                    annToImgs[ann["id"]] = ann["image_id"]
-                    imgCatToAnnsIdx[(ann["image_id"], ann["category_id"])][
-                        ann["id"]
-                    ] = len(
-                        imgCatToAnnsIdx[(ann["image_id"], ann["category_id"])]
-                    )
-                    imgToAnnsIdx[ann["image_id"]][ann["id"]] = len(
-                        imgToAnnsIdx[ann["image_id"]]
-                    )
 
         if "categories" in self.dataset:
             for cat in self.dataset["categories"]:
@@ -142,16 +136,46 @@ class COCO:
                 catToImgs[ann["category_id"]].append(ann["image_id"])
 
         logger.debug("index created!")
+        logger.debug("Done (t={:0.2f}s)".format(time.time() - tic))
 
         # create class members
         self.anns = anns
         self.imgToAnns = imgToAnns
         self.catToImgs = catToImgs
+        self.imgs = imgs
+        self.cats = cats
+
+    def createSubIndex(self):
+        """extra_calc sub index for math_matches."""
+        tic = time.time()
+        # create index
+        logger.debug("creating sub_index...")
+        annToImgs = {}
+        imgCatToAnnsIdx = defaultdict(dict)
+        imgCatToAnnsIdx_count = defaultdict(int)
+        imgToAnnsIdx = defaultdict(dict)
+        imgToAnnsIdx_count = defaultdict(int)
+
+        for ann_id, ann in self.anns.items():
+            annToImgs[ann_id] = ann["image_id"]
+
+            imgCatToAnnsIdx[(ann["image_id"], ann["category_id"])][
+                ann["id"]
+            ] = imgCatToAnnsIdx_count[(ann["image_id"], ann["category_id"])]
+            imgCatToAnnsIdx_count[(ann["image_id"], ann["category_id"])] += 1
+
+            imgToAnnsIdx[ann["image_id"]][ann["id"]] = imgToAnnsIdx_count[
+                ann["image_id"]
+            ]
+            imgToAnnsIdx_count[ann["image_id"]] += 1
+
+        logger.debug("sub_index created!")
+        logger.debug("Done (t={:0.2f}s)".format(time.time() - tic))
+
+        # create class members
         self.annToImgs = annToImgs
         self.imgCatToAnnsIdx = imgCatToAnnsIdx
         self.imgToAnnsIdx = imgToAnnsIdx
-        self.imgs = imgs
-        self.cats = cats
 
     def info(self):
         """Print information about the annotation file.
@@ -344,7 +368,8 @@ class COCO:
 
         assert type(anns) is list, "results in not an array of objects"
 
-        anns = [ann for ann in anns if ann.get("score", 1) >= self.score_tresh]
+        if self.score_tresh != 0:
+            anns = [ann for ann in anns if ann.get("score", 1) >= self.score_tresh]
 
         annsImgIds = [ann["image_id"] for ann in anns]
         assert set(annsImgIds) == (
@@ -390,8 +415,8 @@ class COCO:
                 ann["bbox"] = [x0, y0, x1 - x0, y1 - y0]
         logger.debug("DONE (t={:0.2f}s)".format(time.time() - tic))
 
-        annsImgIds_dict = {image["id"]: True for image in res.dataset["images"]}
-        anns = [ann for ann in anns if annsImgIds_dict.get(ann["image_id"])]
+        # annsImgIds_dict = {image["id"]: True for image in res.dataset["images"]}
+        # anns = [ann for ann in anns if annsImgIds_dict.get(ann["image_id"])]
 
         res.dataset["annotations"] = anns
         res.createIndex()

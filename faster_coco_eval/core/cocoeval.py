@@ -107,18 +107,27 @@ class COCOeval:
             logger.warning("lvis_style not supported for keypoint evaluation")
             self.lvis_style = False
 
-        if cocoGt is not None:
-            self.params.imgIds = sorted(cocoGt.getImgIds())
-            self.params.catIds = sorted(cocoGt.getCatIds())
+        if self.cocoDt is not None:
+            if self.extra_calc:
+                self.cocoDt.createSubIndex()
+
+        if self.cocoGt is not None:
+            if self.extra_calc:
+                self.cocoGt.createSubIndex()
+
+            self.params.imgIds = sorted(self.cocoGt.getImgIds())
+            self.params.catIds = sorted(self.cocoGt.getCatIds())
 
             if iouType == "keypoints":
-                if cocoDt is not None:
-                    self.params.catIds = sorted(list(cocoDt.cat_img_map.keys()))
+                if self.cocoGt is not None:
+                    self.params.catIds = sorted(
+                        list(self.cocoGt.cat_img_map.keys())
+                    )
                 else:
                     self.params.catIds = sorted(
                         [
-                            category_id
-                            for category_id, category in cocoGt.cats.items()
+                            cid
+                            for cid, category in self.cocoGt.cats.items()
                             if len(category.get("keypoints", []))
                         ]
                     )
