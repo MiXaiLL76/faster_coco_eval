@@ -14,8 +14,6 @@ namespace mask_api
 
     namespace Mask
     {
-        typedef std::list<double> bbox;
-
         struct RLE
         {
             RLE(
@@ -50,7 +48,7 @@ namespace mask_api
         // pyx functions
         py::array_t<uint, py::array::f_style> decode(const std::vector<py::dict> &R);
         std::vector<py::dict> encode(const py::array_t<uint, py::array::f_style> &M);
-        
+
         py::array_t<double> toBbox(const std::vector<py::dict> &R);
         py::dict merge(const std::vector<py::dict> &rleObjs, const uint64_t &intersect);
         py::dict merge(const std::vector<py::dict> &rleObjs);
@@ -66,7 +64,5 @@ namespace mask_api
         std::vector<py::dict> rleToUncompressedRLE(const std::vector<RLE> &R);
         py::array_t<double> rleToBbox(const std::vector<RLE> R, const uint64_t &n);
         std::variant<pybind11::dict, std::vector<pybind11::dict>> frPyObjects(const py::object &pyobj, const uint64_t &h, const uint64_t &w);
-
-        py::object deepcopy(const py::object &pyobj);
     } // namespace Mask
 } // namespace mask_api

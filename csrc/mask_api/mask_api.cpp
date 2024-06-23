@@ -73,7 +73,6 @@ namespace mask_api
     m.def("iou", &Mask::iou, "Mask::iou");
 
     m.def("toBbox", &Mask::toBbox, "Mask::toBbox");
-    // m.def("merge", &Mask::merge, "Mask::merge");
     m.def("merge", py::overload_cast<const std::vector<py::dict>&, const uint64_t&>(&Mask::merge), "Mask::merge");
     m.def("merge", py::overload_cast<const std::vector<py::dict>&>(&Mask::merge), "Mask::merge");
 
@@ -87,7 +86,6 @@ namespace mask_api
     m.def("frUncompressedRLE", &Mask::frUncompressedRLE, "Mask::frUncompressedRLE");
     m.def("frPyObjects", &Mask::frPyObjects, "Mask::frPyObjects");
 
-    m.def("deepcopy", &Mask::deepcopy, "Mask::deepcopy");
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
 #else

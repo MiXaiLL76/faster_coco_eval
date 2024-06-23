@@ -57,6 +57,25 @@ namespace coco_eval
       std::vector<bool> detection_ignores;
     };
 
+    class Dataset
+    {
+    public:
+      Dataset() {}
+      void append(int64_t img_id, int64_t cat_id, py::dict ann);
+      std::vector<py::dict> get(int64_t img_id, int64_t cat_id);
+      std::vector<InstanceAnnotation> get_cpp_annotations(
+          int64_t img_id, int64_t cat_id);
+
+      std::vector<std::vector<std::vector<InstanceAnnotation>>> get_cpp_instances(
+          std::vector<int64_t> img_ids, std::vector<int64_t> cat_ids, bool useCats);
+
+      std::vector<std::vector<std::vector<py::dict>>> get_instances(
+          std::vector<int64_t> img_ids, std::vector<int64_t> cat_ids, bool useCats);
+
+    private:
+      std::unordered_map<std::string, std::vector<py::dict>> data;
+    };
+
     template <class T>
     using ImageCategoryInstances = std::vector<std::vector<std::vector<T>>>;
 
@@ -100,5 +119,6 @@ namespace coco_eval
         const ImageCategoryInstances<InstanceAnnotation> &
             image_category_detection_instances);
 
+    py::object deepcopy(const py::object &pyobj);
   } // namespace COCOeval
 } // namespace coco_eval

@@ -52,6 +52,8 @@ from collections import defaultdict
 
 import numpy as np
 
+import faster_coco_eval.faster_eval_api_cpp as _C
+
 from . import mask as maskUtils
 
 logger = logging.getLogger(__name__)
@@ -88,7 +90,7 @@ class COCO:
             if type(annotation_file) is str:
                 self.dataset = self.load_json(annotation_file)
             elif type(annotation_file) is dict:
-                self.dataset = maskUtils.deepcopy(annotation_file)
+                self.dataset = _C.deepcopy(annotation_file)
             else:
                 self.dataset = None
 
@@ -338,7 +340,7 @@ class COCO:
         elif type(resFile) is np.ndarray:
             anns = self.loadNumpyAnnotations(resFile)
         else:
-            anns = maskUtils.deepcopy(resFile)
+            anns = _C.deepcopy(resFile)
 
         assert type(anns) is list, "results in not an array of objects"
 
@@ -358,9 +360,7 @@ class COCO:
             for id, ann in enumerate(anns):
                 ann["id"] = id + 1
         elif "bbox" in anns[0] and not anns[0]["bbox"] == []:
-            res.dataset["categories"] = maskUtils.deepcopy(
-                self.dataset["categories"]
-            )
+            res.dataset["categories"] = _C.deepcopy(self.dataset["categories"])
             for id, ann in enumerate(anns):
                 bb = ann["bbox"]
                 x1, x2, y1, y2 = [bb[0], bb[0] + bb[2], bb[1], bb[1] + bb[3]]
@@ -370,9 +370,7 @@ class COCO:
                 ann["id"] = id + 1
                 ann["iscrowd"] = 0
         elif "segmentation" in anns[0]:
-            res.dataset["categories"] = maskUtils.deepcopy(
-                self.dataset["categories"]
-            )
+            res.dataset["categories"] = _C.deepcopy(self.dataset["categories"])
             for id, ann in enumerate(anns):
                 # now only support compressed RLE format as segmentation results
                 ann["area"] = maskUtils.area(ann["segmentation"])
@@ -381,9 +379,7 @@ class COCO:
                 ann["id"] = id + 1
                 ann["iscrowd"] = 0
         elif "keypoints" in anns[0]:
-            res.dataset["categories"] = maskUtils.deepcopy(
-                self.dataset["categories"]
-            )
+            res.dataset["categories"] = _C.deepcopy(self.dataset["categories"])
             for id, ann in enumerate(anns):
                 s = ann["keypoints"]
                 x = s[0::3]

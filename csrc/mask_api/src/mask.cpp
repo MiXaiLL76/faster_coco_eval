@@ -378,13 +378,13 @@ namespace mask_api
             size_t n = R.size();
             if (n > 0)
             {
-                
+
                 uint64_t s = R[0].h * R[0].w * n;
                 for (uint64_t i = 0; i < R.size(); i++)
                 {
                     uint v = 0;
                     std::vector<std::vector<uint>> mask(R[i].h, std::vector<uint>(R[i].w));
-                    size_t x=0,y=0,c=0;
+                    size_t x = 0, y = 0, c = 0;
                     for (uint64_t j = 0; j < R[i].m; j++)
                     {
                         for (uint64_t k = 0; k < R[i].cnts[j]; k++)
@@ -396,7 +396,7 @@ namespace mask_api
                             {
                                 throw std::range_error("Invalid RLE mask representation");
                             }
-                            y+=1;
+                            y += 1;
 
                             if (y >= R[i].h)
                             {
@@ -858,17 +858,13 @@ namespace mask_api
                 printf("crowd_length=%zu, n=%zu\n", crowd_length, n);
                 throw std::out_of_range("iscrowd must have the same length as gt");
             }
-            if (m == 0 || n == 0){
+            if (m == 0 || n == 0)
+            {
                 return std::vector<double>(0);
             }
             return py::array(iou.size(), iou.data()).reshape({m, n});
         }
 
-        py::object deepcopy(const py::object &pyobj){
-            auto _pyobj = pyobj;
-            return _pyobj;
-        }
-        
         std::variant<pybind11::dict, std::vector<pybind11::dict>> frPyObjects(const py::object &pyobj, const uint64_t &h, const uint64_t &w)
         {
             std::vector<RLE> rles;
@@ -930,7 +926,6 @@ namespace mask_api
 
             return _toString(rles);
         }
-
     } // namespace Mask
 
 }

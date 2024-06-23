@@ -52,6 +52,15 @@ namespace coco_eval
     pybind11::class_<COCOeval::InstanceAnnotation>(m, "InstanceAnnotation").def(pybind11::init<uint64_t, double, double, bool, bool, bool>());
     pybind11::class_<COCOeval::ImageEvaluation>(m, "ImageEvaluation").def(pybind11::init<>());
 
+    m.def("deepcopy", &COCOeval::deepcopy, "COCOeval::deepcopy");
+
+    pybind11::class_<COCOeval::Dataset>(m, "Dataset").def(pybind11::init<>())
+    .def("append", &COCOeval::Dataset::append)
+    .def("get", &COCOeval::Dataset::get)
+    .def("get_instances", &COCOeval::Dataset::get_instances)
+    .def("get_cpp_annotations", &COCOeval::Dataset::get_cpp_annotations)
+    .def("get_cpp_instances", &COCOeval::Dataset::get_cpp_instances);
+
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
 #else

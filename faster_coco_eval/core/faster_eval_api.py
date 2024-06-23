@@ -8,7 +8,6 @@ import numpy as np
 
 import faster_coco_eval.faster_eval_api_cpp as _C
 
-from . import mask as maskUtils
 from .cocoeval import COCOeval
 
 logger = logging.getLogger(__name__)
@@ -18,25 +17,6 @@ class COCOeval_faster(COCOeval):
     """This is a slightly modified version of the original COCO API, where the
     functions evaluateImg() and accumulate() are implemented in C++ to speedup
     evaluation."""
-
-    # <<<< Beginning of code differences with original COCO API
-    def convert_instances_to_cpp(self, instances, is_det=False):
-        # Convert annotations for a list of instances in an image to a format that's fast # noqa: E501
-        # to access in C++
-        instances_cpp = []
-        for instance in instances:
-            instance_cpp = _C.InstanceAnnotation(
-                int(instance["id"]),
-                float(
-                    instance["score"] if is_det else instance.get("score", 0.0)
-                ),
-                float(instance["area"]),
-                bool(instance.get("iscrowd", 0)),
-                bool(instance.get("ignore", 0)),
-                bool(instance.get("lvis_mark", False)) if is_det else False,
-            )
-            instances_cpp.append(instance_cpp)
-        return instances_cpp
 
     def evaluate(self):
         """Run per image evaluation on given images and store results in
@@ -78,38 +58,18 @@ class COCOeval_faster(COCOeval):
         }  # bottleneck
 
         # Convert GT annotations, detections, and IOUs to a format that's fast to access in C++ # noqa: E501
-        ground_truth_instances = [
-            [
-                self.convert_instances_to_cpp(self._gts[imgId, catId])
-                for catId in p.catIds
-            ]
-            for imgId in p.imgIds
-        ]
-
-        detected_instances = [
-            [
-                self.convert_instances_to_cpp(
-                    self._dts[imgId, catId], is_det=True
-                )
-                for catId in p.catIds
-            ]
-            for imgId in p.imgIds
-        ]
+        ground_truth_instances = self.gt_dataset.get_cpp_instances(
+            p.imgIds, p.catIds, bool(p.useCats)
+        )
+        detected_instances = self.dt_dataset.get_cpp_instances(
+            p.imgIds, p.catIds, bool(p.useCats)
+        )
 
         ious = [
             [self.ious[imgId, catId] for catId in catIds] for imgId in p.imgIds
         ]
 
-        if not p.useCats:
-            # For each image, flatten per-category lists into a single list
-            ground_truth_instances = [
-                [[o for c in i for o in c]] for i in ground_truth_instances
-            ]
-            detected_instances = [
-                [[o for c in i for o in c]] for i in detected_instances
-            ]
-
-        self._paramsEval = maskUtils.deepcopy(self.params)
+        self._paramsEval = _C.deepcopy(self.params)
 
         if self.separate_eval:
             # Call C++ implementation of self.evaluateImgs()

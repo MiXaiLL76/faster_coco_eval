@@ -601,6 +601,141 @@ namespace coco_eval
       std::vector<ImageEvaluation> result = EvaluateImages(area_ranges, max_detections.back(), iou_thresholds, image_category_ious, image_category_ground_truth_instances, image_category_detection_instances);
       return Accumulate(params, result);
     }
+
+    py::object deepcopy(const py::object &pyobj)
+    {
+      auto _pyobj = pyobj;
+      return _pyobj;
+    }
+
+    void Dataset::append(int64_t img_id, int64_t cat_id, py::dict ann)
+    {
+      std::string key = std::to_string(img_id) + "_" + std::to_string(cat_id);
+      this->data[key].push_back(ann);
+    }
+    std::vector<py::dict> Dataset::get(int64_t img_id, int64_t cat_id)
+    {
+      std::string key = std::to_string(img_id) + "_" + std::to_string(cat_id);
+      return this->data[key];
+    }
+
+    InstanceAnnotation parseInstanceAnnotation(const py::dict &ann)
+    {
+      uint64_t id = 0;
+      double score = 0.;
+      double area = 0.;
+      bool is_crowd = false;
+      bool ignore = false;
+      bool lvis_mark = false;
+
+      for (auto it : ann)
+      {
+        std::string key = it.first.cast<std::string>();
+
+        if (key == "id")
+        {
+          id = it.second.cast<uint64_t>();
+        }
+        else if (key == "score")
+        {
+          score = it.second.cast<double>();
+        }
+        else if (key == "area")
+        {
+          area = it.second.cast<double>();
+        }
+        else if (key == "is_crowd")
+        {
+          is_crowd = it.second.cast<bool>();
+        }
+        else if (key == "ignore")
+        {
+          ignore = it.second.cast<bool>();
+        }
+        else if (key == "lvis_mark")
+        {
+          lvis_mark = it.second.cast<bool>();
+        }
+      }
+      return InstanceAnnotation(id, score, area, is_crowd, ignore, lvis_mark);
+    }
+
+    std::vector<InstanceAnnotation> Dataset::get_cpp_annotations(
+        int64_t img_id, int64_t cat_id)
+    {
+      std::string key = std::to_string(img_id) + "_" + std::to_string(cat_id);
+      std::vector<InstanceAnnotation> result;
+      std::vector<py::dict> anns = get(img_id, cat_id);
+      for (size_t i = 0; i < anns.size(); i++)
+      {
+        result.push_back(parseInstanceAnnotation(anns[i]));
+      }
+      return result;
+    }
+
+    std::vector<std::vector<std::vector<InstanceAnnotation>>> Dataset::get_cpp_instances(
+        std::vector<int64_t> img_ids, std::vector<int64_t> cat_ids, bool useCats)
+    {
+      std::vector<std::vector<std::vector<InstanceAnnotation>>> result;
+      for (size_t i = 0; i < img_ids.size(); i++)
+      {
+        int64_t img_id = img_ids[i];
+        result.push_back(std::vector<std::vector<InstanceAnnotation>>());
+        if (!useCats)
+        {
+          result[i].push_back(std::vector<InstanceAnnotation>());
+        }
+
+        for (size_t j = 0; j < cat_ids.size(); j++)
+        {
+          int64_t cat_id = cat_ids[j];
+
+          std::vector<InstanceAnnotation> anns = this->get_cpp_annotations(img_id, cat_id);
+
+          if (useCats)
+          {
+            result[i].push_back(anns);
+          }
+          else
+          {
+            result[i][0].insert(result[i][0].end(), anns.begin(), anns.end());
+          }
+        }
+      }
+      return result;
+    }
+
+    std::vector<std::vector<std::vector<py::dict>>> Dataset::get_instances(
+        std::vector<int64_t> img_ids, std::vector<int64_t> cat_ids, bool useCats)
+    {
+      std::vector<std::vector<std::vector<py::dict>>> result;
+      for (size_t i = 0; i < img_ids.size(); i++)
+      {
+        int64_t img_id = img_ids[i];
+        result.push_back(std::vector<std::vector<py::dict>>());
+        if (!useCats)
+        {
+          result[i].push_back(std::vector<py::dict>());
+        }
+
+        for (size_t j = 0; j < cat_ids.size(); j++)
+        {
+          int64_t cat_id = cat_ids[j];
+
+          std::vector<py::dict> anns = this->get(img_id, cat_id);
+
+          if (useCats)
+          {
+            result[i].push_back(anns);
+          }
+          else
+          {
+            result[i][0].insert(result[i][0].end(), anns.begin(), anns.end());
+          }
+        }
+      }
+      return result;
+    }
   } // namespace COCOeval
 
 } // namespace coco_eval

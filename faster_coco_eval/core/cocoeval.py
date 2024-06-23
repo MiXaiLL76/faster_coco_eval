@@ -5,6 +5,8 @@ from collections import defaultdict
 
 import numpy as np
 
+import faster_coco_eval.faster_eval_api_cpp as _C
+
 from . import mask as maskUtils
 from .coco import COCO
 
@@ -87,8 +89,8 @@ class COCOeval:
         # per-image per-category evaluation results [KxAxI] elements
         self.evalImgs = defaultdict(list)
         self.eval: dict = {}  # accumulated evaluation results
-        self._gts = defaultdict(list)  # gt for evaluation
-        self._dts = defaultdict(list)  # dt for evaluation
+        # self._gts = defaultdict(list)  # gt for evaluation
+        # self._dts = defaultdict(list)  # dt for evaluation
         self.params = Params(
             iouType=iouType, kpt_sigmas=kpt_oks_sigmas
         )  # parameters
@@ -122,8 +124,9 @@ class COCOeval:
                     )
 
         self.print_function = print_function  # output print function
-        self.load_data_time = []
-        self.iou_data_time = []
+
+        self.dt_dataset = _C.Dataset()
+        self.gt_dataset = _C.Dataset()
 
     def _toMask(self, anns: list, coco: COCO):
         # modify ann['segmentation'] by reference
@@ -159,8 +162,8 @@ class COCOeval:
             gt["ignore"] = "iscrowd" in gt and gt["iscrowd"]
             if p.iouType == "keypoints":
                 gt["ignore"] = (gt.get("num_keypoints") == 0) or gt["ignore"]
-        self._gts = defaultdict(list)  # gt for evaluation
-        self._dts = defaultdict(list)  # dt for evaluation
+        # self._gts = defaultdict(list)  # gt for evaluation
+        # self._dts = defaultdict(list)  # dt for evaluation
         img_pl = defaultdict(
             set
         )  # per image list of categories present in image
@@ -189,7 +192,8 @@ class COCOeval:
             self.freq_groups = self._prepare_freq_group()
 
         for gt in gts:
-            self._gts[gt["image_id"], gt["category_id"]].append(gt)
+            # self._gts[gt["image_id"], gt["category_id"]].append(gt)
+            self.gt_dataset.append(gt["image_id"], gt["category_id"], gt)
 
         for dt in dts:
             img_id, cat_id = dt["image_id"], dt["category_id"]
@@ -204,7 +208,8 @@ class COCOeval:
                     dt["category_id"] in self.img_nel[dt["image_id"]]
                 )
 
-            self._dts[img_id, cat_id].append(dt)
+            # self._dts[img_id, cat_id].append(dt)
+            self.dt_dataset.append(img_id, cat_id, dt)
 
     def _prepare_freq_group(self):
         p = self.params
@@ -217,14 +222,22 @@ class COCOeval:
 
     def computeIoU(self, imgId, catId):
         p = self.params
-        if p.useCats:
-            gt = self._gts[imgId, catId]
-            dt = self._dts[imgId, catId]
-        else:
-            gt = [ann for cId in p.catIds for ann in self._gts[imgId, cId]]
-            dt = [ann for cId in p.catIds for ann in self._dts[imgId, cId]]
+
+        gt = self.gt_dataset.get_instances(
+            [imgId], [catId] if p.useCats else p.catIds, bool(p.useCats)
+        )[0][
+            0
+        ]  # 1 imgId  1 catId
+
+        dt = self.dt_dataset.get_instances(
+            [imgId], [catId] if p.useCats else p.catIds, bool(p.useCats)
+        )[0][
+            0
+        ]  # 1 imgId  1 catId
+
         if len(gt) == 0 and len(dt) == 0:
             return []
+
         inds = np.argsort([-d["score"] for d in dt], kind="mergesort")
         dt = [dt[i] for i in inds]
         if len(dt) > p.maxDets[-1]:
@@ -247,8 +260,9 @@ class COCOeval:
     def computeOks(self, imgId, catId):
         p = self.params
         # dimention here should be Nxm
-        gts = self._gts[imgId, catId]
-        dts = self._dts[imgId, catId]
+        gts = self.gt_dataset.get(imgId, catId)
+        dts = self.dt_dataset.get(imgId, catId)
+
         inds = np.argsort([-d["score"] for d in dts], kind="mergesort")
         dts = [dts[i] for i in inds]
         if len(dts) > p.maxDets[-1]:
