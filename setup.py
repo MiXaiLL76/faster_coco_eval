@@ -129,36 +129,6 @@ def get_extensions(version_info):
         )
     ]
 
-    # sources = [
-    #     "csrc/mask/common/maskApi.c",
-    #     "csrc/mask/pycocotools/_mask.pyx",
-    # ]
-    # include_dirs = [np.get_include(), "csrc/mask/common"]
-
-    # print("Sources: {}".format(sources))
-    # print("Include: {}".format(include_dirs))
-
-    # ext_modules += [
-    #     Extension(
-    #         "faster_coco_eval.mask_api_cpp",
-    #         sources=sources,
-    #         include_dirs=include_dirs,
-    #         extra_compile_args=(
-    #             []
-    #             if platform.system() == "Windows"
-    #             else [
-    #                 "-Wno-cpp",
-    #                 "-Wno-unused-function",
-    #                 "-std=c99",
-    #                 "-O3",
-    #                 "-Wno-maybe-uninitialized",
-    #                 "-Wno-misleading-indentation",
-    #             ]
-    #         ),
-    #         extra_link_args=[],
-    #     )
-    # ]
-
     return ext_modules
 
 
