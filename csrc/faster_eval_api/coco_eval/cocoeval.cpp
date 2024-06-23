@@ -644,7 +644,7 @@ namespace coco_eval
         {
           area = it.second.cast<double>();
         }
-        else if (key == "is_crowd")
+        else if ((key == "is_crowd") || key == "iscrowd")
         {
           is_crowd = it.second.cast<bool>();
         }
