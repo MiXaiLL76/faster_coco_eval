@@ -461,10 +461,10 @@ namespace mask_api
                 uint64_t m = R[0].m;
                 uint64_t i, a, b;
 
-                std::vector<uint> cnts;
+                std::vector<uint> cnts(h*w+1);
                 for (a = 0; a < m; a++)
                 {
-                    cnts.push_back(R[0].cnts[a]);
+                    cnts[a] = R[0].cnts[a];
                 }
                 for (i = 1; i < n; i++)
                 {
