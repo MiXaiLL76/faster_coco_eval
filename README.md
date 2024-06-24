@@ -31,6 +31,26 @@ pip install faster-coco-eval
 pip install faster-coco-eval[extra]
 ```
 
+### Basic usage
+
+```py
+import faster_coco_eval
+
+# Replace pycocotools with faster_coco_eval
+faster_coco_eval.init_as_pycocotools()
+
+from pycocotools.coco import COCO
+from pycocotools.cocoeval import COCOeval
+
+anno = COCO(str(anno_json))  # init annotations api
+pred = anno.loadRes(str(pred_json))  # init predictions api (must pass string, not Path)
+
+val = COCOeval(anno, pred, "bbox")
+val.evaluate()
+val.accumulate()
+val.summarize()
+
+```
 
 ## Faster-COCO-Eval base
 
