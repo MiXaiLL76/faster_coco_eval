@@ -369,7 +369,9 @@ class COCO:
         assert type(anns) is list, "results in not an array of objects"
 
         if self.score_tresh != 0:
-            anns = [ann for ann in anns if ann.get("score", 1) >= self.score_tresh]
+            anns = [
+                ann for ann in anns if ann.get("score", 1) >= self.score_tresh
+            ]
 
         annsImgIds = [ann["image_id"] for ann in anns]
         assert set(annsImgIds) == (
@@ -414,9 +416,6 @@ class COCO:
                 ann["id"] = id + 1
                 ann["bbox"] = [x0, y0, x1 - x0, y1 - y0]
         logger.debug("DONE (t={:0.2f}s)".format(time.time() - tic))
-
-        # annsImgIds_dict = {image["id"]: True for image in res.dataset["images"]}
-        # anns = [ann for ann in anns if annsImgIds_dict.get(ann["image_id"])]
 
         res.dataset["annotations"] = anns
         res.createIndex()
