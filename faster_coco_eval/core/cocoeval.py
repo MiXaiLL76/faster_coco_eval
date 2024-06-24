@@ -6,9 +6,8 @@ from collections import defaultdict
 import numpy as np
 
 import faster_coco_eval.faster_eval_api_cpp as _C
-
-from . import mask as maskUtils
-from .coco import COCO
+from faster_coco_eval.core import mask as maskUtils
+from faster_coco_eval.core.coco import COCO
 
 logger = logging.getLogger(__name__)
 
@@ -132,10 +131,26 @@ class COCOeval:
                         ]
                     )
 
-        self.print_function = print_function  # output print function
+        self._print_function = print_function  # output print function
+
+        if self.cocoDt is not None:
+            if self.print_function == print:
+                self.cocoDt.print_function = self.print_function
+
+        if self.cocoGt is not None:
+            if self.print_function == print:
+                self.cocoGt.print_function = self.print_function
 
         self.dt_dataset = _C.Dataset()
         self.gt_dataset = _C.Dataset()
+
+    @property
+    def print_function(self):
+        return self._print_function
+
+    @print_function.setter
+    def print_function(self, value):
+        self._print_function = value
 
     def _toMask(self, anns: list, coco: COCO):
         # modify ann['segmentation'] by reference

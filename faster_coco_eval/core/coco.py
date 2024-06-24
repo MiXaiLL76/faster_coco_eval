@@ -53,8 +53,7 @@ from collections import defaultdict
 import numpy as np
 
 import faster_coco_eval.faster_eval_api_cpp as _C
-
-from . import mask as maskUtils
+from faster_coco_eval.core import mask as maskUtils
 
 logger = logging.getLogger(__name__)
 
@@ -83,9 +82,10 @@ class COCO:
         )
         self.imgToAnns, self.catToImgs = defaultdict(list), defaultdict(list)
         self.score_tresh: float = 0.0
+        self.print_function = logger.debug
 
         if annotation_file is not None:
-            logger.debug("loading annotations into memory...")
+            self._print_function("loading annotations into memory...")
             tic = time.time()
             if type(annotation_file) is str:
                 self.dataset = self.load_json(annotation_file)
@@ -99,13 +99,21 @@ class COCO:
             ), "annotation file format {} not supported".format(
                 type(self.dataset)
             )
-            logger.debug("Done (t={:0.2f}s)".format(time.time() - tic))
+            self.print_function("Done (t={:0.2f}s)".format(time.time() - tic))
             self.createIndex()
+
+    @property
+    def print_function(self):
+        return self._print_function
+
+    @print_function.setter
+    def print_function(self, value):
+        self._print_function = value
 
     def createIndex(self):
         tic = time.time()
         # create index
-        logger.debug("creating index...")
+        self.print_function("creating index...")
         anns, cats, imgs = {}, {}, {}
         imgToAnns, catToImgs = defaultdict(list), defaultdict(list)
 
@@ -135,8 +143,8 @@ class COCO:
             for ann in self.dataset["annotations"]:
                 catToImgs[ann["category_id"]].append(ann["image_id"])
 
-        logger.debug("index created!")
-        logger.debug("Done (t={:0.2f}s)".format(time.time() - tic))
+        self.print_function("index created!")
+        self.print_function("Done (t={:0.2f}s)".format(time.time() - tic))
 
         # create class members
         self.anns = anns
@@ -149,7 +157,7 @@ class COCO:
         """extra_calc sub index for math_matches."""
         tic = time.time()
         # create index
-        logger.debug("creating sub_index...")
+        self.print_function("creating sub_index...")
         annToImgs = {}
         imgCatToAnnsIdx = defaultdict(dict)
         imgCatToAnnsIdx_count = defaultdict(int)
@@ -169,8 +177,8 @@ class COCO:
             ]
             imgToAnnsIdx_count[ann["image_id"]] += 1
 
-        logger.debug("sub_index created!")
-        logger.debug("Done (t={:0.2f}s)".format(time.time() - tic))
+        self.print_function("sub_index created!")
+        self.print_function("Done (t={:0.2f}s)".format(time.time() - tic))
 
         # create class members
         self.annToImgs = annToImgs
@@ -184,7 +192,7 @@ class COCO:
 
         """
         for key, value in self.dataset["info"].items():
-            logger.debug("{}: {}".format(key, value))
+            self.print_function("{}: {}".format(key, value))
 
     def getAnnIds(self, imgIds=[], catIds=[], areaRng=[], iscrowd=None):
         """Get ann ids that satisfy given filter conditions.
@@ -357,7 +365,7 @@ class COCO:
         res = COCO()
         res.dataset["images"] = [img for img in self.dataset["images"]]
 
-        logger.debug("Loading and preparing results...")
+        self.print_function("Loading and preparing results...")
         tic = time.time()
         if type(resFile) is str:
             anns = self.load_json(resFile)
@@ -415,7 +423,7 @@ class COCO:
                 ann["area"] = (x1 - x0) * (y1 - y0)
                 ann["id"] = id + 1
                 ann["bbox"] = [x0, y0, x1 - x0, y1 - y0]
-        logger.debug("DONE (t={:0.2f}s)".format(time.time() - tic))
+        self.print_function("DONE (t={:0.2f}s)".format(time.time() - tic))
 
         res.dataset["annotations"] = anns
         res.createIndex()
@@ -436,15 +444,15 @@ class COCO:
 
         """
 
-        logger.debug("Converting ndarray to lists...")
+        self.print_function("Converting ndarray to lists...")
         assert type(data) is np.ndarray
-        logger.debug(data.shape)
+        self.print_function(data.shape)
         assert data.shape[1] == 7
         N = data.shape[0]
         ann = []
         for i in range(N):
             if i % 1000000 == 0:
-                logger.debug("{}/{}".format(i, N))
+                self.print_function("{}/{}".format(i, N))
             ann += [
                 {
                     "image_id": int(data[i, 0]),
