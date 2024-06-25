@@ -203,7 +203,7 @@ class COCOeval_faster(COCOevalBase):
             if self.cocoGt.anns[gt_id].get("matched") is None:
                 self.cocoGt.anns[gt_id]["fn"] = True
 
-    def compute_mIoU(self):
+    def compute_mIoU(self) -> float:
         """Compute the mIoU metric."""
         ious = []
         for _, dt_ann in self.cocoDt.anns.items():
@@ -211,7 +211,9 @@ class COCOeval_faster(COCOevalBase):
                 ious.append(dt_ann["iou"])
         return sum(ious) / len(ious)
 
-    def compute_mAUC(self):
+    # TODO:
+    # Convert to C++
+    def compute_mAUC(self) -> float:
         """Compute the mAUC metric."""
         aucs = []
 
@@ -238,6 +240,7 @@ class COCOeval_faster(COCOevalBase):
             self.all_stats = np.append(self.all_stats, self.compute_mAUC())
 
     def run(self):
+        """Wrapper function which runs the evaluation."""
         self.evaluate()
         self.accumulate()
         self.summarize()
@@ -287,6 +290,8 @@ class COCOeval_faster(COCOevalBase):
             _label: float(self.all_stats[i]) for i, _label in enumerate(labels)
         }
 
+    # TODO:
+    # Convert to C++
     @staticmethod
     def calc_auc(recall_list, precision_list):
         """

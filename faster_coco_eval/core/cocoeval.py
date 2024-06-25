@@ -3,6 +3,7 @@
 
 import logging
 from collections import defaultdict
+from typing import Callable, List, Optional, Union
 
 import numpy as np
 
@@ -69,20 +70,34 @@ class COCOeval:
 
     def __init__(
         self,
-        cocoGt=None,
-        cocoDt=None,
-        iouType="segm",
-        print_function=logger.debug,
-        extra_calc=False,
-        kpt_oks_sigmas=None,
-        lvis_style=False,
-        separate_eval=False,
+        cocoGt: Optional[COCO] = None,
+        cocoDt: Optional[COCO] = None,
+        iouType: str = "segm",
+        print_function: Callable = logger.debug,
+        extra_calc: bool = False,
+        kpt_oks_sigmas: Optional[List[float]] = None,
+        lvis_style: bool = False,
+        separate_eval: bool = False,
     ):
-        """Initialize CocoEval using coco APIs for gt and dt :param cocoGt:
+        """Initialize CocoEval using coco APIs for gt and dt.
 
-        coco object with ground truth annotations
-        :param cocoDt: coco object with detection results
-        :return: None.
+        Args:
+            cocoGt (None or COCO):
+                object with ground truth annotations
+            cocoDt (None or COCO):
+                object with detection annotations
+            iouType (str):
+                type of the intersection over union, defaults to segm
+            print_function (callable):
+                function to print output, defaults to logger.debug
+            extra_calc (bool):
+                whether to perform extra calculations, defaults to False
+            kpt_oks_sigmas (None or list):
+                list of sigmas for keypoint evaluation, defaults to None
+            lvis_style (bool):
+                whether to use LVIS style evaluation, defaults to False
+            separate_eval (bool):
+                whether to perform separate evaluation, defaults to False
 
         """
         if not iouType:
@@ -157,18 +172,23 @@ class COCOeval:
     def print_function(self, value):
         self._print_function = value
 
-    def _toMask(self, anns: list, coco: COCO):
-        # modify ann['segmentation'] by reference
+    def _toMask(self, anns: List[dict], coco: COCO):
+        """Modify ann['rle'] by reference.
+
+        Args:
+            anns (list):
+                list of annotation lists
+            coco (COCO):
+                initialized coco api object
+
+        """
         for ann in anns:
             rle = coco.annToRLE(ann)
             ann["rle"] = rle
 
     def _prepare(self):
-        """Prepare ._gts and ._dts for evaluation based on params.
-
-        :return: None
-
-        """
+        """Prepare self.gt_dataset and self.dt_dataset for evaluation based on
+        params."""
         p = self.params
 
         cat_ids = p.catIds if p.catIds else None
@@ -191,8 +211,7 @@ class COCOeval:
             gt["ignore"] = "iscrowd" in gt and gt["iscrowd"]
             if p.iouType == "keypoints":
                 gt["ignore"] = (gt.get("num_keypoints") == 0) or gt["ignore"]
-        # self._gts = defaultdict(list)  # gt for evaluation
-        # self._dts = defaultdict(list)  # dt for evaluation
+
         img_pl = defaultdict(
             set
         )  # per image list of categories present in image
@@ -221,7 +240,6 @@ class COCOeval:
             self.freq_groups = self._prepare_freq_group()
 
         for gt in gts:
-            # self._gts[gt["image_id"], gt["category_id"]].append(gt)
             self.gt_dataset.append(gt["image_id"], gt["category_id"], gt)
 
         for dt in dts:
@@ -237,10 +255,15 @@ class COCOeval:
                     dt["category_id"] in self.img_nel[dt["image_id"]]
                 )
 
-            # self._dts[img_id, cat_id].append(dt)
             self.dt_dataset.append(img_id, cat_id, dt)
 
-    def _prepare_freq_group(self):
+    def _prepare_freq_group(self) -> list:
+        """Prepare frequency group for LVIS evaluation.
+
+        Returns:
+            list: frequency groups
+
+        """
         p = self.params
         freq_groups = [[] for _ in p.img_count_lbl]
         cat_data = self.cocoGt.load_cats(p.cat_ids)
@@ -249,7 +272,20 @@ class COCOeval:
             freq_groups[p.img_count_lbl.index(frequency)].append(idx)
         return freq_groups
 
-    def computeIoU(self, imgId, catId):
+    def computeIoU(
+        self, imgId: int, catId: int
+    ) -> Union[List[float], np.ndarray]:
+        """Compute IoU between gt and dt for a given image and category.
+
+        Args:
+            imgId (int): image id
+            catId (int): category id
+
+        Return:
+            ious (list or ndarray):
+                ious between gt and dt for a given image and category
+
+        """
         p = self.params
 
         gt = self.gt_dataset.get_instances(
@@ -286,7 +322,18 @@ class COCOeval:
         ious = maskUtils.iou(d, g, iscrowd)
         return ious
 
-    def computeOks(self, imgId, catId):
+    def computeOks(self, imgId: int, catId: int) -> np.ndarray:
+        """Compute oks between gt and dt for a given image and category.
+
+        Args:
+            imgId (int): image id
+            catId (int): category id
+
+        Return:
+            oks (ndarray):
+                oks between gt and dt for a given image and category
+
+        """
         p = self.params
         # dimention here should be Nxm
         gts = self.gt_dataset.get(imgId, catId)
@@ -365,6 +412,9 @@ class COCOeval:
 
         """
 
+        # TODO:
+        # 1) Convert this to C++
+        # 2) Write print function
         def _summarize(
             ap=1, iouThr=None, areaRng="all", maxDets=100, freq_group_idx=None
         ):
@@ -544,15 +594,6 @@ class Params:
     """Params for coco evaluation api."""
 
     def setDetParams(self):
-        self.imgIds = []
-        self.catIds = []
-        # np.arange causes trouble.  the data point on arange is slightly larger than the true value # noqa: E501
-        self.iouThrs = np.linspace(
-            0.5, 0.95, int(np.round((0.95 - 0.5) / 0.05)) + 1, endpoint=True
-        )
-        self.recThrs = np.linspace(
-            0.0, 1.00, int(np.round((1.00 - 0.0) / 0.01)) + 1, endpoint=True
-        )
         self.maxDets = [1, 10, 100]
         self.areaRng = [
             [0**2, 1e5**2],
@@ -561,18 +602,8 @@ class Params:
             [96**2, 1e5**2],
         ]
         self.areaRngLbl = ["all", "small", "medium", "large"]
-        self.useCats = 1
 
     def setKpParams(self):
-        self.imgIds = []
-        self.catIds = []
-        # np.arange causes trouble.  the data point on arange is slightly larger than the true value # noqa: E501
-        self.iouThrs = np.linspace(
-            0.5, 0.95, int(np.round((0.95 - 0.5) / 0.05)) + 1, endpoint=True
-        )
-        self.recThrs = np.linspace(
-            0.0, 1.00, int(np.round((1.00 - 0.0) / 0.01)) + 1, endpoint=True
-        )
         self.maxDets = [20]
         self.areaRng = [
             [0**2, 1e5**2],
@@ -580,7 +611,6 @@ class Params:
             [96**2, 1e5**2],
         ]
         self.areaRngLbl = ["all", "medium", "large"]
-        self.useCats = 1
 
         self.kpt_oks_sigmas = (
             np.array(
@@ -607,14 +637,28 @@ class Params:
             / 10.0
         )
 
-    def __init__(self, iouType="segm", kpt_sigmas=None):
+    def __init__(
+        self, iouType: str = "segm", kpt_sigmas: Optional[List[float]] = None
+    ):
         """Params for coco evaluation api.
 
-        IouType: the type of iou to use for evaluation, can be 'segm', 'bbox',
-            or 'keypoints'
-        kpt_sigmas: list of keypoint sigma values.
+        Args:
+            iouType: either "segm", "bbox" or "keypoints".
+            kpt_sigmas: list of keypoint sigma values.
 
         """
+
+        self.imgIds = []
+        self.catIds = []
+        # np.arange causes trouble.  the data point on arange is slightly larger than the true value # noqa: E501
+        self.iouThrs = np.linspace(
+            0.5, 0.95, int(np.round((0.95 - 0.5) / 0.05)) + 1, endpoint=True
+        )
+        self.recThrs = np.linspace(
+            0.0, 1.00, int(np.round((1.00 - 0.0) / 0.01)) + 1, endpoint=True
+        )
+        self.useCats = 1
+
         if iouType == "segm" or iouType == "bbox":
             self.setDetParams()
         elif iouType == "keypoints":

@@ -3,9 +3,11 @@
 
 import json
 import logging
+import os
 import time
 import warnings
 from collections import defaultdict
+from typing import List, Optional, Union
 
 import numpy as np
 
@@ -21,16 +23,16 @@ def _isArrayLike(obj):
 
 
 class COCO:
-    def __init__(self, annotation_file=None):
-        """Constructor of Microsoft COCO helper class for reading and
-        visualizing annotations.
+    def __init__(
+        self, annotation_file: Optional[Union[str, dict, os.PathLike]] = None
+    ):
+        """Constructor of Microsoft COCO helper class.
 
-        :param annotation_file (str): location of annotation file
-        :param image_folder (str): location to the folder that hosts
-            images.
-        :return:
+        Args:
+            annotation_file (str or dict or PathLike): path to annotation file
 
         """
+
         # load dataset
         self.dataset, self.anns, self.cats, self.imgs = (
             {},
@@ -39,13 +41,16 @@ class COCO:
             {},
         )
         self.imgToAnns, self.catToImgs = defaultdict(list), defaultdict(list)
-        self.score_tresh: float = 0.0
+        self.imgCatToAnnsIdx, self.imgToAnnsIdx = defaultdict(
+            dict
+        ), defaultdict(dict)
+
         self.print_function = logger.debug
 
         if annotation_file is not None:
             self._print_function("loading annotations into memory...")
             tic = time.time()
-            if type(annotation_file) is str:
+            if type(annotation_file) in [str, os.PathLike]:
                 self.dataset = self.load_json(annotation_file)
             elif type(annotation_file) is dict:
                 self.dataset = _C.deepcopy(annotation_file)
@@ -69,6 +74,7 @@ class COCO:
         self._print_function = value
 
     def createIndex(self):
+        """Create index for coco annotation data."""
         tic = time.time()
         # create index
         self.print_function("creating index...")
@@ -112,14 +118,23 @@ class COCO:
         self.cats = cats
 
     def createSubIndex(self):
-        """extra_calc sub index for math_matches."""
+        """Create sub index for mathing annotations and images.
+
+        This function is used for matching annotations and images in the
+        evaluation process. It creates a dictionary for each annotation
+        and image containing the annotations and images that are matched
+        to it.
+
+        """
+
         tic = time.time()
         # create index
         self.print_function("creating sub_index...")
         annToImgs = {}
         imgCatToAnnsIdx = defaultdict(dict)
-        imgCatToAnnsIdx_count = defaultdict(int)
         imgToAnnsIdx = defaultdict(dict)
+
+        imgCatToAnnsIdx_count = defaultdict(int)
         imgToAnnsIdx_count = defaultdict(int)
 
         for ann_id, ann in self.anns.items():
@@ -144,25 +159,29 @@ class COCO:
         self.imgToAnnsIdx = imgToAnnsIdx
 
     def info(self):
-        """Print information about the annotation file.
-
-        :return:
-
-        """
+        """Print information about the annotation file."""
         for key, value in self.dataset["info"].items():
             self.print_function("{}: {}".format(key, value))
 
-    def getAnnIds(self, imgIds=[], catIds=[], areaRng=[], iscrowd=None):
+    def getAnnIds(
+        self,
+        imgIds: List[int] = [],
+        catIds: List[int] = [],
+        areaRng: List[float] = [],
+        iscrowd: bool = None,
+    ) -> List[int]:
         """Get ann ids that satisfy given filter conditions.
 
-        default skips that filter
-        :param imgIds (int array) : get anns for given imgs :param
-            catIds (int array) : get anns for given cats
-        :param areaRng (float array) : get anns for given area range
-            (e.g. [0 inf])
-        :param iscrowd (boolean) : get anns for given crowd label (False
-            or True)
-        :return: ids (int array)       : integer array of ann ids
+        Args:
+            imgIds (int array)    : get anns for given imgs
+            catIds (int array)    : get anns for given cats
+            areaRng (float array) : get anns for given area range
+                (e.g. [0 inf])
+            iscrowd (boolean)     : get anns for given crowd label
+                (False or True)
+
+        Returns:
+            ids (int array) : integer array of ann ids that satisfy the criteria
 
         """
         imgIds = imgIds if _isArrayLike(imgIds) else [imgIds]
@@ -203,17 +222,24 @@ class COCO:
 
         return ids
 
-    def getCatIds(self, catNms=[], supNms=[], catIds=[]):
-        """Filtering parameters.
+    def getCatIds(
+        self,
+        catNms: List[str] = [],
+        supNms: List[str] = [],
+        catIds: List[int] = [],
+    ) -> List[int]:
+        """Get category ids that satisfy given filter conditions.
 
-        default skips that filter.
-        :param catNms (str array)  : get cats for given cat names
-        :param supNms (str array) : get cats for given supercategory
-            names
-        :param catIds (int array)  : get cats for given cat ids
-        :return: ids (int array)   : integer array of cat ids
+        Args:
+            catNms (str array)  : get cats for given cat names
+            supNms (str array)  : get cats for given supercategory names
+            catIds (int array)  : get cats for given ids
+
+        Returns:
+            ids (int array)   : integer array of cat ids
 
         """
+
         catNms = catNms if _isArrayLike(catNms) else [catNms]
         supNms = supNms if _isArrayLike(supNms) else [supNms]
         catIds = catIds if _isArrayLike(catIds) else [catIds]
@@ -248,14 +274,20 @@ class COCO:
         ids = [cat["id"] for cat in cats]
         return ids
 
-    def getImgIds(self, imgIds=[], catIds=[]):
-        """Get img ids that satisfy given filter conditions.
+    def getImgIds(
+        self, imgIds: List[int] = [], catIds: List[int] = []
+    ) -> List[int]:
+        """Get image ids that satisfy given filter conditions.
 
-        :param imgIds (int array) : get imgs for given ids
-        :param catIds (int array) : get imgs with all given cats
-        :return: ids (int array)  : integer array of img ids
+        Args:
+            imgIds (int array) : get imgs for given ids
+            catIds (int array) : get imgs with all given cats
+
+        Return:
+            ids (int array)  : integer array of img ids
 
         """
+
         imgIds = imgIds if _isArrayLike(imgIds) else [imgIds]
         catIds = catIds if _isArrayLike(catIds) else [catIds]
 
@@ -270,23 +302,30 @@ class COCO:
                     ids &= set(self.catToImgs[catId])
         return list(ids)
 
-    def loadAnns(self, ids=[]):
+    def loadAnns(self, ids: List[int] = []) -> List[dict]:
         """Load anns with the specified ids.
 
-        :param ids (int array)       : integer ids specifying anns
-        :return: anns (object array) : loaded ann objects
+        Args:
+            ids (int array) : integer ids specifying anns.
+
+        Return:
+            anns (object array) : loaded ann objects
 
         """
+
         if _isArrayLike(ids):
             return [self.anns[id] for id in ids]
         elif type(ids) is int:
             return [self.anns[ids]]
 
-    def loadCats(self, ids=[]):
-        """Load cats with the specified ids.
+    def loadCats(self, ids: List[int] = []) -> List[dict]:
+        """Load categories with the specified ids.
 
-        :param ids (int array)       : integer ids specifying cats
-        :return: cats (object array) : loaded cat objects
+        Args:
+            ids (int array) : integer ids specifying cats.
+
+        Return:
+            cats (object array) : loaded cat objects
 
         """
         if _isArrayLike(ids):
@@ -294,11 +333,14 @@ class COCO:
         elif type(ids) is int:
             return [self.cats[ids]]
 
-    def loadImgs(self, ids=[]):
-        """Load anns with the specified ids.
+    def loadImgs(self, ids: List[int] = []) -> List[dict]:
+        """Load images with the specified ids.
 
-        :param ids (int array)       : integer ids specifying img
-        :return: imgs (object array) : loaded img objects
+        Args:
+            ids (int array) : integer ids specifying img.
+
+        Return:
+            imgs (object array) : loaded img objects
 
         """
         if _isArrayLike(ids):
@@ -307,25 +349,42 @@ class COCO:
             return [self.imgs[ids]]
 
     @staticmethod
-    def load_json(json_file):
+    def load_json(json_file: Optional[Union[str, os.PathLike]]) -> dict:
+        """Load a json file.
+
+        Args:
+            json_file (str or os.PathLike): Path to the json file
+
+        Return:
+            data (dict): Loaded json data
+
+        """
+
         with open(json_file) as io:
             _data = json.load(io)
         return _data
 
-    def loadRes(self, resFile, min_score=0):
+    def loadRes(
+        self,
+        resFile: Union[str, os.PathLike, np.ndarray],
+        min_score: float = 0.0,
+    ) -> "COCO":
         """Load result file and return a result api object.
 
-        :param   resFile (str)     : file name of result file
-        :return: res (obj)         : result api object
+        Args:
+            resFile (str)     : file name of result file
+            min_score (float) : minimum score to consider a result
+
+        Return:
+            res (obj)         : result api object
 
         """
-        self.score_tresh = min_score
         res = COCO()
         res.dataset["images"] = [img for img in self.dataset["images"]]
 
         self.print_function("Loading and preparing results...")
         tic = time.time()
-        if type(resFile) is str:
+        if type(resFile) in [str, os.PathLike]:
             anns = self.load_json(resFile)
         elif type(resFile) is np.ndarray:
             anns = self.loadNumpyAnnotations(resFile)
@@ -334,10 +393,8 @@ class COCO:
 
         assert type(anns) is list, "results in not an array of objects"
 
-        if self.score_tresh != 0:
-            anns = [
-                ann for ann in anns if ann.get("score", 1) >= self.score_tresh
-            ]
+        if min_score != 0.0:
+            anns = [ann for ann in anns if ann.get("score", 1) >= min_score]
 
         annsImgIds = [ann["image_id"] for ann in anns]
         assert set(annsImgIds) == (
@@ -393,12 +450,15 @@ class COCO:
     def download(self, tarDir=None, imgIds=[]):
         warnings.warn("download deprecated in 1.3.0", DeprecationWarning)
 
-    def loadNumpyAnnotations(self, data):
+    def loadNumpyAnnotations(self, data: np.ndarray) -> List[dict]:
         """Convert result data from array to anns.
 
-        :param data (numpy.ndarray): array [Nx7] where each row contains
-            [imageID,x1,y1,w,h,score,class]
-        :return: annotations (python nested list)
+        Args:
+            data (numpy.ndarray): 2d array where each row contains
+                [imageID, x1, y1, w, h, score, class]
+
+        Return:
+            anns (python nested list): converted annotations
 
         """
 
@@ -421,12 +481,17 @@ class COCO:
             ]
         return ann
 
-    def annToRLE(self, ann):
+    def annToRLE(self, ann: dict) -> dict:
         """Convert annotation which can be polygons, uncompressed RLE to RLE.
 
-        :return: binary mask (numpy 2D array)
+        Args:
+            ann (dict): annotation information
+
+        Return:
+            rle (dict): run-length encoding of the annotation
 
         """
+
         t = self.imgs[ann["image_id"]]
         h, w = t["height"], t["width"]
         segm = ann["segmentation"]
@@ -443,74 +508,108 @@ class COCO:
             rle = ann["segmentation"]
         return rle
 
-    def annToMask(self, ann):
+    def annToMask(self, ann: dict) -> np.ndarray:
         """Convert annotation which can be polygons, uncompressed RLE, or RLE
         to binary mask.
 
-        :return: binary mask (numpy 2D array)
+        Args:
+            ann (dict): annotation information
+
+        Return:
+            mask (binary mask): mask of the annotation
 
         """
         rle = self.annToRLE(ann)
-        m = maskUtils.decode(rle)
-        return m
+        mask = maskUtils.decode(rle)
+        return mask
 
-    def get_ann_ids(self, img_ids=[], cat_ids=[], area_rng=[], iscrowd=None):
+    def get_ann_ids(
+        self,
+        img_ids: List[int] = [],
+        cat_ids: List[int] = [],
+        area_rng: List[float] = [],
+        iscrowd: bool = None,
+    ) -> List[int]:
         """Get ann ids that satisfy given filter conditions.
 
-        :param img_ids (int array) : get anns for given imgs
-        :param cat_ids (int array) : get anns for given cats
-        :param area_rng (float array) : get anns for given area range
-            (e.g. [0 inf])
-        :return: ids (int array)  : integer array of ann ids
+        Args:
+            img_ids (int array)     : get anns for given imgs
+            cat_ids (int array)     : get anns for given cats
+            area_rng (float array) : get anns with area less than this
+            iscrowd (boolean)       : get anns for given crowd label
+
+        Returns:
+            ids (int array)       : integer array of ann ids
 
         """
         return self.getAnnIds(img_ids, cat_ids, area_rng, iscrowd)
 
-    def get_cat_ids(self, cat_names=[], sup_names=[], cat_ids=[]):
+    def get_cat_ids(
+        self,
+        cat_names: List[str] = [],
+        sup_names: List[str] = [],
+        cat_ids: List[int] = [],
+    ) -> List[int]:
         """Get cat ids that satisfy given filter conditions.
 
-        :param cat_names (str array) : get cats for given cat names
-        :param sup_names (str array) : get cats for given supercategory
-            names
-        :param cat_ids (int array) : get cats for given cat ids
-        :return: ids (int array)  : integer array of cat ids
+        Args:
+            cat_names (str array)  : get cats for given names
+            sup_names (str array)  : get cats for given supercategory names
+            cat_ids (int array)    : get cats for given ids
+
+        Returns:
+            ids (int array)       : integer array of cat ids
 
         """
         return self.getCatIds(cat_names, sup_names, cat_ids)
 
-    def get_img_ids(self, img_ids=[], cat_ids=[]):
+    def get_img_ids(
+        self, img_ids: List[int] = [], cat_ids: List[int] = []
+    ) -> List[int]:
         """Get img ids that satisfy given filter conditions.
 
-        :param img_ids (int array) : get imgs for given ids
-        :param cat_ids (int array) : get imgs with all given cats
-        :return: ids (int array)  : integer array of img ids
+        Args:
+            img_ids (int array) : get imgs for given ids
+            cat_ids (int array) : get imgs with all given cats
+
+        Returns:
+            ids (int array)       : integer array of img ids
 
         """
         return self.getImgIds(img_ids, cat_ids)
 
-    def load_anns(self, ids):
+    def load_anns(self, ids: List[int]) -> List[int]:
         """Load anns with the specified ids.
 
-        :param ids (int array)       : integer ids specifying anns
-        :return: anns (object array) : loaded ann objects
+        Args:
+            ids (int array)       : integer ids specifying ann
+
+        Returns:
+            anns (object array)  : loaded ann objects
 
         """
         return self.loadAnns(ids)
 
-    def load_cats(self, ids):
+    def load_cats(self, ids: List[int]) -> List[int]:
         """Load cats with the specified ids.
 
-        :param ids (int array)       : integer ids specifying cats
-        :return: cats (object array) : loaded cat objects
+        Args:
+            ids (int array)       : integer ids specifying cat
+
+        Returns:
+            cats (object array)  : loaded cat objects
 
         """
         return self.loadCats(ids)
 
-    def load_imgs(self, ids):
-        """Load anns with the specified ids.
+    def load_imgs(self, ids: List[int]) -> List[int]:
+        """Load imgs with the specified ids.
 
-        :param ids (int array)       : integer ids specifying img
-        :return: imgs (object array) : loaded img objects
+        Args:
+            ids (int array)       : integer ids specifying img
+
+        Returns:
+            imgs (object array)  : loaded img objects
 
         """
         return self.loadImgs(ids)
