@@ -1,0 +1,144 @@
+{
+    "images": [
+        {
+            "license": 1,
+            "file_name": "000000002299.jpg",
+            "coco_url": "http://images.cocodataset.org/val2017/000000002299.jpg",
+            "height": 302,
+            "width": 500,
+            "date_captured": "2013-11-18 05:37:07",
+            "flickr_url": "http://farm4.staticflickr.com/3558/3415469737_233e744fb9_z.jpg",
+            "id": 2299
+        }
+    ],
+    "categories": [
+        {"supercategory": "person", "id": 1, "name": "person"}
+    ],
+    "annotations": [
+        {
+            "area": 4357.5248,
+            "iscrowd": 0,
+            "image_id": 2299,
+            "bbox": [70.18, 189.51, 64.2, 112.04],
+            "category_id": 1,
+            "id": 1219726,
+            "ignore": 0
+        },
+        {
+            "area": 4688.672549999999,
+            "iscrowd": 0,
+            "image_id": 2299,
+            "bbox": [139.9, 190.55, 72.04, 107.81],
+            "category_id": 1,
+            "id": 1226789,
+            "ignore": 0
+        },
+        {
+            "area": 4038.5159499999995,
+            "iscrowd": 0,
+            "image_id": 2299,
+            "bbox": [204.27, 187.31, 65.83, 101.12],
+            "category_id": 1,
+            "id": 1230224,
+            "ignore": 0
+        },
+        {
+            "area": 4427.582449999998,
+            "iscrowd": 0,
+            "image_id": 2299,
+            "bbox": [257.68, 192.06, 72.41, 95.16],
+            "category_id": 1,
+            "id": 1246141,
+            "ignore": 0
+        },
+        {
+            "area": 4009.819699999999,
+            "iscrowd": 0,
+            "image_id": 2299,
+            "bbox": [327.79, 190.02, 63.11, 95.01],
+            "category_id": 1,
+            "id": 1251019,
+            "ignore": 0
+        },
+        {
+            "area": 3448.9534999999996,
+            "iscrowd": 0,
+            "image_id": 2299,
+            "bbox": [387.02, 193.51, 62.58, 98.63],
+            "category_id": 1,
+            "id": 1261662,
+            "ignore": 0
+        },
+        {
+            "area": 2209.38355,
+            "iscrowd": 0,
+            "image_id": 2299,
+            "bbox": [394.3, 127.59, 40.72, 92.29],
+            "category_id": 1,
+            "id": 1284714,
+            "ignore": 0
+        },
+        {
+            "area": 3576.6812000000027,
+            "iscrowd": 0,
+            "image_id": 2299,
+            "bbox": [331.91, 131.75, 66.35, 117.15],
+            "category_id": 1,
+            "id": 1293633,
+            "ignore": 0
+        },
+        {
+            "area": 1914.4569500000002,
+            "iscrowd": 0,
+            "image_id": 2299,
+            "bbox": [322.94, 129.11, 38.51, 72.29],
+            "category_id": 1,
+            "id": 1309469,
+            "ignore": 0
+        },
+        {
+            "area": 2595.7634000000007,
+            "iscrowd": 0,
+            "image_id": 2299,
+            "bbox": [60.0, 32.96, 53.21, 106.88],
+            "category_id": 1,
+            "id": 1310382,
+            "ignore": 0
+        },
+        {
+            "area": 1766.3418500000002,
+            "iscrowd": 0,
+            "image_id": 2299,
+            "bbox": [99.93, 80.0, 46.67, 74.28],
+            "category_id": 1,
+            "id": 1727411,
+            "ignore": 0
+        },
+        {
+            "area": 3529.9226500000004,
+            "iscrowd": 0,
+            "image_id": 2299,
+            "bbox": [431.19, 134.39, 42.6, 141.41],
+            "category_id": 1,
+            "id": 1750702,
+            "ignore": 0
+        },
+        {
+            "area": 2461.4506000000006,
+            "iscrowd": 0,
+            "image_id": 2299,
+            "bbox": [284.3, 118.18, 41.34, 109.28],
+            "category_id": 1,
+            "id": 2008221,
+            "ignore": 0
+        },
+        {
+            "area": 87090,
+            "iscrowd": 1,
+            "image_id": 2299,
+            "bbox": [0, 18, 499, 263],
+            "category_id": 1,
+            "id": 900100002299
+        }
+    ]
+}

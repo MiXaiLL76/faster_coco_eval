@@ -16,13 +16,51 @@ class TestBaseCoco(unittest.TestCase):
     def setUp(self):
         gt_file = "dataset/gt_dataset.json"
         dt_file = "dataset/dt_dataset.json"
+        gt_ignore_test_file = "dataset/gt_ignore_test.json"
+        dt_ignore_test_file = "dataset/dt_ignore_test.json"
 
         if not os.path.exists(gt_file):
             gt_file = os.path.join("tests", gt_file)
             dt_file = os.path.join("tests", dt_file)
+            gt_ignore_test_file = os.path.join("tests", gt_ignore_test_file)
+            dt_ignore_test_file = os.path.join("tests", dt_ignore_test_file)
 
         self.prepared_coco_in_dict = COCO.load_json(gt_file)
         self.prepared_anns = COCO.load_json(dt_file)
+
+        self.ignore_coco_in_dict = COCO.load_json(gt_ignore_test_file)
+        self.ignore_prepared_anns = COCO.load_json(dt_ignore_test_file)
+
+    def test_ignore_coco_eval(self):
+        stats_as_dict = {
+            "AP_all": 0.7099009900990099,
+            "AP_50": 1.0,
+            "AP_75": 0.8415841584158416,
+            "AP_small": -1.0,
+            "AP_medium": 0.7099009900990099,
+            "AP_large": -1.0,
+            "AR_1": 0.0,
+            "AR_10": 0.45384615384615384,
+            "AR_100": 0.7153846153846154,
+            "AR_small": -1.0,
+            "AR_medium": 0.7153846153846154,
+            "AR_large": -1.0,
+            "AR_50": 1.0,
+            "AR_75": 0.8461538461538461,
+        }
+
+        iouType = "bbox"
+
+        cocoGt = COCO(self.ignore_coco_in_dict)
+        cocoDt = cocoGt.loadRes(self.ignore_prepared_anns)
+
+        cocoEval = COCOeval_faster(cocoGt, cocoDt, iouType)
+
+        cocoEval.evaluate()
+        cocoEval.accumulate()
+        cocoEval.summarize()
+
+        self.assertEqual(cocoEval.stats_as_dict, stats_as_dict)
 
     def test_coco_eval(self):
         stats_as_dict = {
