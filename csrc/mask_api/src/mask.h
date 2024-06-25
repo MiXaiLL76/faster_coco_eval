@@ -61,6 +61,7 @@ namespace mask_api
         std::vector<py::dict> frPoly(const std::vector<std::vector<double>> &poly, const uint64_t &h, const uint64_t &w);
         std::vector<py::dict> frBbox(const std::vector<std::vector<double>> &bb, const uint64_t &h, const uint64_t &w);
         std::vector<py::dict> frUncompressedRLE(const std::vector<py::dict> &ucRles, const uint64_t &h, const uint64_t &w);
+        std::vector<py::dict> toUncompressedRLE(const std::vector<py::dict> &Rles);
         std::vector<py::dict> rleToUncompressedRLE(const std::vector<RLE> &R);
         py::array_t<double> rleToBbox(const std::vector<RLE> R, const uint64_t &n);
         std::variant<pybind11::dict, std::vector<pybind11::dict>> frPyObjects(const py::object &pyobj, const uint64_t &h, const uint64_t &w);

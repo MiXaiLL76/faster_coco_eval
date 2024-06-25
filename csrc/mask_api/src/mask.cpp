@@ -580,6 +580,11 @@ namespace mask_api
             return result;
         }
 
+        std::vector<py::dict> toUncompressedRLE(const std::vector<py::dict> &Rles)
+        {
+            return rleToUncompressedRLE(_frString(Rles));
+        }
+
         std::vector<py::dict> frUncompressedRLE(const std::vector<py::dict> &ucRles, const uint64_t &h, const uint64_t &w)
         {
             std::vector<RLE> rles;
@@ -660,7 +665,6 @@ namespace mask_api
             return result;
         }
 
-        // auto mask = M.unchecked<3>();
         std::vector<double> rleIou(const std::vector<RLE> &dt, const std::vector<RLE> &gt, const uint64_t &m, const uint64_t &n, const std::vector<int> &iscrowd)
         {
             uint64_t g, d;

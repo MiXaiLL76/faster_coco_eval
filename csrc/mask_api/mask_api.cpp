@@ -84,6 +84,7 @@ namespace mask_api
     m.def("frBbox", &Mask::frBbox, "Mask::frBbox");
     m.def("rleToUncompressedRLE", &Mask::rleToUncompressedRLE, "Mask::rleToUncompressedRLE");
     m.def("frUncompressedRLE", &Mask::frUncompressedRLE, "Mask::frUncompressedRLE");
+    m.def("toUncompressedRLE", &Mask::toUncompressedRLE, "Mask::toUncompressedRLE");
     m.def("frPyObjects", &Mask::frPyObjects, "Mask::frPyObjects");
 
 #ifdef VERSION_INFO
