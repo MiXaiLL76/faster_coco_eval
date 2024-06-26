@@ -65,5 +65,6 @@ namespace mask_api
         std::vector<py::dict> rleToUncompressedRLE(const std::vector<RLE> &R);
         py::array_t<double> rleToBbox(const std::vector<RLE> R, const uint64_t &n);
         std::variant<pybind11::dict, std::vector<pybind11::dict>> frPyObjects(const py::object &pyobj, const uint64_t &h, const uint64_t &w);
+        std::variant<pybind11::dict, py::object> segmToRle(const py::object &pyobj, const uint64_t &h, const uint64_t &w);
     } // namespace Mask
 } // namespace mask_api

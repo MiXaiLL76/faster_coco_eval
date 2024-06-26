@@ -172,20 +172,6 @@ class COCOeval:
     def print_function(self, value):
         self._print_function = value
 
-    def _toMask(self, anns: List[dict], coco: COCO):
-        """Modify ann['rle'] by reference.
-
-        Args:
-            anns (list):
-                list of annotation lists
-            coco (COCO):
-                initialized coco api object
-
-        """
-        for ann in anns:
-            rle = coco.annToRLE(ann)
-            ann["rle"] = rle
-
     def _prepare(self):
         """Prepare self.gt_dataset and self.dt_dataset for evaluation based on
         params."""
@@ -199,11 +185,6 @@ class COCOeval:
         dts = self.cocoDt.loadAnns(
             self.cocoDt.getAnnIds(imgIds=p.imgIds, catIds=cat_ids)
         )
-
-        # convert ground truth to mask if iouType == 'segm'
-        if p.iouType == "segm":
-            self._toMask(gts, self.cocoGt)
-            self._toMask(dts, self.cocoDt)
 
         # set ignore flag
         for gt in gts:
@@ -240,6 +221,11 @@ class COCOeval:
             self.freq_groups = self._prepare_freq_group()
 
         for gt in gts:
+            # convert ground truth to mask if iouType == 'segm'
+            if p.iouType == "segm":
+                t = self.cocoGt.imgs[gt["image_id"]]
+                h, w = t["height"], t["width"]
+                gt["rle"] = maskUtils.segmToRle(gt["segmentation"], w, h)
             self.gt_dataset.append(gt["image_id"], gt["category_id"], gt)
 
         for dt in dts:
@@ -255,6 +241,11 @@ class COCOeval:
                     dt["category_id"] in self.img_nel[dt["image_id"]]
                 )
 
+            # convert ground truth to mask if iouType == 'segm'
+            if p.iouType == "segm":
+                t = self.cocoGt.imgs[dt["image_id"]]
+                h, w = t["height"], t["width"]
+                dt["rle"] = maskUtils.segmToRle(dt["segmentation"], w, h)
             self.dt_dataset.append(img_id, cat_id, dt)
 
     def _prepare_freq_group(self) -> list:

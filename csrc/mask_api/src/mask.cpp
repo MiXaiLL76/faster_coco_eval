@@ -931,6 +931,29 @@ namespace mask_api
 
             return _toString(rles);
         }
+
+        std::variant<pybind11::dict, py::object> segmToRle(const py::object &pyobj, const uint64_t &h, const uint64_t &w)
+        {
+            std::string type = py::str(py::type::of(pyobj));
+            if (type == "<class 'list'>")
+            {
+                std::vector<std::vector<double>> poly = pyobj.cast<std::vector<std::vector<double>>>();
+                std::vector<RLE> rles;
+                for (size_t i = 0; i < poly.size(); i++)
+                {
+                    rles.push_back(rleFrPoly(poly[i], poly[i].size() / 2, h, w));
+                }
+                return _toString({rleMerge(rles, 0)})[0];
+            }
+            else if (type == "<class 'dict'>")
+            {
+                return frUncompressedRLE({pyobj}, h, w)[0];
+            }
+            else
+            {
+                return pyobj;
+            }
+        }
     } // namespace Mask
 
 }

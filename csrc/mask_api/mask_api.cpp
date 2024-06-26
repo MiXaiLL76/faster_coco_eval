@@ -86,6 +86,7 @@ namespace mask_api
     m.def("frUncompressedRLE", &Mask::frUncompressedRLE, "Mask::frUncompressedRLE");
     m.def("toUncompressedRLE", &Mask::toUncompressedRLE, "Mask::toUncompressedRLE");
     m.def("frPyObjects", &Mask::frPyObjects, "Mask::frPyObjects");
+    m.def("segmToRle", &Mask::segmToRle, "Mask::segmToRle");
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);

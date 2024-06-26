@@ -11,6 +11,24 @@ ValidRleType = Union[
 ]
 
 
+def segmToRle(segm: Union[List[float], List[int], dict], w: int, h: int):
+    """Convert segm array to run-length encoding.
+
+    Args:
+        segm (list of float or int): segmentation map
+        w (int): width of the image
+        h (int): height of the image
+
+    Returns:
+        rle (dict): run-length encoding of the segmentation map
+
+    """
+    if (type(segm) is dict) and (type(segm["counts"]) is str):
+        return segm
+    else:
+        return _mask.segmToRle(segm, w, h)
+
+
 def iou(
     dt: ValidRleType,
     gt: ValidRleType,
