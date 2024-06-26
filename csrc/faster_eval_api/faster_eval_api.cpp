@@ -53,6 +53,7 @@ namespace coco_eval
     pybind11::class_<COCOeval::ImageEvaluation>(m, "ImageEvaluation").def(pybind11::init<>());
 
     m.def("deepcopy", &COCOeval::deepcopy, "COCOeval::deepcopy");
+    m.def("_summarize", &COCOeval::_summarize, "COCOeval::_summarize");
 
     pybind11::class_<COCOeval::Dataset>(m, "Dataset").def(pybind11::init<>())
     .def("append", &COCOeval::Dataset::append)

@@ -11,6 +11,20 @@ namespace coco_eval
 
   namespace COCOeval
   {
+    template <typename T>
+    int v_index(const std::vector<T> &v, const T &key)
+    {
+      auto itr = std::find(v.begin(), v.end(), key);
+
+      if (itr != v.cend())
+      {
+        return std::distance(v.begin(), itr);
+      }
+      else
+      {
+        return -1;
+      }
+    }
 
     // Sort detections from highest score to lowest, such that
     // detection_instances[detection_sorted_indices[t]] >=
@@ -736,6 +750,81 @@ namespace coco_eval
       }
       return result;
     }
+
+    double _summarize(int ap, double iouThr, std::string areaRng, int maxDet, std::vector<int> catIds, py::object params, std::vector<size_t> counts, py::object nums_array)
+    {
+      std::vector<std::string> areaRngLbl = list_to_vec<std::string>(params.attr("areaRngLbl"));
+      std::vector<int> maxDets = list_to_vec<int>(params.attr("maxDets"));
+      std::vector<double> iouThrs = list_to_vec<double>(params.attr("iouThrs"));
+
+      int iou_ind = v_index(iouThrs, iouThr);
+      int aind = v_index(areaRngLbl, areaRng);
+      int mind = v_index(maxDets, maxDet);
+
+      if (catIds.size() == 0)
+      {
+        for (size_t category = 0; category < counts[2]; category++)
+        {
+          catIds.push_back(category);
+        }
+      }
+
+      std::vector<double> result;
+
+      if (ap == 1)
+      {
+        // # dimension of precision: [TxRxKxAxM]
+        std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>> precision = nums_array.cast<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>();
+        if (iou_ind != -1)
+        {
+          precision = {precision[iou_ind]};
+        }
+        for (size_t iou_threshold = 0; iou_threshold < precision.size(); iou_threshold++)
+        {
+          for (size_t recall_threshold = 0; recall_threshold < counts[1]; recall_threshold++)
+          {
+            for (const auto &category : catIds)
+            {
+              double pre = precision[iou_threshold][recall_threshold][category][aind][mind];
+              if (pre != -1)
+              {
+                result.push_back(pre);
+              }
+            }
+          }
+        }
+      }
+      else
+      {
+        // # dimension of recall: [TxKxAxM]
+        std::vector<std::vector<std::vector<std::vector<double>>>> recall = nums_array.cast<std::vector<std::vector<std::vector<std::vector<double>>>>>();
+        if (iou_ind != -1)
+        {
+          recall = {recall[iou_ind]};
+        }
+        for (size_t iou_threshold = 0; iou_threshold < recall.size(); iou_threshold++)
+        {
+          for (const auto &category : catIds)
+          {
+            double rec = recall[iou_threshold][category][aind][mind];
+            if (rec != -1)
+            {
+              result.push_back(rec);
+            }
+          }
+        }
+      }
+
+      if (result.size() > 0)
+      {
+        return std::accumulate(result.begin(), result.end(), 0.0) / result.size();
+      }
+      else
+      {
+        return -1;
+      }
+    }
+
   } // namespace COCOeval
 
 } // namespace coco_eval

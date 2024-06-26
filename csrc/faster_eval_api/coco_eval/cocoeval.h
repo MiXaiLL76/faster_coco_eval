@@ -120,5 +120,6 @@ namespace coco_eval
             image_category_detection_instances);
 
     py::object deepcopy(const py::object &pyobj);
+    double _summarize(int ap, double iouThr, std::string areaRng, int maxDet, std::vector<int> catIds, py::object params, std::vector<size_t> counts, py::object nums_array);
   } // namespace COCOeval
 } // namespace coco_eval
