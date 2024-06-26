@@ -3,6 +3,8 @@
 import os
 import unittest
 
+import numpy as np
+
 from faster_coco_eval import COCO, COCOeval_faster
 from faster_coco_eval.extra import PreviewResults
 
@@ -125,6 +127,20 @@ class TestBaseCoco(unittest.TestCase):
         result_cm = results.compute_confusion_matrix().tolist()
 
         self.assertEqual(result_cm, prepared_result)
+
+    def test_auc(self):
+        x = np.linspace(0, 0.55, 100)
+        y = np.linspace(0, 2, 100) + 0.1
+
+        cpp_auc = COCOeval_faster.calc_auc(x, y)
+        py_auc = COCOeval_faster.calc_auc(x, y, method="py")
+        # sklearn not in test space!
+        # from sklearn import metrics
+        # orig_auc = metrics.auc(x, y)
+        orig_auc = 1.1550000000000005
+
+        self.assertAlmostEqual(cpp_auc, orig_auc, places=8)
+        self.assertAlmostEqual(py_auc, orig_auc, places=8)
 
 
 if __name__ == "__main__":

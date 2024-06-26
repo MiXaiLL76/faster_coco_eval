@@ -54,6 +54,7 @@ namespace coco_eval
 
     m.def("deepcopy", &COCOeval::deepcopy, "COCOeval::deepcopy");
     m.def("_summarize", &COCOeval::_summarize, "COCOeval::_summarize");
+    m.def("calc_auc", &COCOeval::calc_auc, "COCOeval::calc_auc");
 
     pybind11::class_<COCOeval::Dataset>(m, "Dataset").def(pybind11::init<>())
     .def("append", &COCOeval::Dataset::append)

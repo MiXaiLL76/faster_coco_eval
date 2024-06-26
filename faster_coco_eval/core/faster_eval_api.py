@@ -3,6 +3,7 @@
 
 import logging
 import time
+from typing import List, Union
 
 import numpy as np
 
@@ -139,8 +140,10 @@ class COCOeval_faster(COCOevalBase):
     def math_matches(self):
         """For each ground truth, find the best matching detection and set the
         detection as matched."""
-        for gidx, ground_truth_matches in enumerate(self.ground_truth_matches):
-            gt_ids = self.ground_truth_orig_id[gidx]
+        for gidx, ground_truth_matches in enumerate(
+            self.ground_truth_matches[::-1]
+        ):
+            gt_ids = self.ground_truth_orig_id[-gidx - 1]
 
             for idx, dt_id in enumerate(ground_truth_matches):
                 if dt_id == 0:
@@ -152,6 +155,11 @@ class COCOeval_faster(COCOevalBase):
 
                 _gt_ann = self.cocoGt.anns[gt_id]
                 _dt_ann = self.cocoDt.anns[dt_id]
+
+                if self.params.useCats:
+                    if _gt_ann["category_id"] != _dt_ann["category_id"]:
+                        continue
+
                 _img_id = self.cocoGt.ann_img_map[gt_id]
                 _catId = _gt_ann["category_id"] if self.params.useCats else -1
 
@@ -173,6 +181,8 @@ class COCOeval_faster(COCOevalBase):
                     continue
 
                 iou = self.ious[(_img_id, _catId)][iou_dt_id, iou_gt_id]
+                if (iou <= 0) and self.params.useCats:
+                    continue
 
                 if not _gt_ann.get("matched", False):
                     _dt_ann["tp"] = True
@@ -211,8 +221,6 @@ class COCOeval_faster(COCOevalBase):
                 ious.append(dt_ann["iou"])
         return sum(ious) / len(ious)
 
-    # TODO:
-    # Convert to C++
     def compute_mAUC(self) -> float:
         """Compute the mAUC metric."""
         aucs = []
@@ -290,26 +298,37 @@ class COCOeval_faster(COCOevalBase):
             _label: float(self.all_stats[i]) for i, _label in enumerate(labels)
         }
 
-    # TODO:
-    # Convert to C++
     @staticmethod
-    def calc_auc(recall_list, precision_list):
-        """
-        Calculate area under precision recall curve
-        recall_list: list of recall values
-        precision_list: list of precision values
+    def calc_auc(
+        recall_list: Union[List[float], np.ndarray],
+        precision_list: Union[List[float], np.ndarray],
+        method: str = "c++",
+    ):
+        """Calculate area under precision recall curve.
+
+        Args:
+            recall_list (Union[List[float], np.ndarray]):
+                list of recall values
+            precision_list (Union[List[float], np.ndarray]):
+                list of precision values
+            method (str, optional): method to calculate auc. Defaults to "c++".
+
+        Returns:
+            float: area under precision recall curve
+
         """
         # https://towardsdatascience.com/how-to-efficiently-implement-area-under-precision-recall-curve-pr-auc-a85872fd7f14
-        # mrec = np.concatenate(([0.], recall_list, [1.]))
-        # mpre = np.concatenate(([0.], precision_list, [0.]))
-        mrec = recall_list
-        mpre = precision_list
+        if method == "c++":
+            return round(_C.calc_auc(recall_list, precision_list), 15)
+        else:
+            mrec = recall_list
+            mpre = precision_list
 
-        for i in range(mpre.size - 1, 0, -1):
-            mpre[i - 1] = np.maximum(mpre[i - 1], mpre[i])
+            for i in range(mpre.size - 1, 0, -1):
+                mpre[i - 1] = np.maximum(mpre[i - 1], mpre[i])
 
-        i = np.where(mrec[1:] != mrec[:-1])[0]
-        return np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
+            i = np.where(mrec[1:] != mrec[:-1])[0]
+            return np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
 
 
 # Reassignment, for smooth operation of pycocotools replacement
