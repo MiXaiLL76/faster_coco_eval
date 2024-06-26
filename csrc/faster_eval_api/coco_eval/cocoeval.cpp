@@ -751,7 +751,29 @@ namespace coco_eval
       return result;
     }
 
-    double _summarize(int ap, double iouThr, std::string areaRng, int maxDet, std::vector<int> catIds, py::object params, std::vector<size_t> counts, py::object nums_array)
+    long double calc_auc(const std::vector<long double> &recall_list, const std::vector<long double> &precision_list)
+    {
+      std::vector<long double> mpre = precision_list;
+
+      for (size_t i = mpre.size() - 1; i > 0; i--)
+      {
+        mpre[i - 1] = std::max(mpre[i - 1], mpre[i]);
+      }
+
+      long double result = 0;
+
+      for (size_t i = 1; i < recall_list.size(); i++)
+      {
+        if (recall_list[i - 1] != recall_list[i])
+        {
+          result += (recall_list[i] - recall_list[i - 1]) * mpre[i];
+        }
+      }
+
+      return result;
+    }
+
+    long double _summarize(int ap, double iouThr, std::string areaRng, int maxDet, std::vector<int> catIds, py::object params, std::vector<size_t> counts, py::object nums_array)
     {
       std::vector<std::string> areaRngLbl = list_to_vec<std::string>(params.attr("areaRngLbl"));
       std::vector<int> maxDets = list_to_vec<int>(params.attr("maxDets"));
@@ -769,7 +791,7 @@ namespace coco_eval
         }
       }
 
-      std::vector<double> result;
+      std::vector<long double> result;
 
       if (ap == 1)
       {
@@ -785,7 +807,7 @@ namespace coco_eval
           {
             for (const auto &category : catIds)
             {
-              double pre = precision[iou_threshold][recall_threshold][category][aind][mind];
+              long double pre = (long double)precision[iou_threshold][recall_threshold][category][aind][mind];
               if (pre != -1)
               {
                 result.push_back(pre);
@@ -806,7 +828,7 @@ namespace coco_eval
         {
           for (const auto &category : catIds)
           {
-            double rec = recall[iou_threshold][category][aind][mind];
+            long double rec = (long double)recall[iou_threshold][category][aind][mind];
             if (rec != -1)
             {
               result.push_back(rec);
