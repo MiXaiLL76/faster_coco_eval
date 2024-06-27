@@ -23,7 +23,7 @@ def segmToRle(segm: Union[List[float], List[int], dict], w: int, h: int):
         rle (dict): run-length encoding of the segmentation map
 
     """
-    if (type(segm) is dict) and (type(segm["counts"]) is str):
+    if (type(segm) is dict) and (type(segm["counts"]) is not list):
         return segm
     else:
         return _mask.segmToRle(segm, w, h)
