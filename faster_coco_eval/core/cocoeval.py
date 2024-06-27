@@ -3,7 +3,7 @@
 
 import logging
 from collections import defaultdict
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Literal, Optional, Union
 
 import numpy as np
 
@@ -72,7 +72,7 @@ class COCOeval:
         self,
         cocoGt: Optional[COCO] = None,
         cocoDt: Optional[COCO] = None,
-        iouType: str = "segm",
+        iouType: Literal["segm", "bbox", "keypoints"] = "segm",
         print_function: Callable = logger.debug,
         extra_calc: bool = False,
         kpt_oks_sigmas: Optional[List[float]] = None,
