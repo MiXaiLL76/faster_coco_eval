@@ -4,6 +4,7 @@ import os
 import unittest
 
 import numpy as np
+from parameterized import parameterized
 
 from faster_coco_eval import COCO, COCOeval_faster
 from faster_coco_eval.extra import PreviewResults
@@ -33,7 +34,12 @@ class TestBaseCoco(unittest.TestCase):
         self.ignore_coco_in_dict = COCO.load_json(gt_ignore_test_file)
         self.ignore_prepared_anns = COCO.load_json(dt_ignore_test_file)
 
-    def test_ignore_coco_eval(self):
+    def test_bad_coco_set(self):
+        with self.assertRaises(AssertionError):
+            COCO(1)
+
+    @parameterized.expand([True, False])
+    def test_ignore_coco_eval(self, separate_eval):
         stats_as_dict = {
             "AP_all": 0.7099009900990099,
             "AP_50": 1.0,
@@ -56,11 +62,11 @@ class TestBaseCoco(unittest.TestCase):
         cocoGt = COCO(self.ignore_coco_in_dict)
         cocoDt = cocoGt.loadRes(self.ignore_prepared_anns)
 
-        cocoEval = COCOeval_faster(cocoGt, cocoDt, iouType)
+        cocoEval = COCOeval_faster(
+            cocoGt, cocoDt, iouType, separate_eval=separate_eval
+        )
 
-        cocoEval.evaluate()
-        cocoEval.accumulate()
-        cocoEval.summarize()
+        cocoEval.run()
 
         self.assertEqual(cocoEval.stats_as_dict, stats_as_dict)
 

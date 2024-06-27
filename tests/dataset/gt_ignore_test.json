@@ -8,7 +8,7 @@
             "width": 500,
             "date_captured": "2013-11-18 05:37:07",
             "flickr_url": "http://farm4.staticflickr.com/3558/3415469737_233e744fb9_z.jpg",
-            "id": 2299
+            "id": "2299"
         }
     ],
     "categories": [
@@ -18,7 +18,7 @@
         {
             "area": 4357.5248,
             "iscrowd": 0,
-            "image_id": 2299,
+            "image_id": "2299",
             "bbox": [70.18, 189.51, 64.2, 112.04],
             "category_id": 1,
             "id": 1219726,

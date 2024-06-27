@@ -3,6 +3,7 @@
 import unittest
 
 import numpy as np
+from parameterized import parameterized
 
 import faster_coco_eval.core.mask as mask_util
 import faster_coco_eval.mask_api_new_cpp as _mask
@@ -100,9 +101,14 @@ class TestBaseLvis(unittest.TestCase):
             "counts": b"05500MN3ON3ONe1",
         }
 
-    def test_area(self):
-        areas = _mask.area(self.rleObjs)
+    @parameterized.expand([_mask, mask_util])
+    def test_area(self, module):
+        areas = module.area(self.rleObjs)
         self.assertEqual(areas.tolist(), self.areas)
+
+    def test_area_solo(self):
+        area = mask_util.area(self.rleObjs[0])
+        self.assertEqual(area, self.areas[0])
 
     def test_rles(self):
         self.assertTrue(
@@ -126,60 +132,72 @@ class TestBaseLvis(unittest.TestCase):
             _mask.frUncompressedRLE([self.uncompressed_rle], 20, 20)[0],
         )
 
-    def test_frPyObjects(self):
+    @parameterized.expand([_mask, mask_util])
+    def test_frPyObjects(self, module):
         self.assertEqual(
             self.poly_rles,
-            _mask.frPyObjects([p for p in self.poly], 20, 20),
+            module.frPyObjects([p for p in self.poly], 20, 20),
         )
-        self.assertEqual(self.bbox_rles, _mask.frPyObjects(self.bboxes, 20, 20))
+        self.assertEqual(
+            self.bbox_rles, module.frPyObjects(self.bboxes, 20, 20)
+        )
 
         self.assertEqual(
             self.compressed_rle,
-            _mask.frPyObjects(self.uncompressed_rle, 1350, 1080),
+            module.frPyObjects(self.uncompressed_rle, 1350, 1080),
         )
         self.assertEqual(
             self.compressed_rle,
-            _mask.frPyObjects([self.uncompressed_rle], 1350, 1080)[0],
+            module.frPyObjects([self.uncompressed_rle], 1350, 1080)[0],
         )
 
-    def test_merge(self):
-        self.assertEqual(self.bbox_rles[0], _mask.merge([self.bbox_rles[0]]))
-        self.assertEqual(self.bbox_rles_merged, _mask.merge(self.bbox_rles))
-        self.assertEqual(self.bbox_rles_merged, _mask.merge(self.bbox_rles, 0))
+    @parameterized.expand([_mask, mask_util])
+    def test_merge(self, module):
+        self.assertEqual(self.bbox_rles[0], module.merge([self.bbox_rles[0]]))
+        self.assertEqual(self.bbox_rles_merged, module.merge(self.bbox_rles))
+        self.assertEqual(self.bbox_rles_merged, module.merge(self.bbox_rles, 0))
         self.assertEqual(
-            self.bbox_rles_merged_1, _mask.merge(self.bbox_rles, 1)
+            self.bbox_rles_merged_1, module.merge(self.bbox_rles, 1)
         )
 
-    def test_toBbox(self):
+    @parameterized.expand([_mask, mask_util])
+    def test_toBbox(self, module):
         self.assertEqual(
-            self.bboxes.tolist(), _mask.toBbox(self.bbox_rles).tolist()
+            self.bboxes.tolist(), module.toBbox(self.bbox_rles).tolist()
         )
 
-    def test_iou(self):
+    def test_toBbox_solo(self):
+        self.assertEqual(
+            self.bboxes.tolist()[0],
+            mask_util.toBbox(self.bbox_rles[0]).tolist(),
+        )
+
+    @parameterized.expand([_mask, mask_util])
+    def test_iou(self, module):
         iou_11 = np.array([[1.0, 0.5], [0.13333333, 1.0]]).round(4)
 
-        result_iou_11 = _mask.iou(
+        result_iou_11 = module.iou(
             self.bbox_rles[:2], self.bbox_rles[:2], [1, 1]
         ).round(4)
 
         self.assertEqual(iou_11.tolist(), result_iou_11.tolist())
 
         iou_00 = np.array([[1.0, 0.11764706], [0.11764706, 1.0]]).round(4)
-        result_iou_00 = _mask.iou(
+        result_iou_00 = module.iou(
             self.bbox_rles[:2], self.bbox_rles[:2], [0, 0]
         ).round(4)
 
         self.assertEqual(iou_00.tolist(), result_iou_00.tolist())
 
         iou_10 = np.array([[1.0, 0.11764706], [0.13333333, 1.0]]).round(4)
-        result_iou_10 = _mask.iou(
+        result_iou_10 = module.iou(
             self.bbox_rles[:2], self.bbox_rles[:2], [1, 0]
         ).round(4)
 
         self.assertEqual(iou_10.tolist(), result_iou_10.tolist())
 
         iou_01 = np.array([[1.0, 0.5], [0.11764706, 1.0]]).round(4)
-        result_iou_01 = _mask.iou(
+        result_iou_01 = module.iou(
             self.bbox_rles[:2], self.bbox_rles[:2], [0, 1]
         ).round(4)
         self.assertEqual(iou_01.tolist(), result_iou_01.tolist())
@@ -188,7 +206,7 @@ class TestBaseLvis(unittest.TestCase):
             [[1.0, 0.1562, 0.1], [0.1562, 1.0, 0.2174], [0.1, 0.2174, 1.0]]
         )
 
-        result_poly_iou = _mask.iou(
+        result_poly_iou = module.iou(
             self.poly_rles[:3], self.poly_rles[:3], [0, 0, 0]
         ).round(4)
         self.assertEqual(poly_iou.tolist(), result_poly_iou.tolist())
@@ -200,11 +218,10 @@ class TestBaseLvis(unittest.TestCase):
             (bbox == np.array([0, 0, 2, 2], dtype="float32")).all(), bbox
         )
 
-    # bugfix by piotr in ff4a47150bf66
     def testToBboxNonFullImage(self):
-        mask = np.zeros((10, 10), dtype=np.uint8)
-        mask[2:4, 3:6] = 1
-        bbox = mask_util.toBbox(_encode(mask))
+        mask = np.zeros((10, 10, 1), dtype=np.uint8)
+        mask[2:4, 3:6, :] = 1
+        bbox = mask_util.toBbox(_encode(mask)[0])
         self.assertTrue(
             (bbox == np.array([3, 2, 3, 2], dtype="float32")).all(), bbox
         )
@@ -229,6 +246,30 @@ class TestBaseLvis(unittest.TestCase):
         rle_new = mask_util.encode(mask)
         new_bbox = mask_util.toBbox(rle_new)
         self.assertTrue(np.equal(orig_bbox, new_bbox).all())
+
+        orig_bbox = mask_util.toBbox(rle)
+        masks = mask_util.decode([rle])
+        rles_new = mask_util.encode(masks)
+        new_bboxs = mask_util.toBbox(rles_new)
+        self.assertTrue(np.equal(orig_bbox, new_bboxs[0]).all())
+
+    def testSegmToRle(self):
+        new_rle = mask_util.segmToRle(
+            self.uncompressed_rle,
+            self.uncompressed_rle["size"][0],
+            self.uncompressed_rle["size"][1],
+        )
+        self.assertDictEqual(new_rle, self.compressed_rle)
+
+        new_rle = mask_util.segmToRle(
+            self.compressed_rle,
+            self.compressed_rle["size"][0],
+            self.compressed_rle["size"][1],
+        )
+        self.assertDictEqual(new_rle, self.compressed_rle)
+
+        new_rle = mask_util.segmToRle([self.poly[0]], 20, 20)
+        self.assertDictEqual(new_rle, self.poly_rles[0])
 
 
 if __name__ == "__main__":
