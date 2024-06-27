@@ -932,7 +932,7 @@ namespace mask_api
             return _toString(rles);
         }
 
-        std::variant<pybind11::dict, py::object> segmToRle(const py::object &pyobj, const uint64_t &h, const uint64_t &w)
+        std::variant<pybind11::dict, py::object> segmToRle(const py::object &pyobj, const uint64_t &w, const uint64_t &h)
         {
             std::string type = py::str(py::type::of(pyobj));
             if (type == "<class 'list'>")
