@@ -90,14 +90,16 @@ class TestBaseCoco(unittest.TestCase):
             "mAUC_50": 0.594074074074074,
         }
 
-        iouType = "segm"
         useCats = False
 
         cocoGt = COCO(self.prepared_coco_in_dict)
         cocoDt = cocoGt.loadRes(self.prepared_anns)
 
-        cocoEval = COCOeval_faster(cocoGt, cocoDt, iouType, extra_calc=True)
+        # iouType="segm" as default!
+        cocoEval = COCOeval_faster(cocoGt, cocoDt, extra_calc=True)
         cocoEval.params.maxDets = [len(cocoGt.anns)]
+
+        self.assertEqual(cocoEval.params.useSegm, 1)
 
         if not useCats:
             cocoEval.params.useCats = 0  # Выключение labels

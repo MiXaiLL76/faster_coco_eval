@@ -635,10 +635,7 @@ class COCO:
         return self.imgCatToAnnsIdx
 
     def __repr__(self):
-        s = self.__class__.__name__
-        s += "("
-        s += "annotation_file"
-        s += ") # "
+        s = self.__class__.__name__ + "(annotation_file) # "
         s += "__author__='{}'; ".format(__author__)
         s += "__version__='{}';".format(__version__)
         return s

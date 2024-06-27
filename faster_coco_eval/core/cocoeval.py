@@ -100,9 +100,6 @@ class COCOeval:
                 whether to perform separate evaluation, defaults to False
 
         """
-        if not iouType:
-            logger.warning("iouType not specified. use default iouType segm")
-
         self.cocoGt: COCO = cocoGt  # ground truth COCO API
         self.cocoDt: COCO = cocoDt  # detections COCO API
         # per-image per-category evaluation results [KxAxI] elements
@@ -138,18 +135,9 @@ class COCOeval:
             self.params.catIds = sorted(self.cocoGt.getCatIds())
 
             if iouType == "keypoints":
-                if self.cocoGt is not None:
-                    self.params.catIds = sorted(
-                        list(self.cocoGt.cat_img_map.keys())
-                    )
-                else:
-                    self.params.catIds = sorted(
-                        [
-                            cid
-                            for cid, category in self.cocoGt.cats.items()
-                            if len(category.get("keypoints", []))
-                        ]
-                    )
+                self.params.catIds = sorted(
+                    list(self.cocoGt.cat_img_map.keys())
+                )
 
         self._print_function = print_function  # output print function
 
@@ -606,12 +594,10 @@ class COCOeval:
 
     def __str__(self):
         self.summarize()
+        return str(self.__repr__())
 
     def __repr__(self):
-        s = self.__class__.__name__
-        s += "("
-        s += "annotation_file"
-        s += ") # "
+        s = self.__class__.__name__ + "() # "
         s += "__author__='{}'; ".format(__author__)
         s += "__version__='{}';".format(__version__)
         return s
