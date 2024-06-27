@@ -37,4 +37,4 @@ jobs:
           pip install "${source_file}[tests]"
 
       - name: Run test cases
-        run: pytest tests/*
+        run: pytest --cov=faster_coco_eval tests/
