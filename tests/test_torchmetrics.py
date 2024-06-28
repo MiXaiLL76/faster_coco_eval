@@ -9,7 +9,7 @@ except ImportError:
     raise unittest.SkipTest("Skipping all tests for torchmetrics.")
 
 
-class TestKeypointsMetric(TestCase):
+class TestTorchmetricsLib(TestCase):
     def setUp(self):
         # Preds should be a list of elements, where each element is a dict
         # containing 3 keys: boxes, scores, labels

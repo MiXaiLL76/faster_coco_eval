@@ -293,8 +293,6 @@ class COCOeval:
         elif p.iouType == "bbox":
             g = [g["bbox"] for g in gt]
             d = [d["bbox"] for d in dt]
-        else:
-            raise Exception("unknown iouType for iou computation")
 
         # compute iou between each dt and gt region
         iscrowd = [int(o.get("iscrowd", 0)) for o in gt]
@@ -679,7 +677,8 @@ class Params:
             if kpt_sigmas is not None:
                 self.kpt_oks_sigmas = np.array(kpt_sigmas)
         else:
-            raise Exception("iouType not supported")
+            raise TypeError("iouType not supported")
+
         self.iouType = iouType
 
         # We bin categories in three bins based how many images of the training
@@ -697,6 +696,7 @@ class Params:
     def useSegm(self, value):
         # add backward compatibility if useSegm is specified in params
         self.iouType = "segm" if value == 1 else "bbox"
+
         logger.warning(
             "useSegm is deprecated. Please use iouType (string) instead."
         )

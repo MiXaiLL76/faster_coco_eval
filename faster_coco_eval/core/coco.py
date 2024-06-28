@@ -194,12 +194,12 @@ class COCO:
         imgIds = imgIds if _isArrayLike(imgIds) else [imgIds]
         catIds = catIds if _isArrayLike(catIds) else [catIds]
 
-        check_area = len(areaRng) > 0
+        check_area = len(areaRng) == 2
         check_crowd = iscrowd is not None
         check_cat = len(catIds) > 0
         check_img = len(imgIds) > 0
 
-        if not (check_area and check_crowd and check_cat and check_img):
+        if not (check_area or check_crowd or check_cat or check_img):
             anns = self.dataset["annotations"]
         else:
             anns = []
@@ -214,8 +214,6 @@ class COCO:
                 anns = [ann for ann in anns if ann["category_id"] in catIds]
 
             if check_area:
-                areaRng = [0, float("inf")]
-
                 anns = [
                     ann
                     for ann in anns
@@ -223,7 +221,11 @@ class COCO:
                 ]
 
             if check_crowd:
-                anns = [ann for ann in anns if ann["iscrowd"] == iscrowd]
+                anns = [
+                    ann
+                    for ann in anns
+                    if int(ann.get("iscrowd", 0)) == int(iscrowd)
+                ]
 
         ids = [ann["id"] for ann in anns]
 

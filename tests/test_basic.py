@@ -1,0 +1,216 @@
+#!/usr/bin/python3
+import os
+import unittest
+
+import numpy as np
+from parameterized import parameterized
+
+import faster_coco_eval
+import faster_coco_eval.core.mask as mask_util
+from faster_coco_eval import COCO, COCOeval_faster
+from faster_coco_eval.core.cocoeval import Params
+from faster_coco_eval.core.faster_eval_api import COCOeval
+from faster_coco_eval.extra import PreviewResults
+
+
+class TestBaseCoco(unittest.TestCase):
+    """Test basic COCO functionality."""
+
+    def setUp(self):
+        self.gt_file = "dataset/gt_dataset.json"
+        self.dt_file = "dataset/dt_dataset.json"
+        self.gt_ignore_test_file = "dataset/gt_ignore_test.json"
+        self.dt_ignore_test_file = "dataset/dt_ignore_test.json"
+
+        if not os.path.exists(self.gt_file):
+            self.gt_file = os.path.join("tests", self.gt_file)
+            self.dt_file = os.path.join("tests", self.dt_file)
+            self.gt_ignore_test_file = os.path.join(
+                "tests", self.gt_ignore_test_file
+            )
+            self.dt_ignore_test_file = os.path.join(
+                "tests", self.dt_ignore_test_file
+            )
+
+        prepared_anns = COCO.load_json(self.dt_file)
+
+        cocoGt = COCO(self.gt_file)
+        self.prepared_anns_droped_bbox = [
+            {
+                "image_id": ann["image_id"],
+                "category_id": ann["category_id"],
+                "iscrowd": ann["iscrowd"],
+                "id": ann["id"],
+                "score": ann["score"],
+                "segmentation": mask_util.merge(
+                    mask_util.frPyObjects(
+                        ann["segmentation"],
+                        cocoGt.imgs[ann["image_id"]]["height"],
+                        cocoGt.imgs[ann["image_id"]]["width"],
+                    )
+                ),
+            }
+            for ann in prepared_anns
+        ]
+
+    def test_params(self):
+        kp_params = Params(iouType="keypoints", kpt_sigmas=[1, 2, 3])
+        kp_params.iouThrs = [0.5, 0.6, 0.7]
+        kp_params.recThrs = [0.8, 0.9, 1.0]
+        kp_params.areaRng = [[0, 100**2], [100**2, 200**2]]
+        kp_params.imgIds = [1, 2, 3]
+        self.assertEqual(kp_params.kpt_oks_sigmas.tolist(), [1, 2, 3])
+        self.assertEqual(kp_params.iou_type, "keypoints")
+        self.assertEqual(kp_params.iou_thrs, [0.5, 0.6, 0.7])
+        self.assertEqual(kp_params.rec_thrs, [0.8, 0.9, 1.0])
+        self.assertEqual(kp_params.max_dets, [20])
+        self.assertEqual(kp_params.use_cats, 1)
+        self.assertEqual(kp_params.area_rng, [[0, 100**2], [100**2, 200**2]])
+        self.assertEqual(kp_params.img_ids, [1, 2, 3])
+        self.assertEqual(kp_params.area_rng_lbl, ["all", "medium", "large"])
+
+        kp_params.useSegm = 1
+        self.assertEqual(kp_params.iou_type, "segm")
+
+    def test_bad_coco_set(self):
+        with self.assertRaises(AssertionError):
+            COCO(1)
+
+    def test_bad_iou_type(self):
+        with self.assertRaises(TypeError):
+            ignore_prepared_anns = COCO.load_json(self.gt_ignore_test_file)
+            cocoGt = COCO(ignore_prepared_anns)
+            cocoDt = cocoGt.loadRes(self.dt_ignore_test_file)
+            COCOeval_faster(cocoGt, cocoDt, "iouType")
+
+    @parameterized.expand([True, False])
+    def test_ignore_coco_eval(self, separate_eval):
+        stats_as_dict = {
+            "AP_all": 0.7099009900990099,
+            "AP_50": 1.0,
+            "AP_75": 0.8415841584158416,
+            "AP_small": -1.0,
+            "AP_medium": 0.7099009900990099,
+            "AP_large": -1.0,
+            "AR_1": 0.0,
+            "AR_10": 0.45384615384615384,
+            "AR_100": 0.7153846153846154,
+            "AR_small": -1.0,
+            "AR_medium": 0.7153846153846154,
+            "AR_large": -1.0,
+            "AR_50": 1.0,
+            "AR_75": 0.8461538461538461,
+        }
+
+        iouType = "bbox"
+
+        ignore_prepared_anns = COCO.load_json(self.gt_ignore_test_file)
+        cocoGt = COCO(ignore_prepared_anns, use_deepcopy=True)
+
+        self.assertNotEqual(id(ignore_prepared_anns), id(cocoGt.dataset))
+
+        cocoDt = cocoGt.loadRes(self.dt_ignore_test_file, min_score=0.1)
+
+        cocoEval = COCOeval_faster(
+            cocoGt, cocoDt, iouType, separate_eval=separate_eval
+        )
+
+        cocoEval.run()
+
+        self.assertEqual(cocoEval.stats_as_dict, stats_as_dict)
+
+    def test_coco_eval(self):
+        stats_as_dict = {
+            "AP_all": 0.6947194719471946,
+            "AP_50": 0.6947194719471946,
+            "AP_75": 0.6947194719471946,
+            "AP_small": -1.0,
+            "AP_medium": 0.7367986798679867,
+            "AP_large": 0.0,
+            "AR_1": 0.6666666666666666,
+            "AR_10": 0.75,
+            "AR_100": 0.75,
+            "AR_small": -1.0,
+            "AR_medium": 0.7916666666666666,
+            "AR_large": 0.0,
+            "AR_50": 0.75,
+            "AR_75": 0.75,
+            "mIoU": 1.0,
+            "mAUC_50": 0.8148148148148149,
+        }
+
+        cocoGt = COCO(self.gt_file)
+
+        cocoDt = cocoGt.loadRes(self.prepared_anns_droped_bbox)
+
+        # iouType="segm" as default!
+        cocoEval = COCOeval(cocoGt, cocoDt, extra_calc=True)
+        self.assertEqual(cocoEval.params.useSegm, 1)
+
+        cocoEval.evaluate()
+        cocoEval.accumulate()
+        cocoEval.summarize()
+
+        self.assertEqual(cocoEval.matched, True)
+        self.assertEqual(cocoEval.stats_as_dict, stats_as_dict)
+
+    def test_confusion_matrix(self):
+        prepared_result = [
+            [2.0, 1.0, 0.0, 0.0, 1.0, 0.0],
+            [1.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 2.0, 0.0, 0.0],
+        ]
+
+        iouType = "segm"
+        useCats = False
+
+        cocoGt = COCO(self.gt_file)
+        cocoDt = cocoGt.loadRes(self.dt_file)
+
+        results = PreviewResults(
+            cocoGt=cocoGt,
+            cocoDt=cocoDt,
+            iouType=iouType,
+            iou_tresh=0.5,
+            useCats=useCats,
+        )
+        result_cm = results.compute_confusion_matrix().tolist()
+
+        self.assertEqual(result_cm, prepared_result)
+
+    def test_rerp(self):
+        cocoGt = COCO(self.gt_file)
+        cocoDt = cocoGt.loadRes(self.prepared_anns_droped_bbox)
+        cocoEval = COCOeval_faster(cocoGt, cocoDt, extra_calc=True)
+
+        self.assertEqual(
+            repr(cocoGt),
+            "COCO(annotation_file) # __author__='{}'; __version__='{}';".format(
+                faster_coco_eval.__author__, faster_coco_eval.__version__
+            ),
+        )
+        self.assertEqual(
+            repr(cocoEval),
+            "COCOeval_faster() # __author__='{}'; __version__='{}';".format(
+                faster_coco_eval.__author__, faster_coco_eval.__version__
+            ),
+        )
+
+    def test_auc(self):
+        x = np.linspace(0, 0.55, 100)
+        y = np.linspace(0, 2, 100) + 0.1
+
+        cpp_auc = COCOeval_faster.calc_auc(x, y)
+        py_auc = COCOeval_faster.calc_auc(x, y, method="py")
+        # sklearn not in test space!
+        # from sklearn import metrics
+        # orig_auc = metrics.auc(x, y)
+        orig_auc = 1.1550000000000005
+
+        self.assertAlmostEqual(cpp_auc, orig_auc, places=8)
+        self.assertAlmostEqual(py_auc, orig_auc, places=8)
+
+
+if __name__ == "__main__":
+    unittest.main()

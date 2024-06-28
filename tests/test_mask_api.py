@@ -7,6 +7,7 @@ from parameterized import parameterized
 
 import faster_coco_eval.core.mask as mask_util
 import faster_coco_eval.mask_api_new_cpp as _mask
+from faster_coco_eval import COCO
 
 
 def _encode(x):
@@ -14,11 +15,7 @@ def _encode(x):
     return mask_util.encode(np.asfortranarray(x, np.uint8))
 
 
-class TestBaseLvis(unittest.TestCase):
-    """Test basic LVIS functionality."""
-
-    prepared_coco_in_dict = None
-    prepared_anns = None
+class TestMaskApi(unittest.TestCase):
 
     def setUp(self):
         self.rleObjs = []
@@ -270,6 +267,57 @@ class TestBaseLvis(unittest.TestCase):
 
         new_rle = mask_util.segmToRle([self.poly[0]], 20, 20)
         self.assertDictEqual(new_rle, self.poly_rles[0])
+
+    def testAnnToRLE(self):
+        fake_dataset = {
+            "images": [
+                {
+                    "id": 1,
+                    "width": 20,
+                    "height": 20,
+                    "file_name": "fake_image.jpg",
+                },
+            ],
+            "annotations": [
+                {
+                    "id": 1,
+                    "image_id": 1,
+                    "category_id": 1,
+                    "segmentation": self.uncompressed_rle,
+                },
+                {
+                    "id": 2,
+                    "image_id": 1,
+                    "category_id": 1,
+                    "segmentation": self.compressed_rle,
+                },
+                {
+                    "id": 3,
+                    "image_id": 1,
+                    "category_id": 1,
+                    "segmentation": [self.poly[0].tolist()],
+                },
+            ],
+            "categories": [
+                {"id": 1, "name": "fake_category"},
+            ],
+        }
+
+        fake_gt = COCO(fake_dataset)
+
+        new_rle = fake_gt.annToRLE(fake_gt.anns[1])
+        self.assertDictEqual(new_rle, self.compressed_rle)
+
+        new_rle = fake_gt.annToRLE(fake_gt.anns[2])
+        self.assertDictEqual(new_rle, self.compressed_rle)
+
+        new_rle = fake_gt.annToRLE(fake_gt.anns[3])
+        self.assertDictEqual(new_rle, self.poly_rles[0])
+
+        mask = fake_gt.annToMask(fake_gt.anns[3])
+        self.assertEqual(
+            mask.tolist(), mask_util.decode(self.poly_rles[0]).tolist()
+        )
 
 
 if __name__ == "__main__":
