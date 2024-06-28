@@ -51,8 +51,7 @@ namespace coco_eval
     m.def("COCOevalEvaluateAccumulate", &COCOeval::EvaluateAccumulate, "COCOeval::EvaluateAccumulate");
     pybind11::class_<COCOeval::InstanceAnnotation>(m, "InstanceAnnotation").def(pybind11::init<uint64_t, double, double, bool, bool, bool>());
     pybind11::class_<COCOeval::ImageEvaluation>(m, "ImageEvaluation").def(pybind11::init<>());
-
-    m.def("deepcopy", &COCOeval::deepcopy, "COCOeval::deepcopy");
+    
     m.def("_summarize", &COCOeval::_summarize, "COCOeval::_summarize");
     m.def("calc_auc", &COCOeval::calc_auc, "COCOeval::calc_auc");
 

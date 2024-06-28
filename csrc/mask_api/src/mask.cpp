@@ -95,7 +95,7 @@ namespace mask_api
             bool more;
             std::vector<uint> cnts;
 
-            size_t m = (int)s.size();
+            size_t m = s.size();
             size_t i = 0;
 
             while (i < m)
@@ -366,8 +366,7 @@ namespace mask_api
 
         std::vector<py::dict> encode(const py::array_t<uint, py::array::f_style> &M)
         {
-            std::vector<RLE> rles = rleEncode(M, M.shape(0), M.shape(1), M.shape(2));
-            return _toString(rles);
+            return _toString(rleEncode(M, M.shape(0), M.shape(1), M.shape(2)));
         }
 
         // Decodes n different RLEs that have the same width and height. Write results to M.
@@ -406,7 +405,7 @@ namespace mask_api
                         }
                         v = !v;
                     }
-                    auto _flat_mask = flatten(mask);
+                    std::vector<uint> _flat_mask = flatten(mask);
                     result.insert(result.end(), _flat_mask.begin(), _flat_mask.end());
                 }
             }
@@ -416,8 +415,7 @@ namespace mask_api
         // decode mask from compressed list of RLE string or RLEs object
         py::array_t<uint, py::array::f_style> decode(const std::vector<py::dict> &R)
         {
-            std::vector<RLE> rles = _frString(R);
-            return rleDecode(rles);
+            return rleDecode(_frString(R));
         }
 
         RLE rleMerge(const std::vector<RLE> &R, const int &intersect)
@@ -499,9 +497,7 @@ namespace mask_api
 
         py::dict merge(const std::vector<py::dict> &rleObjs, const uint64_t &intersect = 0)
         {
-            std::vector<RLE> rles = _frString(rleObjs);
-            RLE _merge = rleMerge(rles, intersect);
-            return _toString({_merge})[0];
+            return _toString({rleMerge(_frString(rleObjs), intersect)})[0];
         }
         py::dict merge(const std::vector<py::dict> &rleObjs)
         {
@@ -522,8 +518,7 @@ namespace mask_api
         }
         py::array_t<uint> area(const std::vector<py::dict> &rleObjs)
         {
-            std::vector<RLE> rles = _frString(rleObjs);
-            std::vector<uint> areas = rleArea(rles);
+            std::vector<uint> areas = rleArea(_frString(rleObjs));
             return py::array(areas.size(), areas.data());
         }
 
@@ -540,7 +535,6 @@ namespace mask_api
         std::vector<py::dict> frBbox(const std::vector<std::vector<double>> &bb, const uint64_t &h, const uint64_t &w)
         {
             std::vector<RLE> rles;
-            // std::vector<RLE> rleFrBbox(const std::vector<double> &bb, uint64_t h, uint64_t w, uint64_t n)
             for (uint64_t i = 0; i < bb.size(); i++)
             {
                 rles.push_back(rleFrBbox(bb[i], h, w, 1)[0]);
@@ -647,13 +641,13 @@ namespace mask_api
         std::vector<double> rleIou(const std::vector<RLE> &dt, const std::vector<RLE> &gt, const uint64_t &m, const uint64_t &n, const std::vector<int> &iscrowd)
         {
             uint64_t g, d;
-            py::array_t<double> db, gb;
+            std::vector<double> db, gb;
             int crowd;
 
-            db = rleToBbox(dt, m);
-            gb = rleToBbox(gt, n);
+            db = ravelBbox(rleToBbox(dt, m));
+            gb = ravelBbox(rleToBbox(gt, n));
 
-            std::vector<double> o = bbIou(ravelBbox(db), ravelBbox(gb), m, n, iscrowd);
+            std::vector<double> o = bbIou(db, gb, m, n, iscrowd);
             bool _iscrowd = iscrowd.size() > 0;
 
             for (g = 0; g < n; g++)

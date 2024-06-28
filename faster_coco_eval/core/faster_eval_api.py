@@ -1,6 +1,7 @@
 # Original work Copyright (c) Facebook, Inc. and its affiliates.
 # Modified work Copyright (c) 2024 MiXaiLL76
 
+import copy
 import logging
 import time
 from typing import List, Union
@@ -69,7 +70,7 @@ class COCOeval_faster(COCOevalBase):
             [self.ious[imgId, catId] for catId in catIds] for imgId in p.imgIds
         ]
 
-        self._paramsEval = _C.deepcopy(self.params)
+        self._paramsEval = copy.deepcopy(self.params)
 
         if self.separate_eval:
             # Call C++ implementation of self.evaluateImgs()

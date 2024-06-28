@@ -62,15 +62,15 @@ namespace coco_eval
     public:
       Dataset() {}
       void append(int64_t img_id, int64_t cat_id, py::dict ann);
-      std::vector<py::dict> get(int64_t img_id, int64_t cat_id);
+      std::vector<py::dict> get(const int64_t &img_id, const int64_t &cat_id);
       std::vector<InstanceAnnotation> get_cpp_annotations(
-          int64_t img_id, int64_t cat_id);
+          const int64_t &img_id, const int64_t &cat_id);
 
       std::vector<std::vector<std::vector<InstanceAnnotation>>> get_cpp_instances(
-          std::vector<int64_t> img_ids, std::vector<int64_t> cat_ids, bool useCats);
+          const std::vector<int64_t> &img_ids, const std::vector<int64_t> &cat_ids, const bool &useCats);
 
       std::vector<std::vector<std::vector<py::dict>>> get_instances(
-          std::vector<int64_t> img_ids, std::vector<int64_t> cat_ids, bool useCats);
+          const std::vector<int64_t> &img_ids, const std::vector<int64_t> &cat_ids, const bool &useCats);
 
     private:
       std::unordered_map<std::string, std::vector<py::dict>> data;
@@ -119,8 +119,7 @@ namespace coco_eval
         const ImageCategoryInstances<InstanceAnnotation> &
             image_category_detection_instances);
 
-    py::object deepcopy(const py::object &pyobj);
     long double calc_auc(const std::vector<long double> &recall_list, const std::vector<long double> &precision_list);
-    long double _summarize(int ap, double iouThr, std::string areaRng, int maxDet, std::vector<int> catIds, py::object params, std::vector<size_t> counts, py::object nums_array);
+    long double _summarize(const int &ap, const double &iouThr, const std::string &areaRng, const int &maxDet, const std::vector<int> &catIds, const py::object &params, const std::vector<size_t> &counts, const py::object &nums_array);
   } // namespace COCOeval
 } // namespace coco_eval

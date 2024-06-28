@@ -1,6 +1,7 @@
 # Original work Copyright (c) Piotr Dollar and Tsung-Yi Lin, 2014.
 # Modified work Copyright (c) 2024 MiXaiLL76
 
+import copy
 import json
 import logging
 import os
@@ -11,7 +12,6 @@ from typing import List, Optional, Union
 
 import numpy as np
 
-import faster_coco_eval.faster_eval_api_cpp as _C
 from faster_coco_eval.core import mask as maskUtils
 from faster_coco_eval.version import __author__, __version__
 
@@ -24,12 +24,16 @@ def _isArrayLike(obj):
 
 class COCO:
     def __init__(
-        self, annotation_file: Optional[Union[str, dict, os.PathLike]] = None
+        self,
+        annotation_file: Optional[Union[str, dict, os.PathLike]] = None,
+        use_deepcopy: bool = False,
     ):
         """Constructor of Microsoft COCO helper class.
 
         Args:
             annotation_file (str or dict or PathLike): path to annotation file
+            use_deepcopy (bool, optional):
+                whether to copy the dict annotations. Defaults to False.
 
         """
 
@@ -53,7 +57,10 @@ class COCO:
             if type(annotation_file) in [str, os.PathLike]:
                 self.dataset = self.load_json(annotation_file)
             elif type(annotation_file) is dict:
-                self.dataset = _C.deepcopy(annotation_file)
+                if use_deepcopy:
+                    self.dataset = copy.deepcopy(annotation_file)
+                else:
+                    self.dataset = annotation_file.copy()
             else:
                 self.dataset = None
 
@@ -389,7 +396,7 @@ class COCO:
         elif type(resFile) is np.ndarray:
             anns = self.loadNumpyAnnotations(resFile)
         else:
-            anns = _C.deepcopy(resFile)
+            anns = copy.deepcopy(resFile)
 
         assert type(anns) is list, "results in not an array of objects"
 
@@ -410,7 +417,9 @@ class COCO:
             for id, ann in enumerate(anns):
                 ann["id"] = id + 1
         elif "bbox" in anns[0] and not anns[0]["bbox"] == []:
-            res.dataset["categories"] = _C.deepcopy(self.dataset["categories"])
+            res.dataset["categories"] = copy.deepcopy(
+                self.dataset["categories"]
+            )
             for id, ann in enumerate(anns):
                 bb = ann["bbox"]
                 x1, x2, y1, y2 = [bb[0], bb[0] + bb[2], bb[1], bb[1] + bb[3]]
@@ -420,7 +429,9 @@ class COCO:
                 ann["id"] = id + 1
                 ann["iscrowd"] = 0
         elif "segmentation" in anns[0]:
-            res.dataset["categories"] = _C.deepcopy(self.dataset["categories"])
+            res.dataset["categories"] = copy.deepcopy(
+                self.dataset["categories"]
+            )
             for id, ann in enumerate(anns):
                 # now only support compressed RLE format as segmentation results
                 ann["area"] = maskUtils.area(ann["segmentation"])
@@ -429,7 +440,9 @@ class COCO:
                 ann["id"] = id + 1
                 ann["iscrowd"] = 0
         elif "keypoints" in anns[0]:
-            res.dataset["categories"] = _C.deepcopy(self.dataset["categories"])
+            res.dataset["categories"] = copy.deepcopy(
+                self.dataset["categories"]
+            )
             for id, ann in enumerate(anns):
                 s = ann["keypoints"]
                 x = s[0::3]

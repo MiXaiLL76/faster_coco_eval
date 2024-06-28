@@ -616,21 +616,13 @@ namespace coco_eval
       return Accumulate(params, result);
     }
 
-    py::object deepcopy(const py::object &pyobj)
-    {
-      auto _pyobj = pyobj;
-      return _pyobj;
-    }
-
     void Dataset::append(int64_t img_id, int64_t cat_id, py::dict ann)
     {
-      std::string key = std::to_string(img_id) + "_" + std::to_string(cat_id);
-      this->data[key].push_back(ann);
+      this->data[std::to_string(img_id) + "_" + std::to_string(cat_id)].push_back(ann);
     }
-    std::vector<py::dict> Dataset::get(int64_t img_id, int64_t cat_id)
+    std::vector<py::dict> Dataset::get(const int64_t &img_id, const int64_t &cat_id)
     {
-      std::string key = std::to_string(img_id) + "_" + std::to_string(cat_id);
-      return this->data[key];
+      return this->data[std::to_string(img_id) + "_" + std::to_string(cat_id)];
     }
 
     InstanceAnnotation parseInstanceAnnotation(const py::dict &ann)
@@ -675,7 +667,7 @@ namespace coco_eval
     }
 
     std::vector<InstanceAnnotation> Dataset::get_cpp_annotations(
-        int64_t img_id, int64_t cat_id)
+        const int64_t &img_id, const int64_t &cat_id)
     {
       std::string key = std::to_string(img_id) + "_" + std::to_string(cat_id);
       std::vector<InstanceAnnotation> result;
@@ -688,7 +680,7 @@ namespace coco_eval
     }
 
     std::vector<std::vector<std::vector<InstanceAnnotation>>> Dataset::get_cpp_instances(
-        std::vector<int64_t> img_ids, std::vector<int64_t> cat_ids, bool useCats)
+        const std::vector<int64_t> &img_ids, const std::vector<int64_t> &cat_ids, const bool &useCats)
     {
       std::vector<std::vector<std::vector<InstanceAnnotation>>> result;
       for (size_t i = 0; i < img_ids.size(); i++)
@@ -720,7 +712,7 @@ namespace coco_eval
     }
 
     std::vector<std::vector<std::vector<py::dict>>> Dataset::get_instances(
-        std::vector<int64_t> img_ids, std::vector<int64_t> cat_ids, bool useCats)
+        const std::vector<int64_t> &img_ids, const std::vector<int64_t> &cat_ids, const bool &useCats)
     {
       std::vector<std::vector<std::vector<py::dict>>> result;
       for (size_t i = 0; i < img_ids.size(); i++)
@@ -773,11 +765,14 @@ namespace coco_eval
       return result;
     }
 
-    long double _summarize(int ap, double iouThr, std::string areaRng, int maxDet, std::vector<int> catIds, py::object params, std::vector<size_t> counts, py::object nums_array)
+    long double _summarize(const int &ap, const double &iouThr, const std::string &areaRng, const int  &maxDet, const std::vector<int>  &catIds, const py::object  &params, const std::vector<size_t>  &counts, const py::object  &nums_array)
     {
       std::vector<std::string> areaRngLbl = list_to_vec<std::string>(params.attr("areaRngLbl"));
       std::vector<int> maxDets = list_to_vec<int>(params.attr("maxDets"));
       std::vector<double> iouThrs = list_to_vec<double>(params.attr("iouThrs"));
+
+      std::vector<int> _catIds;
+
 
       int iou_ind = v_index(iouThrs, iouThr);
       int aind = v_index(areaRngLbl, areaRng);
@@ -787,8 +782,10 @@ namespace coco_eval
       {
         for (size_t category = 0; category < counts[2]; category++)
         {
-          catIds.push_back(category);
+          _catIds.push_back(category);
         }
+      }else{
+        _catIds = catIds;
       }
 
       std::vector<long double> result;
@@ -805,7 +802,7 @@ namespace coco_eval
         {
           for (size_t recall_threshold = 0; recall_threshold < counts[1]; recall_threshold++)
           {
-            for (const auto &category : catIds)
+            for (const auto &category : _catIds)
             {
               long double pre = (long double)precision[iou_threshold][recall_threshold][category][aind][mind];
               if (pre != -1)
