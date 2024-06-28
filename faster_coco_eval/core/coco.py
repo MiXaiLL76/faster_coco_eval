@@ -50,6 +50,7 @@ class COCO:
         ), defaultdict(dict)
 
         self.print_function = logger.debug
+        self.use_deepcopy = use_deepcopy
 
         if annotation_file is not None:
             self._print_function("loading annotations into memory...")
@@ -57,7 +58,7 @@ class COCO:
             if type(annotation_file) in [str, os.PathLike]:
                 self.dataset = self.load_json(annotation_file)
             elif type(annotation_file) is dict:
-                if use_deepcopy:
+                if self.use_deepcopy:
                     self.dataset = copy.deepcopy(annotation_file)
                 else:
                     self.dataset = annotation_file.copy()
@@ -398,7 +399,10 @@ class COCO:
         elif type(resFile) is np.ndarray:
             anns = self.loadNumpyAnnotations(resFile)
         else:
-            anns = copy.deepcopy(resFile)
+            if self.use_deepcopy:
+                anns = copy.deepcopy(resFile)
+            else:
+                anns = resFile.copy()
 
         assert type(anns) is list, "results in not an array of objects"
 
