@@ -175,6 +175,9 @@ class TestBaseCoco(unittest.TestCase):
             iou_tresh=0.5,
             useCats=useCats,
         )
+
+        self.assertEqual(results.cocoEval.matched, True)
+
         result_cm = results.compute_confusion_matrix().tolist()
 
         self.assertEqual(result_cm, prepared_result)
