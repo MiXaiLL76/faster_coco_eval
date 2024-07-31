@@ -123,14 +123,7 @@ class COCOeval:
             logger.warning("lvis_style not supported for keypoint evaluation")
             self.lvis_style = False
 
-        if self.cocoDt is not None:
-            if self.extra_calc:
-                self.cocoDt.createSubIndex()
-
         if self.cocoGt is not None:
-            if self.extra_calc:
-                self.cocoGt.createSubIndex()
-
             self.params.imgIds = sorted(self.cocoGt.getImgIds())
             self.params.catIds = sorted(self.cocoGt.getCatIds())
 

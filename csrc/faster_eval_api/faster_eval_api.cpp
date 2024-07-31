@@ -49,12 +49,16 @@ namespace coco_eval
     m.def("COCOevalAccumulate", &COCOeval::Accumulate, "COCOeval::Accumulate");
     m.def("COCOevalEvaluateImages", &COCOeval::EvaluateImages, "COCOeval::EvaluateImages");
     m.def("COCOevalEvaluateAccumulate", &COCOeval::EvaluateAccumulate, "COCOeval::EvaluateAccumulate");
-    pybind11::class_<COCOeval::InstanceAnnotation>(m, "InstanceAnnotation").def(pybind11::init<uint64_t, double, double, bool, bool, bool>());
-    pybind11::class_<COCOeval::ImageEvaluation>(m, "ImageEvaluation").def(pybind11::init<>());
     
+    // slow!
     m.def("_summarize", &COCOeval::_summarize, "COCOeval::_summarize");
     m.def("calc_auc", &COCOeval::calc_auc, "COCOeval::calc_auc");
 
+    pybind11::class_<COCOeval::InstanceAnnotation>(m, "InstanceAnnotation")
+    .def(pybind11::init<uint64_t, double, double, bool, bool, bool>());
+
+    pybind11::class_<COCOeval::ImageEvaluation>(m, "ImageEvaluation").def(pybind11::init<>());
+    
     pybind11::class_<COCOeval::Dataset>(m, "Dataset").def(pybind11::init<>())
     .def("append", &COCOeval::Dataset::append)
     .def("get", &COCOeval::Dataset::get)

@@ -116,18 +116,6 @@ class COCOeval_faster(COCOevalBase):
         self.matched = False
         try:
             if self.extra_calc:
-                self.detection_matches = self.eval["detection_matches"]
-                assert self.detection_matches.shape[1] <= len(self.cocoDt.anns)
-
-                self.ground_truth_matches = self.eval["ground_truth_matches"]
-                assert self.ground_truth_matches.shape[1] <= len(
-                    self.cocoGt.anns
-                )
-
-                self.ground_truth_orig_id = self.eval["ground_truth_orig_id"]
-                assert self.ground_truth_orig_id.shape[1] <= len(
-                    self.cocoGt.anns
-                )
                 self.math_matches()
                 self.matched = True
         except Exception as e:
@@ -139,72 +127,19 @@ class COCOeval_faster(COCOevalBase):
         self.print_function("DONE (t={:0.2f}s).".format(toc - tic))
 
     def math_matches(self):
-        """For each ground truth, find the best matching detection and set the
-        detection as matched."""
-        for gidx, ground_truth_matches in enumerate(
-            self.ground_truth_matches[::-1]
-        ):
-            gt_ids = self.ground_truth_orig_id[-gidx - 1]
+        for dt_gt, iou in self.eval["matched"].items():
+            dt_id, gt_id = dt_gt.split("_")
 
-            for idx, dt_id in enumerate(ground_truth_matches):
-                if dt_id == 0:
-                    continue
+            dt_id = int(dt_id)
+            gt_id = int(gt_id)
 
-                gt_id = gt_ids[idx]
-                if gt_id <= -1:
-                    continue
+            _gt_ann = self.cocoGt.anns[gt_id]
+            _dt_ann = self.cocoDt.anns[dt_id]
 
-                _gt_ann = self.cocoGt.anns[gt_id]
-                _dt_ann = self.cocoDt.anns[dt_id]
-
-                if self.params.useCats:
-                    if _gt_ann["category_id"] != _dt_ann["category_id"]:
-                        continue
-
-                _img_id = self.cocoGt.ann_img_map[gt_id]
-                _catId = _gt_ann["category_id"] if self.params.useCats else -1
-
-                if self.params.useCats:
-                    _catId = _gt_ann["category_id"]
-                    _map_gt_dict = self.cocoGt.img_cat_ann_idx_map
-                    _map_dt_dict = self.cocoDt.img_cat_ann_idx_map
-                    _map_id = (_img_id, _catId)
-                else:
-                    _catId = -1
-                    _map_gt_dict = self.cocoGt.img_ann_idx_map
-                    _map_dt_dict = self.cocoDt.img_ann_idx_map
-                    _map_id = _img_id
-
-                iou_gt_id = _map_gt_dict[_map_id].get(gt_id)
-                iou_dt_id = _map_dt_dict[_map_id].get(dt_id)
-
-                if iou_gt_id is None or iou_dt_id is None:
-                    continue
-
-                iou = self.ious[(_img_id, _catId)][iou_dt_id, iou_gt_id]
-                if (iou <= 0) and self.params.useCats:
-                    continue
-
-                if not _gt_ann.get("matched", False):
-                    _dt_ann["tp"] = True
-                    _dt_ann["gt_id"] = gt_id
-                    _dt_ann["iou"] = iou
-
-                    _gt_ann["dt_id"] = dt_id
-                    _gt_ann["matched"] = True
-                else:
-                    _old_dt_ann = self.cocoDt.anns[_gt_ann["dt_id"]]
-
-                    if _old_dt_ann.get("iou", 0) < iou:
-                        for _key in ["tp", "gt_id", "iou"]:
-                            if _old_dt_ann.get(_key) is not None:
-                                del _old_dt_ann[_key]
-
-                        _dt_ann["tp"] = True
-                        _dt_ann["gt_id"] = gt_id
-                        _dt_ann["iou"] = iou
-
-                        _gt_ann["dt_id"] = dt_id
+            _dt_ann["tp"] = True
+            _dt_ann["gt_id"] = gt_id
+            _dt_ann["iou"] = iou
+            _gt_ann["dt_id"] = dt_id
 
         for dt_id in self.cocoDt.anns.keys():
             if self.cocoDt.anns[dt_id].get("gt_id") is None:
@@ -216,16 +151,14 @@ class COCOeval_faster(COCOevalBase):
 
     def compute_mIoU(self) -> float:
         """Compute the mIoU metric."""
-        ious = []
-        for _, dt_ann in self.cocoDt.anns.items():
-            if dt_ann.get("iou", False):
-                ious.append(dt_ann["iou"])
-        return sum(ious) / len(ious)
+        return sum(self.eval["matched"].values()) / len(self.eval["matched"])
 
     def compute_mAUC(self) -> float:
         """Compute the mAUC metric."""
         aucs = []
 
+        # K - category
+        # A - area_range
         for K in range(self.eval["counts"][2]):
             for A in range(self.eval["counts"][3]):
                 precision_list = self.eval["precision"][0, :, K, A, :].ravel()

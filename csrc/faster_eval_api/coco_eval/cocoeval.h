@@ -34,6 +34,18 @@ namespace coco_eval
       bool lvis_mark = false;
     };
 
+    // Stores the match between a detected instance and a ground truth instance
+    struct MatchedAnnotation
+    {
+      MatchedAnnotation(
+          uint64_t dt_id,
+          uint64_t gt_id,
+          double iou) : dt_id{dt_id}, gt_id{gt_id}, iou{iou} {}
+      uint64_t dt_id;
+      uint64_t gt_id;
+      double iou;
+    };
+
     // Stores intermediate results for evaluating detection results for a single
     // image that has D detected instances and G ground truth instances. This stores
     // matches between detected and ground truth instances
@@ -44,7 +56,6 @@ namespace coco_eval
       std::vector<int64_t> detection_matches;
 
       std::vector<int64_t> ground_truth_matches;
-      std::vector<int64_t> ground_truth_orig_id;
       // The detection score of each of the D detected instances
       std::vector<double> detection_scores;
 
@@ -55,6 +66,8 @@ namespace coco_eval
       // Marks whether or not each of D instances was ignored from evaluation (e.g.,
       // because it's outside aRng)
       std::vector<bool> detection_ignores;
+
+      std::vector<MatchedAnnotation> matched_annotations;
     };
 
     class Dataset

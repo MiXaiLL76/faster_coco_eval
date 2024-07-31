@@ -45,10 +45,6 @@ class COCO:
             {},
         )
         self.imgToAnns, self.catToImgs = defaultdict(list), defaultdict(list)
-        self.imgCatToAnnsIdx, self.imgToAnnsIdx = defaultdict(
-            dict
-        ), defaultdict(dict)
-
         self.print_function = logger.debug
         self.use_deepcopy = use_deepcopy
 
@@ -124,47 +120,6 @@ class COCO:
         self.catToImgs = catToImgs
         self.imgs = imgs
         self.cats = cats
-
-    def createSubIndex(self):
-        """Create sub index for mathing annotations and images.
-
-        This function is used for matching annotations and images in the
-        evaluation process. It creates a dictionary for each annotation
-        and image containing the annotations and images that are matched
-        to it.
-
-        """
-
-        tic = time.time()
-        # create index
-        self.print_function("creating sub_index...")
-        annToImgs = {}
-        imgCatToAnnsIdx = defaultdict(dict)
-        imgToAnnsIdx = defaultdict(dict)
-
-        imgCatToAnnsIdx_count = defaultdict(int)
-        imgToAnnsIdx_count = defaultdict(int)
-
-        for ann_id, ann in self.anns.items():
-            annToImgs[ann_id] = ann["image_id"]
-
-            imgCatToAnnsIdx[(ann["image_id"], ann["category_id"])][
-                ann["id"]
-            ] = imgCatToAnnsIdx_count[(ann["image_id"], ann["category_id"])]
-            imgCatToAnnsIdx_count[(ann["image_id"], ann["category_id"])] += 1
-
-            imgToAnnsIdx[ann["image_id"]][ann["id"]] = imgToAnnsIdx_count[
-                ann["image_id"]
-            ]
-            imgToAnnsIdx_count[ann["image_id"]] += 1
-
-        self.print_function("sub_index created!")
-        self.print_function("Done (t={:0.2f}s)".format(time.time() - tic))
-
-        # create class members
-        self.annToImgs = annToImgs
-        self.imgCatToAnnsIdx = imgCatToAnnsIdx
-        self.imgToAnnsIdx = imgToAnnsIdx
 
     def info(self):
         """Print information about the annotation file."""
@@ -640,18 +595,6 @@ class COCO:
     @property
     def cat_img_map(self):
         return self.catToImgs
-
-    @property
-    def ann_img_map(self):
-        return self.annToImgs
-
-    @property
-    def img_ann_idx_map(self):
-        return self.imgToAnnsIdx
-
-    @property
-    def img_cat_ann_idx_map(self):
-        return self.imgCatToAnnsIdx
 
     def __repr__(self):
         s = self.__class__.__name__ + "(annotation_file) # "
