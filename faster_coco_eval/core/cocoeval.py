@@ -201,11 +201,19 @@ class COCOeval:
 
             self.freq_groups = self._prepare_freq_group()
 
+        img_sizes = defaultdict(tuple)
+
+        def get_img_size_by_id(image_id) -> tuple:
+            if img_sizes.get(image_id) is None:
+                t = self.cocoGt.imgs[image_id]
+                img_sizes[image_id] = t["height"], t["width"]
+            return img_sizes[image_id]
+
         for gt in gts:
             # convert ground truth to mask if iouType == 'segm'
             if p.iouType == "segm":
-                t = self.cocoGt.imgs[gt["image_id"]]
-                h, w = t["height"], t["width"]
+                h, w = get_img_size_by_id(gt["image_id"])
+
                 gt["rle"] = maskUtils.segmToRle(gt["segmentation"], w, h)
             self.gt_dataset.append(gt["image_id"], gt["category_id"], gt)
 
@@ -224,8 +232,7 @@ class COCOeval:
 
             # convert ground truth to mask if iouType == 'segm'
             if p.iouType == "segm":
-                t = self.cocoGt.imgs[dt["image_id"]]
-                h, w = t["height"], t["width"]
+                h, w = get_img_size_by_id(gt["image_id"])
                 dt["rle"] = maskUtils.segmToRle(dt["segmentation"], w, h)
             self.dt_dataset.append(img_id, cat_id, dt)
 

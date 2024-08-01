@@ -167,23 +167,44 @@ class COCO:
                 anns = self.dataset["annotations"]
 
             if check_cat:
-                anns = [ann for ann in anns if ann["category_id"] in catIds]
+                anns = list(
+                    filter(lambda ann: ann["category_id"] in catIds, anns)
+                )
+                # anns = [ann for ann in anns if ann["category_id"] in catIds]
 
             if check_area:
-                anns = [
-                    ann
-                    for ann in anns
-                    if ann["area"] > areaRng[0] and ann["area"] < areaRng[1]
-                ]
+                anns = list(
+                    filter(
+                        lambda ann: (
+                            ann["area"] > areaRng[0]
+                            and ann["area"] < areaRng[1]
+                        ),
+                        anns,
+                    )
+                )
+                # anns = [
+                #     ann
+                #     for ann in anns
+                #     if ann["area"] > areaRng[0] and ann["area"] < areaRng[1]
+                # ]
 
             if check_crowd:
-                anns = [
-                    ann
-                    for ann in anns
-                    if int(ann.get("iscrowd", 0)) == int(iscrowd)
-                ]
+                anns = list(
+                    filter(
+                        lambda ann: (
+                            int(ann.get("iscrowd", 0)) == int(iscrowd)
+                        ),
+                        anns,
+                    )
+                )
+                # anns = [
+                #     ann
+                #     for ann in anns
+                #     if int(ann.get("iscrowd", 0)) == int(iscrowd)
+                # ]
 
-        ids = [ann["id"] for ann in anns]
+        ids = list(map(lambda ann: ann["id"], anns))
+        # ids = [ann["id"] for ann in anns]
 
         return ids
 
@@ -215,26 +236,36 @@ class COCO:
             cats = self.dataset["categories"]
 
             if len(catNms) > 0:
-                name_to_cat = {cat.get("name"): cat for cat in cats}
-                cats = [
-                    name_to_cat[label]
-                    for label in catNms
-                    if name_to_cat.get(label)
-                ]
+                cats = list(filter(lambda cat: cat.get("name") in catNms, cats))
+
+                # name_to_cat = {cat.get("name"): cat for cat in cats}
+                # cats = [
+                #     name_to_cat[label]
+                #     for label in catNms
+                #     if name_to_cat.get(label)
+                # ]
 
             if len(supNms) > 0:
-                supercategory_to_cat = {
-                    cat.get("supercategory"): cat for cat in cats
-                }
-                cats = [
-                    supercategory_to_cat[label]
-                    for label in supNms
-                    if supercategory_to_cat.get(label)
-                ]
+                cats = list(
+                    filter(lambda cat: cat.get("supercategory") in supNms, cats)
+                )
+
+                # supercategory_to_cat = {
+                #     cat.get("supercategory"): cat for cat in cats
+                # }
+                # cats = [
+                #     supercategory_to_cat[label]
+                #     for label in supNms
+                #     if supercategory_to_cat.get(label)
+                # ]
 
             if len(catIds) > 0:
-                id_to_cat = {cat.get("id"): cat for cat in cats}
-                cats = [id_to_cat[idx] for idx in catIds if id_to_cat.get(idx)]
+                cats = list(filter(lambda cat: cat.get("id") in catIds, cats))
+
+                # id_to_cat = {cat.get("id"): cat for cat in cats}
+                # cats = [
+                #   id_to_cat[idx] for idx in catIds if id_to_cat.get(idx)
+                # ]
 
         ids = [cat["id"] for cat in cats]
         return ids
@@ -267,7 +298,7 @@ class COCO:
                     ids &= set(self.catToImgs[catId])
         return list(ids)
 
-    def loadAnns(self, ids: List[int] = []) -> List[dict]:
+    def loadAnns(self, ids: Union[List[int], int] = []) -> List[dict]:
         """Load anns with the specified ids.
 
         Args:
@@ -283,7 +314,7 @@ class COCO:
         elif type(ids) is int:
             return [self.anns[ids]]
 
-    def loadCats(self, ids: List[int] = []) -> List[dict]:
+    def loadCats(self, ids: Union[List[int], int] = []) -> List[dict]:
         """Load categories with the specified ids.
 
         Args:
@@ -298,7 +329,7 @@ class COCO:
         elif type(ids) is int:
             return [self.cats[ids]]
 
-    def loadImgs(self, ids: List[int] = []) -> List[dict]:
+    def loadImgs(self, ids: Union[List[int], int] = []) -> List[dict]:
         """Load images with the specified ids.
 
         Args:

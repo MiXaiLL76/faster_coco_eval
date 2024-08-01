@@ -2,6 +2,7 @@
 # Modified work Copyright (c) 2024 MiXaiLL76
 
 import copy
+import itertools
 import logging
 import time
 from typing import List, Union
@@ -54,8 +55,7 @@ class COCOeval_faster(COCOevalBase):
 
         self.ious = {
             (imgId, catId): computeIoU(imgId, catId)
-            for imgId in p.imgIds
-            for catId in catIds
+            for (imgId, catId) in itertools.product(p.imgIds, catIds)
         }  # bottleneck
 
         # Convert GT annotations, detections, and IOUs to a format that's fast to access in C++ # noqa: E501
@@ -66,6 +66,7 @@ class COCOeval_faster(COCOevalBase):
             p.imgIds, p.catIds, bool(p.useCats)
         )
 
+        # List Comp faster then map of map
         ious = [
             [self.ious[imgId, catId] for catId in catIds] for imgId in p.imgIds
         ]
