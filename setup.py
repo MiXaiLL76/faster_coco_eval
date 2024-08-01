@@ -105,12 +105,19 @@ def get_extensions(version_info):
     ]
     print("Sources: {}".format(sources))
 
+    extra_compile_args = [
+        "-std=c++17",
+        "-ffinite-math-only",
+        "-fno-signed-zeros",
+        "-ftree-vectorize",
+    ]
+
     ext_modules += [
         Pybind11Extension(
             name="faster_coco_eval.faster_eval_api_cpp",
             sources=sources,
             define_macros=[("VERSION_INFO", version_info)],
-            extra_compile_args=["-std=c++17"],
+            extra_compile_args=extra_compile_args,
         )
     ]
 
@@ -125,7 +132,7 @@ def get_extensions(version_info):
             name="faster_coco_eval.mask_api_new_cpp",
             sources=sources,
             define_macros=[("VERSION_INFO", version_info)],
-            extra_compile_args=["-std=c++17"],
+            extra_compile_args=extra_compile_args,
         )
     ]
 

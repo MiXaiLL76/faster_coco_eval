@@ -210,16 +210,13 @@ namespace mask_api
             uint64_t j = 0;
             double scale = 5;
 
-            std::vector<int> x;
-            std::vector<int> y;
-            for (j = 0; j < k; j++)
-                x.push_back((int)(scale * xy[j * 2 + 0] + .5));
-
+            std::vector<int> x(k+1);
+            std::vector<int> y(k+1);
+            for (j = 0; j < k; j++){
+                x[j]=(int)(scale*xy[j*2+0]+.5);
+                y[j]=(int)(scale*xy[j*2+1]+.5);
+            }
             x[k] = x[0];
-
-            for (j = 0; j < k; j++)
-                y.push_back((int)(scale * xy[j * 2 + 1] + .5));
-
             y[k] = y[0];
 
             std::vector<int> u;
