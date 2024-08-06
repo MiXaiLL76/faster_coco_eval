@@ -147,8 +147,8 @@ class COCO:
             ids (int array) : integer array of ann ids that satisfy the criteria
 
         """
-        imgIds = imgIds if _isArrayLike(imgIds) else [imgIds]
-        catIds = catIds if _isArrayLike(catIds) else [catIds]
+        imgIds = set(imgIds if _isArrayLike(imgIds) else [imgIds])
+        catIds = set(catIds if _isArrayLike(catIds) else [catIds])
 
         check_area = len(areaRng) == 2
         check_crowd = iscrowd is not None
@@ -226,9 +226,9 @@ class COCO:
 
         """
 
-        catNms = catNms if _isArrayLike(catNms) else [catNms]
-        supNms = supNms if _isArrayLike(supNms) else [supNms]
-        catIds = catIds if _isArrayLike(catIds) else [catIds]
+        catNms = set(catNms if _isArrayLike(catNms) else [catNms])
+        supNms = set(supNms if _isArrayLike(supNms) else [supNms])
+        catIds = set(catIds if _isArrayLike(catIds) else [catIds])
 
         if len(catNms) == len(supNms) == len(catIds) == 0:
             cats = self.dataset["categories"]
