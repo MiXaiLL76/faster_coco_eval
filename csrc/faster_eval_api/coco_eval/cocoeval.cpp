@@ -630,11 +630,11 @@ namespace coco_eval
 
     void Dataset::append(int64_t img_id, int64_t cat_id, py::dict ann)
     {
-      this->data[std::to_string(img_id) + "_" + std::to_string(cat_id)].push_back(ann);
+      this->data[{img_id, cat_id}].push_back(ann);
     }
     std::vector<py::dict> Dataset::get(const int64_t &img_id, const int64_t &cat_id)
     {
-      std::string key = std::to_string(img_id) + "_" + std::to_string(cat_id);
+      std::pair<int64_t, int64_t> key(img_id, cat_id);
 
       if (this->data.find(key) != this->data.end())
       {

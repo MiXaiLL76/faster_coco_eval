@@ -70,10 +70,32 @@ namespace coco_eval
       std::vector<MatchedAnnotation> matched_annotations;
     };
 
+    template <class T>
+    inline void hash_combine(std::size_t &seed, const T &v)
+    {
+      std::hash<T> hasher;
+      seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+
+    struct hash_pair
+    {
+      std::size_t operator()(const std::pair<int64_t, int64_t> &p) const
+      {
+        std::size_t h = 0;
+        hash_combine(h, p.first);
+        hash_combine(h, p.second);
+        return h;
+      }
+    };
+
     class Dataset
     {
     public:
-      Dataset() {}
+      Dataset()
+      {
+        this->data.reserve(8192); // RESERVING SPACE BEFOREHAND
+        // this->data.max_load_factor(0.25); // DECREASING MAX_LOAD_FACTOR
+      }
       void append(int64_t img_id, int64_t cat_id, py::dict ann);
       std::vector<py::dict> get(const int64_t &img_id, const int64_t &cat_id);
       std::vector<InstanceAnnotation> get_cpp_annotations(
@@ -86,7 +108,7 @@ namespace coco_eval
           const std::vector<int64_t> &img_ids, const std::vector<int64_t> &cat_ids, const bool &useCats);
 
     private:
-      std::unordered_map<std::string, std::vector<py::dict>> data;
+      std::unordered_map<std::pair<int64_t, int64_t>, std::vector<py::dict>, hash_pair> data;
     };
 
     template <class T>
