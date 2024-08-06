@@ -232,7 +232,7 @@ class COCOeval:
 
             # convert ground truth to mask if iouType == 'segm'
             if p.iouType == "segm":
-                h, w = get_img_size_by_id(gt["image_id"])
+                h, w = get_img_size_by_id(dt["image_id"])
                 dt["rle"] = maskUtils.segmToRle(dt["segmentation"], w, h)
             self.dt_dataset.append(img_id, cat_id, dt)
 
@@ -279,7 +279,7 @@ class COCOeval:
             0
         ]  # 1 imgId  1 catId
 
-        if len(gt) == 0 and len(dt) == 0:
+        if len(gt) == 0 or len(dt) == 0:
             return []
 
         inds = np.argsort([-d["score"] for d in dt], kind="mergesort")
