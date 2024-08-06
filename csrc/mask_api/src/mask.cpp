@@ -292,7 +292,7 @@ namespace mask_api
                 a.push_back((uint)(x[j] * (int)(h) + y[j]));
             a.push_back((uint)(h * w));
 
-            std::sort(a.begin(), a.end());
+            std::stable_sort(a.begin(), a.end());
 
             uint p = 0;
             for (j = 0; j < a.size(); j++)
