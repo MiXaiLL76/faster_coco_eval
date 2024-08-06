@@ -634,7 +634,16 @@ namespace coco_eval
     }
     std::vector<py::dict> Dataset::get(const int64_t &img_id, const int64_t &cat_id)
     {
-      return this->data[std::to_string(img_id) + "_" + std::to_string(cat_id)];
+      std::string key = std::to_string(img_id) + "_" + std::to_string(cat_id);
+
+      if (this->data.find(key) != this->data.end())
+      {
+        return this->data[key];
+      }
+      else
+      {
+        return std::vector<py::dict>();
+      }
     }
 
     InstanceAnnotation parseInstanceAnnotation(const py::dict &ann)
@@ -681,9 +690,8 @@ namespace coco_eval
     std::vector<InstanceAnnotation> Dataset::get_cpp_annotations(
         const int64_t &img_id, const int64_t &cat_id)
     {
-      std::string key = std::to_string(img_id) + "_" + std::to_string(cat_id);
-      std::vector<InstanceAnnotation> result;
       std::vector<py::dict> anns = get(img_id, cat_id);
+      std::vector<InstanceAnnotation> result;
       for (size_t i = 0; i < anns.size(); i++)
       {
         result.push_back(parseInstanceAnnotation(anns[i]));
