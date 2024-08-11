@@ -33,7 +33,7 @@ namespace mask_api
             std::vector<uint> cnts;
         };
 
-        RLE rleErode_3x3(const RLE &rle);
+        RLE rleErode_3x3(const RLE &rle, int dilation);
         std::vector<py::dict> erode_3x3(const std::vector<py::dict> &rleObjs);
 
         RLE rleToBoundary(const RLE &rle, const double &dilation_ratio);

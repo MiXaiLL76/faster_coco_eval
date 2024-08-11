@@ -424,7 +424,7 @@ namespace mask_api
             return rleDecode(_frString(R));
         }
 
-        RLE rleErode_3x3(const RLE &rle)
+        RLE rleErode_3x3(const RLE &rle, int dilation = 1)
         {
             bool v = false;
             int64_t max_len = rle.w * rle.h;
@@ -440,8 +440,32 @@ namespace mask_api
                 v = !v;
                 ptr += count; });
 
-            std::vector<int> ofsvec = {(int)rle.h, 1, (int)rle.h - 1, (int)rle.h + 1};
-            std::vector<int> ofsvec_bottom = {1, (int)-rle.h + 1, (int)rle.h + 1};
+            std::vector<int> ofsvec;
+            std::vector<int> ofsvec_bottom;
+
+            for (int i = dilation; i >= 0; i--)
+            {
+                for (int j = dilation; j >= -dilation; j--)
+                {
+                    if (i == 0 && j <= 0)
+                    {
+                        continue;
+                    }
+                    if (i > 0)
+                    {
+                        ofsvec.push_back(i * rle.h + j);
+                    }
+                    else
+                    {
+                        ofsvec.push_back(j);
+                    }
+                }
+            }
+
+            for (int i = dilation; i >= -dilation; i--)
+            {
+                ofsvec_bottom.push_back(i * rle.h + dilation);
+            }
 
             int64_t c = 0;
             int64_t ic = 0;
@@ -469,8 +493,7 @@ namespace mask_api
                                 return (
                                     (test_ptr > 0) && 
                                     (test_ptr < max_len) && _counts[test_ptr]
-                                ); 
-                            });
+                                ); });
                         }
                         else
                         {
@@ -482,7 +505,7 @@ namespace mask_api
                                     (_test_ptr > 0) && _counts[_test_ptr] && 
                                     (test_ptr < max_len) && _counts[test_ptr]
                                 ); });
-                        }   
+                        }
 
                         if (_min)
                         {
@@ -534,14 +557,9 @@ namespace mask_api
             {
                 dilation = 1;
             }
-
-            RLE erode_rle(rle);
-            for (int i = 0; i < dilation; i++)
-            {
-                erode_rle = rleErode_3x3(erode_rle);
-            }
-            return rleMerge({rle, erode_rle}, -1);
+            return rleMerge({rle, rleErode_3x3(rle, dilation)}, -1);
         }
+
         std::vector<py::dict> toBoundary(const std::vector<py::dict> &rleObjs, const double &dilation_ratio)
         {
             std::vector<RLE> rles = _frString(rleObjs);
