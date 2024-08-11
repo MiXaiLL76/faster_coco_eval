@@ -58,7 +58,7 @@ namespace coco_eval
       ignores->reserve(ground_truth_instances.size());
       for (auto o : ground_truth_instances)
       {
-        ignores->push_back(
+        ignores->emplace_back(
             o.ignore || o.area < area_range[0] || o.area > area_range[1]);
       }
 
@@ -296,9 +296,9 @@ namespace coco_eval
              d < (int)evaluation.detection_scores.size() && d < max_detections;
              ++d)
         { // detected instances
-          evaluation_indices->push_back(evaluation_index + i);
-          image_detection_indices->push_back(d);
-          detection_scores->push_back(evaluation.detection_scores[d]);
+          evaluation_indices->emplace_back(evaluation_index + i);
+          image_detection_indices->emplace_back(d);
+          detection_scores->emplace_back(evaluation.detection_scores[d]);
         }
         for (auto ground_truth_ignore : evaluation.ground_truth_ignores)
         {
@@ -389,13 +389,13 @@ namespace coco_eval
 
         const double recall =
             static_cast<double>(true_positives_sum) / num_valid_ground_truth;
-        recalls->push_back(recall);
+        recalls->emplace_back(recall);
         const int64_t num_valid_detections =
             true_positives_sum + false_positives_sum;
         const double precision = num_valid_detections > 0
                                      ? static_cast<double>(true_positives_sum) / num_valid_detections
                                      : 0.0;
-        precisions->push_back(precision);
+        precisions->emplace_back(precision);
       }
 
       (*recalls_out)[recalls_out_index] = !recalls->empty() ? recalls->back() : 0;
@@ -630,7 +630,7 @@ namespace coco_eval
 
     void Dataset::append(int64_t img_id, int64_t cat_id, py::dict ann)
     {
-      this->data[{img_id, cat_id}].push_back(ann);
+      this->data[{img_id, cat_id}].emplace_back(ann);
     }
     std::vector<py::dict> Dataset::get(const int64_t &img_id, const int64_t &cat_id)
     {
@@ -720,7 +720,7 @@ namespace coco_eval
 
           if (useCats)
           {
-            result[i].push_back(anns);
+            result[i].emplace_back(anns);
           }
           else
           {
@@ -752,7 +752,7 @@ namespace coco_eval
 
           if (useCats)
           {
-            result[i].push_back(anns);
+            result[i].emplace_back(anns);
           }
           else
           {
@@ -801,7 +801,7 @@ namespace coco_eval
       {
         for (size_t category = 0; category < counts[2]; category++)
         {
-          _catIds.push_back(category);
+          _catIds.emplace_back(category);
         }
       }
       else
@@ -828,7 +828,7 @@ namespace coco_eval
               long double pre = (long double)precision[iou_threshold][recall_threshold][category][aind][mind];
               if (pre != -1)
               {
-                result.push_back(pre);
+                result.emplace_back(pre);
               }
             }
           }
@@ -849,7 +849,7 @@ namespace coco_eval
             long double rec = (long double)recall[iou_threshold][category][aind][mind];
             if (rec != -1)
             {
-              result.push_back(rec);
+              result.emplace_back(rec);
             }
           }
         }
