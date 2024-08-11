@@ -49,6 +49,12 @@ namespace mask_api
 
     m.def("get_compiler_version", &get_compiler_version, "get_compiler_version");
 
+    m.def("rleErode_3x3", &Mask::rleErode_3x3, "Mask::rleErode_3x3");
+    m.def("erode_3x3", &Mask::erode_3x3, "Mask::erode_3x3");
+
+    m.def("rleToBoundary", &Mask::rleToBoundary, "Mask::rleToBoundary");
+    m.def("toBoundary", &Mask::toBoundary, "Mask::toBoundary");
+
     m.def("rleEncode", &Mask::rleEncode, "Mask::rleEncode");
     m.def("rleDecode", &Mask::rleDecode, "Mask::rleDecode");
 
@@ -73,8 +79,8 @@ namespace mask_api
     m.def("iou", &Mask::iou, "Mask::iou");
 
     m.def("toBbox", &Mask::toBbox, "Mask::toBbox");
-    m.def("merge", py::overload_cast<const std::vector<py::dict>&, const uint64_t&>(&Mask::merge), "Mask::merge");
-    m.def("merge", py::overload_cast<const std::vector<py::dict>&>(&Mask::merge), "Mask::merge");
+    m.def("merge", py::overload_cast<const std::vector<py::dict> &, const int &>(&Mask::merge), "Mask::merge");
+    m.def("merge", py::overload_cast<const std::vector<py::dict> &>(&Mask::merge), "Mask::merge");
 
     m.def("area", &Mask::area, "Mask::area");
     m.def("bbIou", &Mask::bbIou, "Mask::bbIou");

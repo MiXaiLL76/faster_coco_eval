@@ -33,9 +33,15 @@ namespace mask_api
             std::vector<uint> cnts;
         };
 
-        py::array_t<uint, py::array::f_style> rleDecode(const std::vector<RLE> &R);
+        RLE rleErode_3x3(const RLE &rle);
+        std::vector<py::dict> erode_3x3(const std::vector<py::dict> &rleObjs);
 
-        std::vector<RLE> rleEncode(const py::array_t<uint, py::array::f_style> &M, const uint64_t &h, const uint64_t &w, const uint64_t &n);
+        RLE rleToBoundary(const RLE &rle, const double &dilation_ratio);
+        std::vector<py::dict> toBoundary(const std::vector<py::dict> &rleObjs, const double &dilation_ratio);
+
+        py::array_t<uint8_t, py::array::f_style> rleDecode(const std::vector<RLE> &R, int padding);
+        std::vector<RLE> rleEncode(const py::array_t<uint8_t, py::array::f_style> &M, const uint64_t &h, const uint64_t &w, const uint64_t &n, int padding);
+
         py::bytes rleToString(const RLE &R);
         RLE rleFrString(const std::string &s, const uint64_t &h, const uint64_t &w);
 
@@ -46,11 +52,11 @@ namespace mask_api
         RLE rleMerge(const std::vector<RLE> &R, const int &intersect);
 
         // pyx functions
-        py::array_t<uint, py::array::f_style> decode(const std::vector<py::dict> &R);
-        std::vector<py::dict> encode(const py::array_t<uint, py::array::f_style> &M);
+        py::array_t<uint8_t, py::array::f_style> decode(const std::vector<py::dict> &R);
+        std::vector<py::dict> encode(const py::array_t<uint8_t, py::array::f_style> &M);
 
         py::array_t<double> toBbox(const std::vector<py::dict> &R);
-        py::dict merge(const std::vector<py::dict> &rleObjs, const uint64_t &intersect);
+        py::dict merge(const std::vector<py::dict> &rleObjs, const int &intersect);
         py::dict merge(const std::vector<py::dict> &rleObjs);
         py::array_t<uint> area(const std::vector<py::dict> &rleObjs);
         std::variant<py::array_t<double, py::array::f_style>, std::vector<double>> iou(const py::object &dt, const py::object &gt, const std::vector<int> &iscrowd);
