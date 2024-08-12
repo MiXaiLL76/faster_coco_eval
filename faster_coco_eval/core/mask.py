@@ -1,8 +1,15 @@
 # Original work Copyright (c) Piotr Dollar and Tsung-Yi Lin, 2014.
 # Modified work Copyright (c) 2024 MiXaiLL76
-from typing import List, Union
+from typing import List, Literal, Union
 
 import numpy as np
+
+try:
+    import cv2
+
+    opencv_available = True
+except ImportError:
+    opencv_available = False
 
 import faster_coco_eval.mask_api_new_cpp as _mask
 
@@ -27,6 +34,60 @@ def segmToRle(segm: Union[List[float], List[int], dict], w: int, h: int):
         return segm
     else:
         return _mask.segmToRle(segm, w, h)
+
+
+def rleToBoundaryCV(rle: dict, dilation_ratio: float = 0.02) -> dict:
+    """Convert run-length encoding to boundary rle.
+
+    Args:
+        rle (dict): run-length encoding of a binary mask
+        dilation_ratio (float): ratio of dilation to apply to the mask
+
+    """
+    mask = _mask.decode([rle])[:, :, 0]
+    h, w = rle["size"]
+
+    img_diag = np.sqrt(h**2 + w**2)
+    dilation = int(round(dilation_ratio * img_diag))
+    if dilation < 1:
+        dilation = 1
+    # Pad image so mask truncated by the image border is
+    # also considered as boundary.
+    new_mask = cv2.copyMakeBorder(
+        mask, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=0
+    )
+    kernel = np.ones((3, 3), dtype=np.uint8)
+    new_mask_erode = cv2.erode(new_mask, kernel, iterations=dilation)
+    mask_erode = new_mask_erode[1 : h + 1, 1 : w + 1]
+    # G_d intersects G in the paper.
+    boundary_mask = mask - mask_erode
+    return _mask.encode(boundary_mask[..., None])[0]
+
+
+def rleToBoundary(
+    rle: dict,
+    dilation_ratio: float = 0.02,
+    backend: Literal["mask_api", "opencv"] = "mask_api",
+) -> dict:
+    """Convert run-length encoding to boundary rle.
+
+    Args:
+        rle (dict): run-length encoding of a binary mask
+        dilation_ratio (float): ratio of dilation to apply to the mask
+        backend (str): backend to use for conversion
+            - "mask_api": uses the mask_api_new_cpp backend
+            - "opencv": uses OpenCV for conversion
+
+    """
+    if backend == "mask_api":
+        return _mask.toBoundary([rle], dilation_ratio)[0]
+    else:
+        if not opencv_available:
+            raise ImportError(
+                "OpenCV is not available. Please install OpenCV to use this"
+                " function."
+            )
+        return rleToBoundaryCV(rle, dilation_ratio)
 
 
 def iou(
