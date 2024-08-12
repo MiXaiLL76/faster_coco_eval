@@ -35,8 +35,8 @@ namespace mask_api
             std::vector<RLE> RLES;
             for (uint64_t i = 0; i < n; i++)
             {
-                std::vector<uint> cnts;
-                uint p = 0;
+                std::vector<uint> cnts = {};
+                uint8_t p = 0;
                 uint c = 0;
                 for (uint64_t row = padding; row < (w - padding); row++)
                 {
@@ -45,7 +45,7 @@ namespace mask_api
 
                         if (mask(col, row, i) != p)
                         {
-                            cnts.push_back(c);
+                            cnts.emplace_back(c);
                             c = 0;
                             p = mask(col, row, i);
                         }
@@ -53,9 +53,9 @@ namespace mask_api
                     }
                 }
 
-                cnts.push_back(c);
+                cnts.emplace_back(c);
 
-                RLES.push_back(RLE(h, w, cnts.size(), cnts));
+                RLES.emplace_back(h, w, cnts.size(), cnts);
             }
             return RLES;
         }
