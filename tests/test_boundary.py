@@ -37,7 +37,10 @@ class TestBoundary(unittest.TestCase):
         self.mini_mask_rle = mask_util.encode(mini_mask)
         self.rle_80_70 = mask_util.segmToRle(segm, 80, 70)
 
-    def test_rleToBoundary(self):
+    def test_rleToBoundary_all(self):
+        if not mask_util.opencv_available:
+            raise unittest.SkipTest("OpenCV is not available. Skipping test.")
+
         mask_api_rle = mask_util.rleToBoundary(
             self.rle_80_70, backend="mask_api"
         )
@@ -53,6 +56,23 @@ class TestBoundary(unittest.TestCase):
 
         self.assertTrue(
             np.array_equal(mask_api_rle_mask, self.mini_mask_boundry)
+        )
+        self.assertTrue(np.array_equal(opencv_rle_mask, self.mini_mask_boundry))
+
+    def test_rleToBoundary_mask_api(self):
+        mask_api_rle_mask = mask_util.decode(
+            [mask_util.rleToBoundary(self.mini_mask_rle, backend="mask_api")]
+        )
+        self.assertTrue(
+            np.array_equal(mask_api_rle_mask, self.mini_mask_boundry)
+        )
+
+    def test_rleToBoundary_opencv(self):
+        if not mask_util.opencv_available:
+            raise unittest.SkipTest("OpenCV is not available. Skipping test.")
+
+        opencv_rle_mask = mask_util.decode(
+            [mask_util.rleToBoundary(self.mini_mask_rle, backend="opencv")]
         )
         self.assertTrue(np.array_equal(opencv_rle_mask, self.mini_mask_boundry))
 
