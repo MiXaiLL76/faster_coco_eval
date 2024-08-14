@@ -30,10 +30,7 @@ def segmToRle(segm: Union[List[float], List[int], dict], w: int, h: int):
         rle (dict): run-length encoding of the segmentation map
 
     """
-    if (type(segm) is dict) and (type(segm["counts"]) is not list):
-        return segm
-    else:
-        return _mask.segmToRle(segm, w, h)
+    return _mask.segmToRle(segm, w, h)
 
 
 def rleToBoundaryCV(rle: dict, dilation_ratio: float = 0.02) -> dict:
@@ -75,7 +72,7 @@ def rleToBoundary(
         rle (dict): run-length encoding of a binary mask
         dilation_ratio (float): ratio of dilation to apply to the mask
         backend (str): backend to use for conversion
-            - "mask_api": uses the mask_api_new_cpp backend
+            - "mask_api": uses the faster_eval_api_cpp backend
             - "opencv": uses OpenCV for conversion
 
     """
