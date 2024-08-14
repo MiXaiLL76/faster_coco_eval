@@ -126,7 +126,7 @@ class TestMaskApi(unittest.TestCase):
     def test_frUncompressedRLE(self):
         self.assertEqual(
             self.compressed_rle,
-            _mask.frUncompressedRLE([self.uncompressed_rle], 20, 20)[0],
+            _mask.frUncompressedRLE([self.uncompressed_rle])[0],
         )
 
     @parameterized.expand([_mask, mask_util])
