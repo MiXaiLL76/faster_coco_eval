@@ -5,6 +5,6 @@ requires = [
     "build",
     "oldest-supported-numpy",
     "cython",
-    "pybind11==2.11.1",
+    "pybind11==2.13.1",
 ]
 build-backend = "setuptools.build_meta"
