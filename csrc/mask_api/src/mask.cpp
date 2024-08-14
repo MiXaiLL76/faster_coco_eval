@@ -342,27 +342,9 @@ namespace mask_api
             std::vector<RLE> result;
             for (uint64_t i = 0; i < R.size(); i++)
             {
-                std::vector<uint64_t> size;
-                std::string counts;
-
-                for (auto it : R[i])
-                {
-                    std::string name = it.first.cast<std::string>();
-
-                    if (name == "size")
-                    {
-                        size = it.second.cast<std::vector<uint64_t>>();
-                    }
-                    else if (name == "counts")
-                    {
-                        counts = it.second.cast<std::string>();
-                    }
-                }
-
-                if (size.size() == 2)
-                {
-                    result.push_back(rleFrString(counts, size[0], size[1]));
-                }
+                std::pair<uint64_t, uint64_t> size = R[i]["size"].cast<std::pair<uint64_t, uint64_t>>();
+                std::string counts = R[i]["counts"].cast<std::string>();
+                result.push_back(rleFrString(counts, size.first, size.second));
             }
             return result;
         }
@@ -594,15 +576,19 @@ namespace mask_api
                 {
                     cnts[a] = R[0].cnts[a];
                 }
+
+                RLE B(0,0,{});
+                RLE A(h,w,m,{});
+
                 for (i = 1; i < n; i++)
                 {
-                    RLE B = R[i];
+                    B = R[i];
                     if (B.h != h || B.w != w)
                     {
                         h = w = m = 0;
                         break;
                     }
-                    RLE A = RLE(h, w, m, cnts);
+                    A = RLE(h, w, m, cnts);
                     ca = A.cnts[0];
                     cb = B.cnts[0];
                     v = va = vb = false;
@@ -718,32 +704,14 @@ namespace mask_api
             return rleToUncompressedRLE(_frString(Rles));
         }
 
-        std::vector<py::dict> frUncompressedRLE(const std::vector<py::dict> &ucRles, const uint64_t &h, const uint64_t &w)
+        std::vector<py::dict> frUncompressedRLE(const std::vector<py::dict> &ucRles)
         {
             std::vector<RLE> rles;
             for (uint64_t i = 0; i < ucRles.size(); i++)
             {
-                std::vector<uint64_t> size;
-                std::vector<uint> counts;
-
-                for (auto it : ucRles[i])
-                {
-                    std::string name = it.first.cast<std::string>();
-
-                    if (name == "size")
-                    {
-                        size = it.second.cast<std::vector<uint64_t>>();
-                    }
-                    else if (name == "counts")
-                    {
-                        counts = it.second.cast<std::vector<uint>>();
-                    }
-                }
-
-                if (size.size() == 2)
-                {
-                    rles.push_back(RLE(size[0], size[1], counts.size(), counts));
-                }
+                std::pair<uint64_t, uint64_t> size = ucRles[i]["size"].cast<std::pair<uint64_t, uint64_t>>();
+                std::vector<uint> counts = ucRles[i]["counts"].cast<std::vector<uint>>();
+                rles.emplace_back(size.first, size.second, counts.size(), counts);
             }
             return _toString(rles);
         }
@@ -1021,7 +989,7 @@ namespace mask_api
 
                 if (sub_type == "<class 'dict'>")
                 {
-                    return frUncompressedRLE(pyobj.cast<std::vector<py::dict>>(), h, w);
+                    return frUncompressedRLE(pyobj.cast<std::vector<py::dict>>());
                 }
                 else if (sub_type == "<class 'list'>" or sub_type == "<class 'numpy.ndarray'>")
                 {
@@ -1055,7 +1023,7 @@ namespace mask_api
             }
             else if (type == "<class 'dict'>")
             {
-                return frUncompressedRLE({pyobj}, h, w)[0]; // need return first
+                return frUncompressedRLE({pyobj})[0]; // need return first
             }
             else
             {
@@ -1080,12 +1048,13 @@ namespace mask_api
             }
             else if (type == "<class 'dict'>")
             {
-                return frUncompressedRLE({pyobj}, h, w)[0];
+                std::string sub_type = py::str(py::type::of(pyobj["counts"]));
+                if (sub_type == "<class 'list'>")
+                {
+                    return frUncompressedRLE({pyobj})[0];
+                }
             }
-            else
-            {
-                return pyobj;
-            }
+            return pyobj;
         }
     } // namespace Mask
 
