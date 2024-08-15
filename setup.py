@@ -3,10 +3,11 @@
 import glob
 
 import setuptools
-from pybind11.setup_helpers import Pybind11Extension, build_ext, ParallelCompile
+from pybind11.setup_helpers import ParallelCompile, Pybind11Extension, build_ext
 from setuptools import setup
 
 ParallelCompile("4").install()
+
 
 def readme():
     with open("README.md", encoding="utf-8") as f:
