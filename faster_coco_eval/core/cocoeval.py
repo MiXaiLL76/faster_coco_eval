@@ -72,12 +72,14 @@ class COCOeval:
         self,
         cocoGt: Optional[COCO] = None,
         cocoDt: Optional[COCO] = None,
-        iouType: Literal["segm", "bbox", "keypoints"] = "segm",
+        iouType: Literal["segm", "bbox", "keypoints", "boundary"] = "segm",
         print_function: Callable = logger.debug,
         extra_calc: bool = False,
         kpt_oks_sigmas: Optional[List[float]] = None,
         lvis_style: bool = False,
         separate_eval: bool = False,
+        boundary_backend: Literal["mask_api", "opencv"] = "mask_api",
+        boundary_dilation_ratio: float = 0.02,
     ):
         """Initialize CocoEval using coco APIs for gt and dt.
 
@@ -118,6 +120,8 @@ class COCOeval:
         self.matched = False
         self.lvis_style = lvis_style
         self.separate_eval = separate_eval
+        self.boundary_backend = boundary_backend
+        self.boundary_dilation_ratio = boundary_dilation_ratio
 
         if iouType == "keypoints" and self.lvis_style:
             logger.warning("lvis_style not supported for keypoint evaluation")
@@ -211,10 +215,17 @@ class COCOeval:
 
         for gt in gts:
             # convert ground truth to mask if iouType == 'segm'
-            if p.iouType == "segm":
+            if p.compute_rle:
                 h, w = get_img_size_by_id(gt["image_id"])
-
                 gt["rle"] = maskUtils.segmToRle(gt["segmentation"], w, h)
+
+                if p.compute_boundary:
+                    gt["boundary"] = maskUtils.rleToBoundary(
+                        gt["rle"],
+                        dilation_ratio=self.boundary_dilation_ratio,
+                        backend=self.boundary_backend,
+                    )
+
             self.gt_dataset.append(gt["image_id"], gt["category_id"], gt)
 
         for dt in dts:
@@ -231,9 +242,17 @@ class COCOeval:
                 )
 
             # convert ground truth to mask if iouType == 'segm'
-            if p.iouType == "segm":
+            if p.compute_rle:
                 h, w = get_img_size_by_id(dt["image_id"])
                 dt["rle"] = maskUtils.segmToRle(dt["segmentation"], w, h)
+
+                if p.compute_boundary:
+                    dt["boundary"] = maskUtils.rleToBoundary(
+                        dt["rle"],
+                        dilation_ratio=self.boundary_dilation_ratio,
+                        backend=self.boundary_backend,
+                    )
+
             self.dt_dataset.append(img_id, cat_id, dt)
 
     def _prepare_freq_group(self) -> list:
@@ -287,16 +306,34 @@ class COCOeval:
         if len(dt) > p.maxDets[-1]:
             dt = dt[0 : p.maxDets[-1]]
 
-        if p.iouType == "segm":
+        if p.compute_rle:
             g = [g["rle"] for g in gt]
             d = [d["rle"] for d in dt]
         elif p.iouType == "bbox":
             g = [g["bbox"] for g in gt]
             d = [d["bbox"] for d in dt]
 
-        # compute iou between each dt and gt region
         iscrowd = [int(o.get("iscrowd", 0)) for o in gt]
+        # compute iou between each dt and gt region
         ious = maskUtils.iou(d, g, iscrowd)
+
+        if p.compute_boundary:
+            g_b = [g["boundary"] for g in gt]
+            d_b = [d["boundary"] for d in dt]
+
+            # compute iou between each dt and gt region boundary
+            boundary_ious = maskUtils.iou(d_b, g_b, iscrowd)
+
+            # combine mask and boundary iou
+            boundary_ious = np.array(boundary_ious)
+            iscrowd = np.array(iscrowd)
+            if len(gt) and len(dt):
+                ious[:, iscrowd == 0] = np.minimum(
+                    ious[:, iscrowd == 0], boundary_ious[:, iscrowd == 0]
+                )
+            else:
+                ious = np.minimum(ious, boundary_ious)
+
         return ious
 
     def computeOks(self, imgId: int, catId: int) -> np.ndarray:
@@ -582,7 +619,7 @@ class COCOeval:
         if not self.eval:
             raise Exception("Please run accumulate() first")
         iouType = self.params.iouType
-        if iouType == "segm" or iouType == "bbox":
+        if iouType in set(["segm", "bbox", "boundary"]):
             summarize = _summarizeDets
         elif iouType == "keypoints":
             summarize = _summarizeKps
@@ -649,7 +686,9 @@ class Params:
         )
 
     def __init__(
-        self, iouType: str = "segm", kpt_sigmas: Optional[List[float]] = None
+        self,
+        iouType: Literal["bbox", "keypoints", "segm", "boundary"] = "segm",
+        kpt_sigmas: Optional[List[float]] = None,
     ):
         """Params for coco evaluation api.
 
@@ -670,7 +709,7 @@ class Params:
         )
         self.useCats = 1
 
-        if iouType == "segm" or iouType == "bbox":
+        if iouType in set(["segm", "bbox", "boundary"]):
             self.setDetParams()
         elif iouType == "keypoints":
             self.setKpParams()
@@ -678,6 +717,9 @@ class Params:
                 self.kpt_oks_sigmas = np.array(kpt_sigmas)
         else:
             raise TypeError("iouType not supported")
+
+        self.compute_rle = iouType in set(["segm", "boundary"])
+        self.compute_boundary = iouType == "boundary"
 
         self.iouType = iouType
 

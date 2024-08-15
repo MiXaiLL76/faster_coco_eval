@@ -48,10 +48,12 @@ class COCOeval_faster(COCOevalBase):
         # loop through images, area range, max detection number
         catIds = p.catIds if p.useCats else [-1]
 
-        if p.iouType == "segm" or p.iouType == "bbox":
+        if p.iouType in set(["segm", "bbox", "boundary"]):
             computeIoU = self.computeIoU
         elif p.iouType == "keypoints":
             computeIoU = self.computeOks
+        else:
+            raise ValueError("Invalid iouType: {}".format(p.iouType))
 
         self.ious = {
             (imgId, catId): computeIoU(imgId, catId)
@@ -115,12 +117,12 @@ class COCOeval_faster(COCOevalBase):
             )
 
         self.matched = False
-        try:
-            if self.extra_calc:
+        if self.extra_calc:
+            try:
                 self.math_matches()
                 self.matched = True
-        except Exception as e:
-            logger.error("{} math_matches error: ".format(e), exc_info=True)
+            except Exception as e:
+                logger.error("{} math_matches error: ".format(e), exc_info=True)
 
         toc = time.time()
 
@@ -205,7 +207,7 @@ class COCOeval_faster(COCOevalBase):
             "AR_large",
         ]
 
-        if self.params.iouType in ["segm", "bbox"]:
+        if self.params.iouType in set(["segm", "bbox", "boundary"]):
             labels += ["AR_50", "AR_75"]
         else:
             labels = [label for label in labels if "small" not in label]
