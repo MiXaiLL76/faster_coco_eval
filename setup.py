@@ -3,9 +3,10 @@
 import glob
 
 import setuptools
-from pybind11.setup_helpers import Pybind11Extension, build_ext
+from pybind11.setup_helpers import Pybind11Extension, build_ext, ParallelCompile
 from setuptools import setup
 
+ParallelCompile("4").install()
 
 def readme():
     with open("README.md", encoding="utf-8") as f:
@@ -107,6 +108,7 @@ def get_extensions(version_info):
 
     extra_compile_args = [
         "-std=c++17",
+        "-fPIC",
         "-ffinite-math-only",
         "-fno-signed-zeros",
         "-ftree-vectorize",
@@ -123,6 +125,7 @@ def get_extensions(version_info):
 
     sources = [
         "csrc/mask_api/src/mask.cpp",
+        "csrc/mask_api/src/rle.cpp",
         "csrc/mask_api/mask_api.cpp",
     ]
     print("Sources: {}".format(sources))

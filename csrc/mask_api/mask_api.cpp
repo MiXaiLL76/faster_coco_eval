@@ -45,14 +45,44 @@ namespace mask_api
 
   PYBIND11_MODULE(mask_api_new_cpp, m)
   {
-    pybind11::class_<Mask::RLE>(m, "RLE").def(pybind11::init<uint64_t, uint64_t, uint64_t, std::vector<uint>>());
+    pybind11::class_<Mask::RLE>(m, "RLE")
+    .def(pybind11::init<uint64_t, uint64_t, uint64_t, std::vector<uint>>())
+    .def(pybind11::init<>(&Mask::RLE::frString))
+    .def(pybind11::init<>(&Mask::RLE::frBbox))
+    .def(pybind11::init<>(&Mask::RLE::frPoly))
+    .def(pybind11::init<>(&Mask::RLE::merge))
+    .def(pybind11::init<>(&Mask::RLE::frUncompressedRLE))
+    .def(pybind11::init<>(&Mask::RLE::frSegm))
+    .def("toString", &Mask::RLE::toString, py::call_guard<py::gil_scoped_release>())
+    .def("toBbox", &Mask::RLE::toBbox, py::call_guard<py::gil_scoped_release>())
+    .def("erode_3x3", &Mask::RLE::erode_3x3, py::call_guard<py::gil_scoped_release>())
+    .def("area", &Mask::RLE::area, py::call_guard<py::gil_scoped_release>())
+    .def("toBoundary", &Mask::RLE::toBoundary, py::call_guard<py::gil_scoped_release>())
+    .def("toDict", &Mask::RLE::toDict)
+    .def(py::pickle(
+        [](const Mask::RLE &p) { // __getstate__
+            /* Return a tuple that fully encodes the state of the object */
+            return py::make_tuple(p.h, p.w, p.m, p.cnts);
+        },
+        [](py::tuple t) { // __setstate__
+            if (t.size() != 4)
+                throw std::runtime_error("Invalid state!");
+
+            /* Create a new C++ instance */
+            Mask::RLE p = Mask::RLE(
+              t[0].cast<std::uint64_t>(), 
+              t[1].cast<std::uint64_t>(), 
+              t[2].cast<std::uint64_t>(), 
+              t[3].cast<std::vector<uint>>()
+            );
+
+            return p;
+        }
+    ));
 
     m.def("get_compiler_version", &get_compiler_version, "get_compiler_version");
 
-    m.def("rleErode_3x3", &Mask::rleErode_3x3, "Mask::rleErode_3x3");
     m.def("erode_3x3", &Mask::erode_3x3, "Mask::erode_3x3");
-
-    m.def("rleToBoundary", &Mask::rleToBoundary, "Mask::rleToBoundary");
     m.def("toBoundary", &Mask::toBoundary, "Mask::toBoundary");
 
     m.def("rleEncode", &Mask::rleEncode, "Mask::rleEncode");
@@ -64,11 +94,7 @@ namespace mask_api
     m.def("rleToBbox", &Mask::rleToBbox, "Mask::rleToBbox");
     m.def("rleFrBbox", &Mask::rleFrBbox, "Mask::rleFrBbox");
 
-    m.def("rleMerge", &Mask::rleMerge, "Mask::rleMerge");
-
     m.def("rleFrPoly", &Mask::rleFrPoly, "Mask::rleFrPoly");
-
-    m.def("rleArea", &Mask::rleArea, "Mask::rleArea");
 
     // pyx functions
     m.def("_toString", &Mask::_toString, "Mask::_toString");

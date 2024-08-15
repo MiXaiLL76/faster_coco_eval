@@ -28,7 +28,17 @@ namespace mask_api
         uint umax(uint a, uint b) { return (a > b) ? a : b; }
         uint umax(uint8_t a, uint8_t b) { return (a > b) ? a : b; }
 
-        std::vector<RLE> rleEncode(const py::array_t<uint8_t, py::array::f_style> &M, const uint64_t &h, const uint64_t &w, const uint64_t &n, int padding = 0)
+        py::bytes rleToString(const RLE &R)
+        {
+            return py::bytes(R.toString());
+        }
+
+        RLE rleFrString(const std::string &s, const uint64_t &h, const uint64_t &w)
+        {
+            return RLE::frString(s, h, w);
+        }
+
+        std::vector<RLE> rleEncode(const py::array_t<uint8_t, py::array::f_style> &M, const uint64_t &h, const uint64_t &w, const uint64_t &n)
         {
             auto mask = M.unchecked<3>();
 
@@ -38,9 +48,9 @@ namespace mask_api
                 std::vector<uint> cnts = {};
                 uint8_t p = 0;
                 uint c = 0;
-                for (uint64_t row = padding; row < (w - padding); row++)
+                for (uint64_t row = 0; row < (w); row++)
                 {
-                    for (uint64_t col = padding; col < (h - padding); col++)
+                    for (uint64_t col = 0; col < (h); col++)
                     {
 
                         if (mask(col, row, i) != p)
@@ -60,131 +70,13 @@ namespace mask_api
             return RLES;
         }
 
-        py::bytes rleToString(const RLE &R)
-        {
-            int64_t x;
-            int64_t c;
-            bool more;
-            std::string result;
-
-            for (uint64_t i = 0; i < R.m; i++)
-            {
-                x = (int64_t)R.cnts[i];
-                if (i > 2)
-                {
-                    x -= (int64_t)R.cnts[i - 2];
-                }
-
-                more = true;
-
-                while (more)
-                {
-                    c = x & 0x1f;
-                    x >>= 5;
-                    more = (c & 0x10) ? x != -1 : x != 0;
-                    if (more)
-                        c |= 0x20;
-                    c += 48;
-                    result += (char)c;
-                }
-            }
-            return py::bytes(result);
-        }
-
-        RLE rleFrString(const std::string &s, const uint64_t &h, const uint64_t &w)
-        {
-            int64_t x;
-            int64_t c;
-            int64_t k;
-            bool more;
-            std::vector<uint> cnts;
-
-            size_t m = s.size();
-            size_t i = 0;
-
-            while (i < m)
-            {
-                x = 0;
-                k = 0;
-                more = true;
-
-                while (more)
-                {
-                    c = s[i] - 48;
-                    x |= (c & 0x1f) << 5 * k;
-                    more = c & 0x20;
-                    c &= 0x10 ? -1 : 0;
-                    i += 1;
-                    k += 1;
-
-                    if (!more && (c & 0x10))
-                    {
-                        x |= -1 << 5 * k;
-                    }
-                }
-
-                if (cnts.size() > 2)
-                {
-                    x += cnts[cnts.size() - 2];
-                }
-
-                cnts.emplace_back(x);
-            }
-
-            return RLE(h, w, cnts.size(), cnts);
-        }
-
         py::array_t<double> rleToBbox(const std::vector<RLE> R, const uint64_t &n)
         {
             std::vector<double> result;
             for (uint64_t i = 0; i < n; i++)
             {
-                uint h, w, xs, ys, xe, ye, cc;
-                uint64_t j, m;
-
-                h = (uint)R[i].h;
-                w = (uint)R[i].w;
-                m = R[i].m;
-
-                m = ((uint64_t)(m / 2)) * 2;
-
-                xs = w;
-                ys = h;
-                xe = ye = 0;
-                cc = 0;
-                if (m == 0)
-                {
-                    result.insert(result.end(), {0, 0, 0, 0});
-                    continue;
-                }
-                for (j = 0; j < m; j++)
-                {
-                    uint start = cc;    // start of current segment
-                    cc += R[i].cnts[j]; // start of next segment
-                    if (j % 2 == 0)
-                        continue; // skip background segment
-                    if (R[i].cnts[j] == 0)
-                        continue; // skip zero-length foreground segment
-                    uint y_start = start % h, x_start = (start - y_start) / h;
-                    uint y_end = (cc - 1) % h, x_end = (cc - 1 - y_end) / h;
-
-                    // x_start <= x_end must be true
-                    xs = umin(xs, x_start);
-                    xe = umax(xe, x_end);
-
-                    if (x_start < x_end)
-                    {
-                        ys = 0;
-                        ye = h - 1; // foreground segment goes across columns
-                    }
-                    else
-                    {
-                        // if x_start == x_end, then y_start <= y_end must be true
-                        ys = umin(ys, y_start);
-                        ye = umax(ye, y_end);
-                    }
-                }
-                result.insert(result.end(), {(double)xs, (double)ys, (double)(xe - xs + 1), (double)(ye - ys + 1)});
+                std::vector<uint> bbox = R[i].toBbox();
+                std::copy(bbox.begin(), bbox.end(), std::back_inserter(result));
             }
             return py::array(result.size(), result.data()).reshape({-1, 4});
         }
@@ -200,127 +92,14 @@ namespace mask_api
             std::vector<RLE> result;
             for (uint64_t i = 0; i < n; i++)
             {
-                double xs = bb[4 * i + 0], xe = xs + bb[4 * i + 2];
-                double ys = bb[4 * i + 1], ye = ys + bb[4 * i + 3];
-                std::vector<double> xy = {xs, ys, xs, ye, xe, ye, xe, ys};
-                result.push_back(rleFrPoly(xy, 4, h, w));
+                result.emplace_back(RLE::frBbox({bb[i * 4], bb[i * 4 + 1], bb[i * 4 + 2], bb[i * 4 + 3]}, h, w));
             }
             return result;
         }
 
         RLE rleFrPoly(const std::vector<double> &xy, const uint64_t &k, const uint64_t &h, const uint64_t &w)
         {
-            /* upsample and get discrete points densely along entire boundary */
-            uint64_t j = 0;
-            double scale = 5;
-
-            std::vector<int> x(k + 1);
-            std::vector<int> y(k + 1);
-            for (j = 0; j < k; j++)
-            {
-                x[j] = (int)(scale * xy[j * 2 + 0] + .5);
-                y[j] = (int)(scale * xy[j * 2 + 1] + .5);
-            }
-            x[k] = x[0];
-            y[k] = y[0];
-
-            std::vector<int> u;
-            std::vector<int> v;
-
-            for (j = 0; j < k; j++)
-            {
-                int xs = x[j], xe = x[j + 1], ys = y[j], ye = y[j + 1], dx, dy, t, d;
-                int flip;
-                double s;
-                dx = abs(xe - xs);
-                dy = abs(ys - ye);
-                flip = (dx >= dy && xs > xe) || (dx < dy && ys > ye);
-                if (flip)
-                {
-                    t = xs;
-                    xs = xe;
-                    xe = t;
-                    t = ys;
-                    ys = ye;
-                    ye = t;
-                }
-                s = dx >= dy ? (double)(ye - ys) / dx : (double)(xe - xs) / dy;
-
-                if (dx >= dy)
-                    for (d = 0; d <= dx; d++)
-                    {
-                        t = flip ? dx - d : d;
-
-                        u.emplace_back(t + xs);
-                        v.emplace_back((int)(ys + s * t + .5));
-                    }
-                else
-                    for (d = 0; d <= dy; d++)
-                    {
-                        t = flip ? dy - d : d;
-
-                        v.emplace_back(t + ys);
-                        u.emplace_back((int)(xs + s * t + .5));
-                    }
-            }
-
-            /* get points along y-boundary and downsample */
-
-            double xd, yd;
-            x.clear();
-            y.clear();
-
-            for (j = 1; j < u.size(); j++)
-                if (u[j] != u[j - 1])
-                {
-                    xd = (double)(u[j] < u[j - 1] ? u[j] : u[j] - 1);
-                    xd = (xd + .5) / scale - .5;
-                    if (floor(xd) != xd || xd < 0 || xd > w - 1)
-                        continue;
-                    yd = (double)(v[j] < v[j - 1] ? v[j] : v[j - 1]);
-                    yd = (yd + .5) / scale - .5;
-                    if (yd < 0)
-                        yd = 0;
-                    else if (yd > h)
-                        yd = h;
-
-                    yd = ceil(yd);
-                    x.emplace_back((int)xd);
-                    y.emplace_back((int)yd);
-                }
-
-            /* compute rle encoding given y-boundary points */
-            std::vector<uint> a;
-            std::vector<uint> b;
-
-            for (j = 0; j < x.size(); j++)
-                a.emplace_back((uint)(x[j] * (int)(h) + y[j]));
-            a.emplace_back((uint)(h * w));
-
-            std::stable_sort(a.begin(), a.end());
-
-            uint p = 0;
-            for (j = 0; j < a.size(); j++)
-            {
-                uint t = a[j];
-                a[j] -= p;
-                p = t;
-            }
-
-            j = 1;
-            b.emplace_back(a[0]);
-
-            while (j < a.size())
-                if (a[j] > 0)
-                    b.emplace_back(a[j++]);
-                else
-                {
-                    j++;
-                    if (j < a.size())
-                        b[b.size() - 1] += a[j++];
-                }
-
-            return RLE(h, w, b.size(), b);
+            return RLE::frPoly(xy, h, w);
         }
 
         std::vector<py::dict> _toString(const std::vector<RLE> &rles)
@@ -329,9 +108,7 @@ namespace mask_api
 
             for (uint64_t i = 0; i < rles.size(); i++)
             {
-                py::bytes c_string = rleToString(rles[i]);
-                std::vector<uint64_t> size = {rles[i].h, rles[i].w};
-                result.push_back(py::dict("size"_a = size, "counts"_a = c_string));
+                result.push_back(rles[i].toDict());
             }
             return result;
         }
@@ -344,7 +121,7 @@ namespace mask_api
             {
                 std::pair<uint64_t, uint64_t> size = R[i]["size"].cast<std::pair<uint64_t, uint64_t>>();
                 std::string counts = R[i]["counts"].cast<std::string>();
-                result.push_back(rleFrString(counts, size.first, size.second));
+                result.emplace_back(RLE::frString(counts, size.first, size.second));
             }
             return result;
         }
@@ -356,13 +133,13 @@ namespace mask_api
 
         // Decodes n different RLEs that have the same width and height. Write results to M.
         // Returns whether the decoding succeeds or not.
-        py::array_t<uint8_t, py::array::f_style> rleDecode(const std::vector<RLE> &R, int padding = 0)
+        py::array_t<uint8_t, py::array::f_style> rleDecode(const std::vector<RLE> &R)
         {
             std::vector<uint> result;
             size_t n = R.size();
             if (n > 0)
             {
-                uint64_t h = (R[0].h + padding + padding), w = (R[0].w + padding + padding);
+                uint64_t h = (R[0].h), w = (R[0].w);
                 py::array_t<uint8_t, py::array::f_style> M({h, w, n});
                 auto mask = M.mutable_unchecked();
                 uint64_t s = h * w * n;
@@ -370,7 +147,7 @@ namespace mask_api
                 for (uint64_t i = 0; i < n; i++)
                 {
                     uint v = 0;
-                    size_t x = padding, y = padding, c = 0;
+                    size_t x = 0, y = 0, c = 0;
                     for (uint64_t j = 0; j < R[i].m; j++)
                     {
                         for (uint64_t k = 0; k < R[i].cnts[j]; k++)
@@ -406,265 +183,38 @@ namespace mask_api
             return rleDecode(_frString(R));
         }
 
-        RLE rleErode_3x3(const RLE &rle, int dilation = 1)
-        {
-            bool v = false;
-            int64_t max_len = rle.w * rle.h;
-            std::vector<bool> _counts(max_len, false);
-            std::vector<bool>::iterator ptr = _counts.begin();
-            std::for_each(rle.cnts.begin(), rle.cnts.end(), [&v, &ptr](uint count)
-                          {
-                
-                if(v){
-                    std::fill_n(ptr, count, v);
-                }
-                
-                v = !v;
-                ptr += count; });
-
-            std::vector<int> ofsvec;
-            std::vector<int> ofsvec_bottom;
-
-            for (int i = dilation; i >= 0; i--)
-            {
-                for (int j = dilation; j >= -dilation; j--)
-                {
-                    if (i == 0 && j <= 0)
-                    {
-                        continue;
-                    }
-                    if (i > 0)
-                    {
-                        ofsvec.push_back(i * rle.h + j);
-                    }
-                    else
-                    {
-                        ofsvec.push_back(j);
-                    }
-                }
-            }
-
-            for (int i = dilation; i >= -dilation; i--)
-            {
-                ofsvec_bottom.push_back(i * rle.h + dilation);
-            }
-
-            int64_t c = 0;
-            int64_t ic = 0;
-            RLE result(rle.h, rle.w, {});
-
-            bool _min = false, _prev_min = false;
-
-            v = true;
-            for (uint j : rle.cnts)
-            {
-                result.cnts.emplace_back(0);
-
-                v = !v;
-                if (v)
-                {
-                    _prev_min = false;
-
-                    for (uint k = 0; k < j; k++)
-                    {
-                        if (_prev_min)
-                        {
-                            _min = std::all_of(ofsvec_bottom.begin(), ofsvec_bottom.end(), [c, max_len, &_counts](int o)
-                                               {
-                                int64_t test_ptr = c + o;
-                                return (
-                                    (test_ptr > 0) && 
-                                    (test_ptr < max_len) && _counts[test_ptr]
-                                ); });
-                        }
-                        else
-                        {
-                            _min = std::all_of(ofsvec.begin(), ofsvec.end(), [c, max_len, &_counts](int o)
-                                               {
-                                int64_t test_ptr = c + o;
-                                int64_t _test_ptr = c - o;
-                                return (
-                                    (_test_ptr > 0) && _counts[_test_ptr] && 
-                                    (test_ptr < max_len) && _counts[test_ptr]
-                                ); });
-                        }
-
-                        if (_min)
-                        {
-                            result.cnts[ic] += 1;
-                        }
-                        else
-                        {
-                            if (_prev_min)
-                            {
-                                result.cnts.insert(result.cnts.end(), {1, 0});
-                                ic += 2;
-                            }
-                            else
-                            {
-                                result.cnts[ic - 1] += 1;
-                            }
-                        }
-                        _prev_min = _min;
-
-                        c++;
-                    }
-                }
-                else
-                {
-                    result.cnts[ic] += j;
-                    c += j;
-                }
-
-                ic++;
-            }
-
-            result.m = result.cnts.size();
-
-            return result;
-        }
-
         std::vector<py::dict> erode_3x3(const std::vector<py::dict> &rleObjs)
         {
             std::vector<RLE> rles = _frString(rleObjs);
             std::transform(rles.begin(), rles.end(), rles.begin(), [](RLE const &rle)
-                           { return rleErode_3x3(rle); });
+                           { return rle.erode_3x3(1); });
             return _toString(rles);
         }
 
-        RLE rleToBoundary(const RLE &rle, const double &dilation_ratio = 0.02)
-        {
-            int dilation = (int)std::round((dilation_ratio * std::sqrt(rle.h * rle.h + rle.w * rle.w)));
-            if (dilation < 1)
-            {
-                dilation = 1;
-            }
-            return rleMerge({rle, rleErode_3x3(rle, dilation)}, -1);
-        }
-
-        std::vector<py::dict> toBoundary(const std::vector<py::dict> &rleObjs, const double &dilation_ratio)
+        std::vector<py::dict> toBoundary(const std::vector<py::dict> &rleObjs, const double &dilation_ratio = 0.02)
         {
             std::vector<RLE> rles = _frString(rleObjs);
             std::transform(rles.begin(), rles.end(), rles.begin(), [&dilation_ratio](RLE const &rle)
-                           { return rleToBoundary(rle, dilation_ratio); });
+                           { return rle.toBoundary(dilation_ratio); });
 
             return _toString(rles);
-        }
-
-        RLE rleMerge(const std::vector<RLE> &R, const int &intersect)
-        {
-            uint64_t n = R.size();
-
-            if (n == 0)
-            {
-                return RLE(0, 0, 0, {});
-            }
-            else if (n == 1)
-            {
-                return R[0];
-            }
-            else
-            {
-                uint64_t h = R[0].h, w = R[0].w;
-                uint c, ca, cb, cc, ct;
-                bool v, va, vb, vp;
-                uint64_t m = R[0].m;
-                uint64_t i, a, b;
-
-                std::vector<uint> cnts(h * w + 1);
-                for (a = 0; a < m; a++)
-                {
-                    cnts[a] = R[0].cnts[a];
-                }
-
-                RLE B(0,0,{});
-                RLE A(h,w,m,{});
-
-                for (i = 1; i < n; i++)
-                {
-                    B = R[i];
-                    if (B.h != h || B.w != w)
-                    {
-                        h = w = m = 0;
-                        break;
-                    }
-                    A = RLE(h, w, m, cnts);
-                    ca = A.cnts[0];
-                    cb = B.cnts[0];
-                    v = va = vb = false;
-                    m = 0;
-                    a = b = 1;
-                    cc = 0;
-                    ct = 1;
-                    while (ct > 0)
-                    {
-                        c = umin(ca, cb);
-                        cc += c;
-                        ct = 0;
-                        ca -= c;
-                        if (!ca && a < A.m)
-                        {
-                            ca = A.cnts[a++];
-                            va = !va;
-                        }
-                        ct += ca;
-                        cb -= c;
-                        if (!cb && b < B.m)
-                        {
-                            cb = B.cnts[b++];
-                            vb = !vb;
-                        }
-                        ct += cb;
-                        vp = v;
-
-                        if (intersect == 1)
-                        {
-                            v = va && vb;
-                        }
-                        else if (intersect == 0)
-                        {
-                            v = va || vb;
-                        }
-                        else
-                        {
-                            v = va != vb;
-                        }
-
-                        if (v != vp || ct == 0)
-                        {
-                            cnts[m++] = cc;
-                            cc = 0;
-                        }
-                    }
-                }
-
-                return RLE(h, w, m, cnts);
-            }
         }
 
         py::dict merge(const std::vector<py::dict> &rleObjs, const int &intersect = 0)
         {
-            return _toString({rleMerge(_frString(rleObjs), intersect)})[0];
+            return _toString({RLE::merge(_frString(rleObjs), intersect)})[0];
         }
         py::dict merge(const std::vector<py::dict> &rleObjs)
         {
             return merge(rleObjs, 0);
         }
 
-        std::vector<uint> rleArea(const std::vector<RLE> &R)
-        {
-            uint64_t i, j;
-            std::vector<uint> result(R.size(), 0);
-            for (i = 0; i < R.size(); i++)
-            {
-                for (j = 1; j < R[i].m; j += 2)
-                    result[i] += R[i].cnts[j];
-            }
-            return result;
-        }
         py::array_t<uint> area(const std::vector<py::dict> &rleObjs)
         {
-            std::vector<uint> areas = rleArea(_frString(rleObjs));
+            std::vector<RLE> rles = _frString(rleObjs);
+            std::vector<uint> areas(rles.size());
+            std::transform(rles.begin(), rles.end(), areas.begin(), [](RLE const &rle)
+                           { return rle.area(); });
             return py::array(areas.size(), areas.data());
         }
 
@@ -673,7 +223,7 @@ namespace mask_api
             std::vector<RLE> rles;
             for (uint64_t i = 0; i < poly.size(); i++)
             {
-                rles.push_back(rleFrPoly(poly[i], poly[i].size() / 2, h, w));
+                rles.emplace_back(RLE::frPoly(poly[i], h, w));
             }
             return _toString(rles);
         }
@@ -683,7 +233,7 @@ namespace mask_api
             std::vector<RLE> rles;
             for (uint64_t i = 0; i < bb.size(); i++)
             {
-                rles.push_back(rleFrBbox(bb[i], h, w, 1)[0]);
+                rles.emplace_back(RLE::frBbox(bb[i], h, w));
             }
             return _toString(rles);
         }
@@ -723,7 +273,7 @@ namespace mask_api
             bool crowd;
             bool _iscrowd = iscrowd.size() > 0;
 
-            std::vector<double> o(m * n);
+            std::vector<double> o(m * n, 0);
 
             for (g = 0; g < n; g++)
             {
@@ -751,29 +301,22 @@ namespace mask_api
             return o;
         }
 
-        std::vector<double> ravelBbox(const py::array_t<double> &bb)
-        {
-            auto _bb = bb.unchecked<2>();
-            std::vector<double> result;
-
-            for (pybind11::ssize_t i = 0; i < _bb.shape(0); i++)
-            {
-                result.push_back(_bb(i, 0));
-                result.push_back(_bb(i, 1));
-                result.push_back(_bb(i, 2));
-                result.push_back(_bb(i, 3));
-            }
-            return result;
-        }
-
         std::vector<double> rleIou(const std::vector<RLE> &dt, const std::vector<RLE> &gt, const uint64_t &m, const uint64_t &n, const std::vector<int> &iscrowd)
         {
             uint64_t g, d;
             std::vector<double> db, gb;
             int crowd;
 
-            db = ravelBbox(rleToBbox(dt, m));
-            gb = ravelBbox(rleToBbox(gt, n));
+            for (uint64_t i = 0; i < m; i++)
+            {
+                std::vector<uint> bbox = dt[i].toBbox();
+                std::copy(bbox.begin(), bbox.end(), std::back_inserter(db));
+            }
+            for (uint64_t i = 0; i < n; i++)
+            {
+                std::vector<uint> bbox = gt[i].toBbox();
+                std::copy(bbox.begin(), bbox.end(), std::back_inserter(gb));
+            }
 
             std::vector<double> o = bbIou(db, gb, m, n, iscrowd);
             bool _iscrowd = iscrowd.size() > 0;
@@ -830,7 +373,7 @@ namespace mask_api
                             u = 1;
                         else if (crowd)
                         {
-                            u = rleArea({dt[d]})[0];
+                            u = dt[d].area();
                         }
                         o[d * n + g] = (double)i / (double)u;
                     }
@@ -1035,26 +578,15 @@ namespace mask_api
 
         std::variant<pybind11::dict, py::object> segmToRle(const py::object &pyobj, const uint64_t &w, const uint64_t &h)
         {
-            std::string type = py::str(py::type::of(pyobj));
-            if (type == "<class 'list'>")
+            try
             {
-                std::vector<std::vector<double>> poly = pyobj.cast<std::vector<std::vector<double>>>();
-                std::vector<RLE> rles;
-                for (size_t i = 0; i < poly.size(); i++)
-                {
-                    rles.push_back(rleFrPoly(poly[i], poly[i].size() / 2, h, w));
-                }
-                return _toString({rleMerge(rles, 0)})[0];
+                RLE rle = RLE::frSegm(pyobj, w, h);
+                return rle.toDict();
             }
-            else if (type == "<class 'dict'>")
+            catch (py::type_error const &)
             {
-                std::string sub_type = py::str(py::type::of(pyobj["counts"]));
-                if (sub_type == "<class 'list'>")
-                {
-                    return frUncompressedRLE({pyobj})[0];
-                }
+                return pyobj;
             }
-            return pyobj;
         }
     } // namespace Mask
 

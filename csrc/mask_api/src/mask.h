@@ -14,8 +14,14 @@ namespace mask_api
 
     namespace Mask
     {
-        struct RLE
+        uint umin(uint a, uint b);
+        uint umin(uint8_t a, uint8_t b);
+        uint umax(uint a, uint b);
+        uint umax(uint8_t a, uint8_t b);
+
+        class RLE
         {
+        public:
             RLE(
                 uint64_t h,
                 uint64_t w,
@@ -31,25 +37,34 @@ namespace mask_api
             uint64_t w;
             uint64_t m;
             std::vector<uint> cnts;
+
+            std::string toString() const;
+            std::vector<uint> toBbox() const;
+            RLE erode_3x3(int dilation) const;
+            RLE toBoundary(double dilation_ratio) const;
+            uint area() const;
+            py::dict toDict() const;
+
+            static RLE frString(const std::string &s, const uint64_t &h, const uint64_t &w);
+            static RLE frBbox(const std::vector<double> &bb, const uint64_t &h, const uint64_t &w);
+            static RLE frPoly(const std::vector<double> &xy, const uint64_t &h, const uint64_t &w);
+            static RLE merge(const std::vector<RLE> &R, const int &intersect);
+            static RLE frUncompressedRLE(const py::dict &ucRle);
+            static RLE frSegm(const py::object &pyobj, const uint64_t &w, const uint64_t &h);
         };
 
-        RLE rleErode_3x3(const RLE &rle, int dilation);
         std::vector<py::dict> erode_3x3(const std::vector<py::dict> &rleObjs);
 
-        RLE rleToBoundary(const RLE &rle, const double &dilation_ratio);
         std::vector<py::dict> toBoundary(const std::vector<py::dict> &rleObjs, const double &dilation_ratio);
 
-        py::array_t<uint8_t, py::array::f_style> rleDecode(const std::vector<RLE> &R, int padding);
-        std::vector<RLE> rleEncode(const py::array_t<uint8_t, py::array::f_style> &M, const uint64_t &h, const uint64_t &w, const uint64_t &n, int padding);
+        py::array_t<uint8_t, py::array::f_style> rleDecode(const std::vector<RLE> &R);
+        std::vector<RLE> rleEncode(const py::array_t<uint8_t, py::array::f_style> &M, const uint64_t &h, const uint64_t &w, const uint64_t &n);
 
         py::bytes rleToString(const RLE &R);
         RLE rleFrString(const std::string &s, const uint64_t &h, const uint64_t &w);
 
         std::vector<RLE> rleFrBbox(const std::vector<double> &bb, const uint64_t &h, const uint64_t &w, const uint64_t &n);
         RLE rleFrPoly(const std::vector<double> &xy, const uint64_t &k, const uint64_t &h, const uint64_t &w);
-
-        std::vector<uint> rleArea(const std::vector<RLE> &R);
-        RLE rleMerge(const std::vector<RLE> &R, const int &intersect);
 
         // pyx functions
         py::array_t<uint8_t, py::array::f_style> decode(const std::vector<py::dict> &R);
