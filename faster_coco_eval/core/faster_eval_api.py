@@ -149,7 +149,7 @@ class COCOeval_faster(COCOevalBase):
                 self.cocoDt.anns[dt_id]["fp"] = True
 
         for gt_id in self.cocoGt.anns.keys():
-            if self.cocoGt.anns[gt_id].get("matched") is None:
+            if self.cocoGt.anns[gt_id].get("dt_id") is None:
                 self.cocoGt.anns[gt_id]["fn"] = True
 
     def compute_mIoU(self) -> float:
