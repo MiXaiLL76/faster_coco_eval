@@ -623,9 +623,17 @@ class COCO:
     def img_ann_map(self):
         return self.imgToAnns
 
+    @img_ann_map.setter
+    def img_ann_map(self, value):
+        self.imgToAnns = value
+
     @property
     def cat_img_map(self):
         return self.catToImgs
+
+    @cat_img_map.setter
+    def cat_img_map(self, value):
+        self.catToImgs = value
 
     def __repr__(self):
         s = self.__class__.__name__ + "(annotation_file) # "
