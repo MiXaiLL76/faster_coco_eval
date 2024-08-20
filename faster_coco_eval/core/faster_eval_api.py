@@ -28,7 +28,6 @@ class COCOeval_faster(COCOevalBase):
         Unlike the original COCO PythonAPI, we don't populate the
         datastructure self.evalImgs because this datastructure is a
         computational bottleneck.
-        :return: None
 
         """
         tic = time.time()

@@ -30,6 +30,7 @@ def segmToRle(segm: Union[List[float], List[int], dict], w: int, h: int):
         rle (dict): run-length encoding of the segmentation map
 
     """
+
     return _mask.segmToRle(segm, w, h)
 
 
@@ -40,7 +41,11 @@ def rleToBoundaryCV(rle: dict, dilation_ratio: float = 0.02) -> dict:
         rle (dict): run-length encoding of a binary mask
         dilation_ratio (float): ratio of dilation to apply to the mask
 
+    Returns:
+        boundary_rle (dict): run-length encoding of the boundary mask
+
     """
+
     mask = _mask.decode([rle])[:, :, 0]
     h, w = rle["size"]
 
@@ -75,7 +80,11 @@ def rleToBoundary(
             - "mask_api": uses the faster_eval_api_cpp backend
             - "opencv": uses OpenCV for conversion
 
+    Returns:
+        boundary_rle (dict): run-length encoding of the boundary mask
+
     """
+
     if backend == "mask_api":
         return _mask.toBoundary([rle], dilation_ratio)[0]
     else:
@@ -91,7 +100,20 @@ def iou(
     dt: ValidRleType,
     gt: ValidRleType,
     iscrowd: List[int],
-):
+) -> Union[list, np.ndarray]:
+    """Compute intersection over union between two sets of run-length encoded
+    masks.
+
+    Args:
+        dt (list of dict or dict): detected masks
+        gt (list of dict or dict): ground truth masks
+        iscrowd (list of int): flag indicating whether the mask is crowd
+
+    Returns:
+        iou (list or ndarray): intersection over union between dt and gt masks
+
+    """
+
     return _mask.iou(dt, gt, iscrowd)
 
 
@@ -106,6 +128,7 @@ def merge(rleObjs: List[dict], intersect: int = 0):
         merged (dict): run-length encoding of merged mask
 
     """
+
     return _mask.merge(rleObjs, intersect)
 
 
@@ -128,7 +151,11 @@ def frPyObjects(
         h (int): height of the image
         w (int): width of the image
 
+    Returns:
+        rle (dict or list of dict): run-length encoding of the objects
+
     """
+
     return _mask.frPyObjects(objs, h, w)
 
 
@@ -142,6 +169,7 @@ def encode(bimask: np.ndarray) -> dict:
         rle (dict): run-length encoding of the binary mask
 
     """
+
     if len(bimask.shape) == 3:
         return _mask.encode(bimask)
     elif len(bimask.shape) == 2:
@@ -159,6 +187,7 @@ def decode(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
         bimask (ndarray): decoded binary mask
 
     """
+
     if type(rleObjs) is list:
         return _mask.decode(rleObjs)
     else:
@@ -174,6 +203,7 @@ def area(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
     Returns:
         area (np.ndarray): area of run-length encodings
     """
+
     if type(rleObjs) is list:
         return _mask.area(rleObjs)
     else:
@@ -185,10 +215,12 @@ def toBbox(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
 
     Args:
         rleObjs (dict or list of dict): run-length encoding of binary mask
+
     Returns:
         bbox (np.ndarray): bounding box of run-length encodings
 
     """
+
     if type(rleObjs) is list:
         return _mask.toBbox(rleObjs)
     else:
