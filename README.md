@@ -15,6 +15,23 @@ https://pypi.org/project/faster-coco-eval/)
 I often use this project, but I saw it abandoned and without a public repository on github.
 Also, part of the project remained unfinished for a long time. I implemented some of the author's ideas and decided to make the results publicly available.
 
+## Install
+
+### Basic implementation identical to pycocotools
+
+```bash
+pip install faster-coco-eval
+```
+
+### Additional visualization options
+
+> Only 1 additional package needed opencv-python-headless  
+
+```bash
+pip install faster-coco-eval[extra]
+```
+
+
 ## Faster-COCO-Eval base
 
 This package wraps a facebook C++ implementation of COCO-eval operations found in the
@@ -27,9 +44,9 @@ for coco's AP metrics, especially when dealing with a high number of instances i
 For our use case with a test dataset of 5000 images from the coco val dataset.
 Testing was carried out using the mmdetection framework and the eval_metric.py script. The indicators are presented below.
 
-Visualization of testing **colab_example.ipynb** available in directory [examples/comparison](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/comparison/mmdet/colab_example.ipynb)
-[colab_example.ipynb in google collab](https://colab.research.google.com/drive/1qj392oIU8fmeyIFHCtxCrLA8PQQAMoIs)
-Tested with rtmdet model bbox + segm
+Visualization of testing **colab_example.ipynb** available in directory [examples/comparison](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/comparison)
+- [mmdet example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/comparison/mmdet/colab_example.ipynb)
+- [ultralytics example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/comparison/ultralytics/colab_example.ipynb)
 
 ### Summary for 5000 imgs
 
@@ -52,6 +69,7 @@ Code examples for using the library are available on the [Wiki](https://github.c
 - [Eval example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/eval_example.ipynb)
 - [Curve example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/curve_example.ipynb)
 - [CED Keypoint example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/ced_example.ipynb)
+- [LVIS example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/lvis_example.ipynb)
 
 ## Update history
 

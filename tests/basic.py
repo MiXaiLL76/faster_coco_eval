@@ -72,6 +72,7 @@ class TestBaseCoco(unittest.TestCase):
         cocoEval.accumulate()
         cocoEval.summarize()
 
+        self.assertEqual(cocoEval.matched, True)
         self.assertEqual(cocoEval.stats_as_dict, stats_as_dict)
 
     def test_boundary_eval(self):

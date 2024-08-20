@@ -45,7 +45,6 @@ __version__ = "2.0"
 # Licensed under the Simplified BSD License [see bsd.txt]
 
 import copy
-import itertools
 import json
 import logging
 import time
@@ -178,36 +177,39 @@ class COCO:
         imgIds = imgIds if _isArrayLike(imgIds) else [imgIds]
         catIds = catIds if _isArrayLike(catIds) else [catIds]
 
-        if len(imgIds) == len(catIds) == len(areaRng) == 0:
+        check_area = len(areaRng) > 0
+        check_crowd = iscrowd is not None
+        check_cat = len(catIds) > 0
+        check_img = len(imgIds) > 0
+
+        if not (check_area and check_crowd and check_cat and check_img):
             anns = self.dataset["annotations"]
         else:
-            if not len(imgIds) == 0:
-                lists = [
-                    self.imgToAnns[imgId]
-                    for imgId in imgIds
-                    if imgId in self.imgToAnns
-                ]
-                anns = list(itertools.chain.from_iterable(lists))
+            anns = []
+
+            if check_img:
+                for img_id in imgIds:
+                    anns.extend(self.img_ann_map[img_id])
             else:
                 anns = self.dataset["annotations"]
-            anns = (
-                anns
-                if len(catIds) == 0
-                else [ann for ann in anns if ann["category_id"] in catIds]
-            )
-            anns = (
-                anns
-                if len(areaRng) == 0
-                else [
+
+            if check_cat:
+                anns = [ann for ann in anns if ann["category_id"] in catIds]
+
+            if check_area:
+                areaRng = [0, float("inf")]
+
+                anns = [
                     ann
                     for ann in anns
                     if ann["area"] > areaRng[0] and ann["area"] < areaRng[1]
                 ]
-            )
-        if iscrowd is not None:
-            ids = [ann["id"] for ann in anns if ann["iscrowd"] == iscrowd]
-        else:
-            ids = [ann["id"] for ann in anns]
+
+            if check_crowd:
+                anns = [ann for ann in anns if ann["iscrowd"] == iscrowd]
+
+        ids = [ann["id"] for ann in anns]
+
         return ids
 
     def getCatIds(self, catNms=[], supNms=[], catIds=[]):
