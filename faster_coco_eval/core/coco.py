@@ -170,7 +170,6 @@ class COCO:
                 anns = list(
                     filter(lambda ann: ann["category_id"] in catIds, anns)
                 )
-                # anns = [ann for ann in anns if ann["category_id"] in catIds]
 
             if check_area:
                 anns = list(
@@ -182,11 +181,6 @@ class COCO:
                         anns,
                     )
                 )
-                # anns = [
-                #     ann
-                #     for ann in anns
-                #     if ann["area"] > areaRng[0] and ann["area"] < areaRng[1]
-                # ]
 
             if check_crowd:
                 anns = list(
@@ -197,15 +191,8 @@ class COCO:
                         anns,
                     )
                 )
-                # anns = [
-                #     ann
-                #     for ann in anns
-                #     if int(ann.get("iscrowd", 0)) == int(iscrowd)
-                # ]
 
         ids = list(map(lambda ann: ann["id"], anns))
-        # ids = [ann["id"] for ann in anns]
-
         return ids
 
     def getCatIds(
@@ -238,34 +225,13 @@ class COCO:
             if len(catNms) > 0:
                 cats = list(filter(lambda cat: cat.get("name") in catNms, cats))
 
-                # name_to_cat = {cat.get("name"): cat for cat in cats}
-                # cats = [
-                #     name_to_cat[label]
-                #     for label in catNms
-                #     if name_to_cat.get(label)
-                # ]
-
             if len(supNms) > 0:
                 cats = list(
                     filter(lambda cat: cat.get("supercategory") in supNms, cats)
                 )
 
-                # supercategory_to_cat = {
-                #     cat.get("supercategory"): cat for cat in cats
-                # }
-                # cats = [
-                #     supercategory_to_cat[label]
-                #     for label in supNms
-                #     if supercategory_to_cat.get(label)
-                # ]
-
             if len(catIds) > 0:
                 cats = list(filter(lambda cat: cat.get("id") in catIds, cats))
-
-                # id_to_cat = {cat.get("id"): cat for cat in cats}
-                # cats = [
-                #   id_to_cat[idx] for idx in catIds if id_to_cat.get(idx)
-                # ]
 
         ids = [cat["id"] for cat in cats]
         return ids
@@ -620,19 +586,43 @@ class COCO:
         return self.loadImgs(ids)
 
     @property
-    def img_ann_map(self):
+    def img_ann_map(self) -> dict:
+        """Return a mapping from image ids to annotation ids.
+
+        Returns:
+            imgToAnns (dict): mapping from image ids to annotation ids
+
+        """
         return self.imgToAnns
 
     @img_ann_map.setter
-    def img_ann_map(self, value):
+    def img_ann_map(self, value: dict):
+        """Set the mapping from image ids to annotation ids.
+
+        Args:
+            value (dict): mapping from image ids to annotation ids
+
+        """
         self.imgToAnns = value
 
     @property
-    def cat_img_map(self):
+    def cat_img_map(self) -> dict:
+        """Return a mapping from category ids to image ids.
+
+        Returns:
+            catToImgs (dict): mapping from category ids to image ids
+
+        """
         return self.catToImgs
 
     @cat_img_map.setter
-    def cat_img_map(self, value):
+    def cat_img_map(self, value: dict):
+        """Set the mapping from category ids to image ids.
+
+        Args:
+            value (dict): mapping from category ids to image ids
+
+        """
         self.catToImgs = value
 
     def __repr__(self):
@@ -640,3 +630,66 @@ class COCO:
         s += "__author__='{}'; ".format(__author__)
         s += "__version__='{}';".format(__version__)
         return s
+
+    def to_dict(self, separate_fn: bool = False) -> dict:
+        """Convert to a standard python dictionary.
+
+        Args:
+            separate_fn (bool): whether to separate the fn category
+
+        Returns:
+            dict: a standard python dictionary
+
+        """
+
+        cats = list(self.cats.values())
+        anns = list(self.anns.values())
+
+        if separate_fn:
+            max_category_id = max(cats, key=lambda x: x["id"])["id"]
+            fn_cats = [
+                dict(
+                    category,
+                    **{
+                        "id": (category["id"] + max_category_id),
+                        "name": (category["name"] + "_fn"),
+                    }
+                )
+                for category in cats
+            ]
+
+            for ann in anns:
+                if ann.get("fn"):
+                    ann["category_id"] = ann["category_id"] + max_category_id
+
+            cats += fn_cats
+
+        return {
+            "info": {"description": "Created from faster-coco-eval"},
+            "images": list(self.imgs.values()),
+            "annotations": anns,
+            "categories": cats,
+        }
+
+    def __iter__(self):
+        """Iterate over the annotations.
+
+        Args:
+            separate_fn (bool): whether to separate the fn category
+
+        Yields:
+            key, val: the key-value pair of the annotation
+
+        """
+        for key, val in self.to_dict().items():
+            yield key, val
+
+    def dump(self, output_file: Union[str, os.PathLike]):
+        """Dump annotations to a json file.
+
+        Args:
+            output_file (str or PathLike): Path to the output json file
+
+        """
+        with open(output_file, "w") as io:
+            json.dump(dict(self), io, ensure_ascii=False, indent=4)

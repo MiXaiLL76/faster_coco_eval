@@ -245,6 +245,21 @@ class TestBaseCoco(unittest.TestCase):
 
         self.assertEqual(cocoEval.stats_as_dict, stats_as_dict)
 
+    def test_to_dict(self):
+        orig_data = COCO.load_json(self.gt_file)
+        cocoGt = COCO(self.gt_file)
+        
+        parsed_data = cocoGt.to_dict()
+
+        self.assertListEqual(parsed_data['annotations'], orig_data['annotations'])
+        self.assertListEqual(parsed_data['categories'], orig_data['categories'])
+        self.assertListEqual(parsed_data['images'], orig_data['images'])
+
+        parsed_data = dict(cocoGt)
+
+        self.assertListEqual(parsed_data['annotations'], orig_data['annotations'])
+        self.assertListEqual(parsed_data['categories'], orig_data['categories'])
+        self.assertListEqual(parsed_data['images'], orig_data['images'])
 
 if __name__ == "__main__":
     unittest.main()
