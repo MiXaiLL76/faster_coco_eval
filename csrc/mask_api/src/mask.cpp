@@ -6,6 +6,7 @@
 #include <numeric>
 #include <iostream>
 #include <execution>
+#include <future>
 
 using namespace pybind11::literals;
 
@@ -183,11 +184,11 @@ namespace mask_api
             return rleDecode(_frString(R));
         }
 
-        std::vector<py::dict> erode_3x3(const std::vector<py::dict> &rleObjs)
+        std::vector<py::dict> erode_3x3(const std::vector<py::dict> &rleObjs, const int &dilation)
         {
             std::vector<RLE> rles = _frString(rleObjs);
-            std::transform(rles.begin(), rles.end(), rles.begin(), [](RLE const &rle)
-                           { return rle.erode_3x3(1); });
+            std::transform(rles.begin(), rles.end(), rles.begin(), [dilation](RLE const &rle)
+                           { return rle.erode_3x3(dilation); });
             return _toString(rles);
         }
 
@@ -588,6 +589,109 @@ namespace mask_api
                 return pyobj;
             }
         }
+
+        std::vector<py::dict> processRleToBoundary(const std::vector<RLE> &rles, const double &dilation_ratio, const size_t &cpu_count)
+        {
+            py::gil_scoped_release release;
+            std::vector<std::tuple<uint64_t, uint64_t, std::string>> result(rles.size());
+
+            auto process = [&rles, &result](size_t s, size_t e, double d) mutable
+            {
+                for (size_t i = s; i < e; ++i)
+                {
+                    result[i] = rles[i].toBoundary(d).toTuple();
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            };
+
+            size_t start = 0;
+            size_t step = 1000;
+            size_t end = step;
+
+            while (start < rles.size())
+            {
+                std::vector<std::future<void>> rle_futures(cpu_count);
+
+                size_t thread = 0;
+                for (thread = 0; thread < rle_futures.size(); thread++)
+                {
+                    rle_futures[thread] = std::async(std::launch::async, process, start, end, dilation_ratio);
+
+                    start += step;
+                    end += step;
+
+                    if (end > rles.size())
+                    {
+                        end = rles.size();
+                    }
+                    if (start > rles.size())
+                    {
+                        break;
+                    }
+                }
+
+                for (size_t i = 0; i < thread; i++)
+                {
+                    rle_futures[i].wait();
+                }
+                rle_futures.clear();
+                rle_futures.shrink_to_fit();
+            }
+
+            py::gil_scoped_acquire acquire;
+
+            std::vector<py::dict> py_result(result.size());
+
+            for (size_t i = 0; i < result.size(); i++)
+            {
+                py_result[i] = py::dict(
+                    "size"_a = std::vector<uint64_t>{std::get<0>(result[i]), std::get<1>(result[i])},
+                    "counts"_a = py::bytes(std::get<2>(result[i])));
+            }
+            return py_result;
+        }
+
+        std::vector<py::dict> calculateRleForAllAnnotations(
+            const std::vector<py::dict> &anns,
+            const std::unordered_map<uint64_t, std::tuple<uint64_t, uint64_t>> &image_info,
+            const bool &compute_rle,
+            const bool &compute_boundary,
+            const double &dilation_ratio,
+            const size_t &cpu_count)
+        {
+            if (compute_rle)
+            {
+                size_t ann_count = anns.size();
+                std::vector<RLE> rles(ann_count);
+                for (size_t i = 0; i < ann_count; i++)
+                {
+                    if (anns[i].contains("segmentation"))
+                    {
+                        uint64_t image_id = anns[i]["image_id"].cast<uint64_t>();
+                        // printf("image_id=%zu\n", image_id);
+                        std::tuple<uint64_t, uint64_t> image_hw = image_info.at(image_id);
+                        rles[i] = RLE::frSegm(anns[i]["segmentation"], std::get<1>(image_hw), std::get<0>(image_hw));
+                    }
+                }
+                std::vector<py::dict> boundary_array;
+
+                if (compute_boundary)
+                {
+                    boundary_array = processRleToBoundary(rles, dilation_ratio, cpu_count);
+                }
+
+                for (size_t i = 0; i < ann_count; i++)
+                {
+                    anns[i]["rle"] = rles[i].toDict();
+                    if (compute_boundary)
+                    {
+                        anns[i]["boundary"] = boundary_array[i];
+                    }
+                }
+            }
+            return anns;
+        }
+
     } // namespace Mask
 
 }

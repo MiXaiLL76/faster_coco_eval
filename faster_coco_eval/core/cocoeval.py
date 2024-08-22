@@ -2,6 +2,7 @@
 # Modified work Copyright (c) 2024 MiXaiLL76
 
 import logging
+import os
 from collections import defaultdict
 from typing import Callable, List, Literal, Optional, Union
 
@@ -26,8 +27,8 @@ class COCOeval:
         kpt_oks_sigmas: Optional[List[float]] = None,
         lvis_style: bool = False,
         separate_eval: bool = False,
-        boundary_backend: Literal["mask_api", "opencv"] = "mask_api",
         boundary_dilation_ratio: float = 0.02,
+        boundary_cpu_count: int = min(os.cpu_count(), 4),
     ):
         """Initialize CocoEval using coco APIs for gt and dt.
 
@@ -48,6 +49,11 @@ class COCOeval:
                 whether to use LVIS style evaluation, defaults to False
             separate_eval (bool):
                 whether to perform separate evaluation, defaults to False
+            boundary_dilation_ratio (float):
+                ratio for boundary dilation, defaults to 0.02
+            boundary_cpu_count (int):
+                number of CPUs for boundary comput,
+                    defaults to min(os.cpu_count(), 4)
 
         """
         self.cocoGt: COCO = cocoGt  # ground truth COCO API
@@ -68,8 +74,8 @@ class COCOeval:
         self.matched = False
         self.lvis_style = lvis_style
         self.separate_eval = separate_eval
-        self.boundary_backend = boundary_backend
         self.boundary_dilation_ratio = boundary_dilation_ratio
+        self.boundary_cpu_count = boundary_cpu_count
 
         if iouType == "keypoints" and self.lvis_style:
             logger.warning("lvis_style not supported for keypoint evaluation")
@@ -162,18 +168,17 @@ class COCOeval:
             return img_sizes[image_id]
 
         for gt in gts:
-            # convert ground truth to mask if iouType == 'segm'
             if p.compute_rle:
-                h, w = get_img_size_by_id(gt["image_id"])
-                gt["rle"] = maskUtils.segmToRle(gt["segmentation"], w, h)
+                get_img_size_by_id(gt["image_id"])
 
-                if p.compute_boundary:
-                    gt["boundary"] = maskUtils.rleToBoundary(
-                        gt["rle"],
-                        dilation_ratio=self.boundary_dilation_ratio,
-                        backend=self.boundary_backend,
-                    )
-
+        for gt in maskUtils.calculateRleForAllAnnotations(
+            gts,
+            img_sizes,
+            p.compute_rle,
+            p.compute_boundary,
+            self.boundary_dilation_ratio,
+            self.boundary_cpu_count,
+        ):
             self.gt_dataset.append(gt["image_id"], gt["category_id"], gt)
 
         for dt in dts:
@@ -183,25 +188,26 @@ class COCOeval:
                     cat_id not in img_nl.get(img_id, [])
                     and cat_id not in img_pl[img_id]
                 ) and self.lvis_style:
+                    dt["drop"] = True
                     continue
 
                 dt["lvis_mark"] = (
                     dt["category_id"] in self.img_nel[dt["image_id"]]
                 )
 
-            # convert ground truth to mask if iouType == 'segm'
             if p.compute_rle:
-                h, w = get_img_size_by_id(dt["image_id"])
-                dt["rle"] = maskUtils.segmToRle(dt["segmentation"], w, h)
+                get_img_size_by_id(dt["image_id"])
 
-                if p.compute_boundary:
-                    dt["boundary"] = maskUtils.rleToBoundary(
-                        dt["rle"],
-                        dilation_ratio=self.boundary_dilation_ratio,
-                        backend=self.boundary_backend,
-                    )
-
-            self.dt_dataset.append(img_id, cat_id, dt)
+        for dt in maskUtils.calculateRleForAllAnnotations(
+            dts,
+            img_sizes,
+            p.compute_rle,
+            p.compute_boundary,
+            self.boundary_dilation_ratio,
+            self.boundary_cpu_count,
+        ):
+            if not dt.get("drop", False):
+                self.dt_dataset.append(dt["image_id"], dt["category_id"], dt)
 
     def _prepare_freq_group(self) -> list:
         """Prepare frequency group for LVIS evaluation.

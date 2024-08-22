@@ -5,6 +5,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
+#include <pybind11/embed.h>
 #include <vector>
 
 namespace py = pybind11;
@@ -22,6 +23,8 @@ namespace mask_api
         class RLE
         {
         public:
+            RLE() : h{0}, w{0}, m{0} {}
+
             RLE(
                 uint64_t h,
                 uint64_t w,
@@ -39,6 +42,7 @@ namespace mask_api
             std::vector<uint> cnts;
 
             std::string toString() const;
+            std::tuple<uint64_t, uint64_t, std::string> toTuple() const;
             std::vector<uint> toBbox() const;
             RLE erode_3x3(int dilation) const;
             RLE toBoundary(double dilation_ratio) const;
@@ -51,9 +55,10 @@ namespace mask_api
             static RLE merge(const std::vector<RLE> &R, const int &intersect);
             static RLE frUncompressedRLE(const py::dict &ucRle);
             static RLE frSegm(const py::object &pyobj, const uint64_t &w, const uint64_t &h);
+            static RLE frTuple(const std::tuple<uint64_t, uint64_t, std::string> &w_h_rlestring);
         };
 
-        std::vector<py::dict> erode_3x3(const std::vector<py::dict> &rleObjs);
+        std::vector<py::dict> erode_3x3(const std::vector<py::dict> &rleObjs, const int &dilation = 1);
 
         std::vector<py::dict> toBoundary(const std::vector<py::dict> &rleObjs, const double &dilation_ratio);
 
@@ -87,5 +92,13 @@ namespace mask_api
         py::array_t<double> rleToBbox(const std::vector<RLE> R, const uint64_t &n);
         std::variant<pybind11::dict, std::vector<pybind11::dict>> frPyObjects(const py::object &pyobj, const uint64_t &h, const uint64_t &w);
         std::variant<pybind11::dict, py::object> segmToRle(const py::object &pyobj, const uint64_t &w, const uint64_t &h);
+        std::vector<py::dict> processRleToBoundary(const std::vector<RLE> &rles, const double &dilation_ratio, const size_t &cpu_count);
+        std::vector<py::dict> calculateRleForAllAnnotations(
+            const std::vector<py::dict> &anns,
+            const std::unordered_map<uint64_t, std::tuple<uint64_t, uint64_t>> &image_info,
+            const bool &compute_rle,
+            const bool &compute_boundary,
+            const double &dilation_ratio,
+            const size_t &cpu_count);
     } // namespace Mask
 } // namespace mask_api

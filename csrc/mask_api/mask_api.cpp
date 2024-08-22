@@ -53,6 +53,7 @@ namespace mask_api
     .def(pybind11::init<>(&Mask::RLE::merge))
     .def(pybind11::init<>(&Mask::RLE::frUncompressedRLE))
     .def(pybind11::init<>(&Mask::RLE::frSegm))
+    .def(pybind11::init<>(&Mask::RLE::frTuple))
     .def("toString", &Mask::RLE::toString, py::call_guard<py::gil_scoped_release>())
     .def("toBbox", &Mask::RLE::toBbox, py::call_guard<py::gil_scoped_release>())
     .def("erode_3x3", &Mask::RLE::erode_3x3, py::call_guard<py::gil_scoped_release>())
@@ -119,6 +120,7 @@ namespace mask_api
     m.def("toUncompressedRLE", &Mask::toUncompressedRLE, "Mask::toUncompressedRLE");
     m.def("frPyObjects", &Mask::frPyObjects, "Mask::frPyObjects");
     m.def("segmToRle", &Mask::segmToRle, "Mask::segmToRle");
+    m.def("calculateRleForAllAnnotations", &Mask::calculateRleForAllAnnotations, "Mask::calculateRleForAllAnnotations");
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);

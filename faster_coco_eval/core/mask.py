@@ -1,6 +1,6 @@
 # Original work Copyright (c) Piotr Dollar and Tsung-Yi Lin, 2014.
 # Modified work Copyright (c) 2024 MiXaiLL76
-from typing import List, Literal, Union
+from typing import Dict, List, Literal, Union
 
 import numpy as np
 
@@ -53,6 +53,7 @@ def rleToBoundaryCV(rle: dict, dilation_ratio: float = 0.02) -> dict:
     dilation = int(round(dilation_ratio * img_diag))
     if dilation < 1:
         dilation = 1
+
     # Pad image so mask truncated by the image border is
     # also considered as boundary.
     new_mask = cv2.copyMakeBorder(
@@ -94,6 +95,35 @@ def rleToBoundary(
                 " function."
             )
         return rleToBoundaryCV(rle, dilation_ratio)
+
+
+def calculateRleForAllAnnotations(
+    anns: List[dict],
+    img_sizes: Dict[int, tuple],
+    compute_rle: bool,
+    compute_boundary: bool,
+    boundary_dilation_ratio: float,
+    boundary_cpu_count: int,
+):
+    """Calculate run-length encoding for all annotations.
+
+    Args:
+        anns (list of dict): annotations
+        img_sizes (dict): dictionary mapping image ids to their sizes (h,w)
+        compute_rle (bool): whether to compute run-length encoding
+        compute_boundary (bool): whether to compute boundary run-length encoding
+        boundary_dilation_ratio (float): ratio of dilation to apply to the mask
+        boundary_cpu_count (int): number of CPUs to use for boundary computation
+
+    """
+    return _mask.calculateRleForAllAnnotations(
+        anns,
+        img_sizes,
+        compute_rle,
+        compute_boundary,
+        boundary_dilation_ratio,
+        boundary_cpu_count,
+    )
 
 
 def iou(

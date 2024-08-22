@@ -303,6 +303,7 @@ namespace mask_api
             int64_t ic = 0;
             std::vector<uint> cnts;
             bool _min = false, _prev_min = false;
+            uint64_t rle_h = this->h;
 
             v = true;
             for (uint j : this->cnts)
@@ -316,26 +317,33 @@ namespace mask_api
 
                     for (uint k = 0; k < j; k++)
                     {
-                        if (_prev_min)
+                        if (c % rle_h != 0)
                         {
-                            _min = std::all_of(ofsvec_bottom.begin(), ofsvec_bottom.end(), [c, max_len, &_counts](int o)
-                                               {
-                                int64_t test_ptr = c + o;
-                                return (
-                                    (test_ptr > 0) && 
-                                    (test_ptr < max_len) && _counts[test_ptr]
-                                ); });
+                            if (_prev_min)
+                            {
+                                _min = std::all_of(ofsvec_bottom.begin(), ofsvec_bottom.end(), [c, max_len, rle_h, &_counts](int o)
+                                                   {
+                                    int64_t test_ptr = c + o;
+                                    return (
+                                        (test_ptr > 0) && 
+                                        (test_ptr < max_len) && _counts[test_ptr] && (test_ptr % rle_h != 0)
+                                    ); });
+                            }
+                            else
+                            {
+                                _min = std::all_of(ofsvec.begin(), ofsvec.end(), [c, max_len, rle_h, &_counts](int o)
+                                                   {
+                                    int64_t test_ptr = c + o;
+                                    int64_t _test_ptr = c - o;
+                                    return (
+                                        (_test_ptr > 0) && _counts[_test_ptr] && 
+                                        (test_ptr < max_len) && _counts[test_ptr] && ((test_ptr + 1) % rle_h != 0)
+                                    ); });
+                            }
                         }
                         else
                         {
-                            _min = std::all_of(ofsvec.begin(), ofsvec.end(), [c, max_len, &_counts](int o)
-                                               {
-                                int64_t test_ptr = c + o;
-                                int64_t _test_ptr = c - o;
-                                return (
-                                    (_test_ptr > 0) && _counts[_test_ptr] && 
-                                    (test_ptr < max_len) && _counts[test_ptr]
-                                ); });
+                            _min = false;
                         }
 
                         if (_min)
@@ -368,7 +376,32 @@ namespace mask_api
                 ic++;
             }
 
-            return RLE(this->h, this->w, cnts.size(), cnts);
+            ic = 0;
+            std::vector<uint> clean_cnts;
+            bool last_zero = false;
+            for (size_t i = 0; i < cnts.size(); i++)
+            {
+                if (i > 0)
+                {
+                    if (cnts[i] == 0 || last_zero)
+                    {
+                        clean_cnts[ic - 1] += cnts[i];
+                    }
+                    else
+                    {
+                        clean_cnts.emplace_back(cnts[i]);
+                        ic++;
+                    }
+                }
+                else
+                {
+                    clean_cnts.emplace_back(cnts[i]);
+                    ic++;
+                }
+                last_zero = cnts[i] == 0;
+            }
+
+            return RLE(this->h, this->w, clean_cnts.size(), clean_cnts);
         }
 
         RLE RLE::merge(const std::vector<RLE> &R, const int &intersect)
@@ -464,7 +497,7 @@ namespace mask_api
 
         RLE RLE::toBoundary(double dilation_ratio) const
         {
-            int dilation = (int)std::round((dilation_ratio * std::sqrt(this->h * this->h + this->w * this->w)));
+            int dilation = (int)std::round((dilation_ratio * std::sqrt(this->h * this->h + this->w * this->w)) - 1e-10);
             if (dilation < 1)
             {
                 dilation = 1;
@@ -486,6 +519,16 @@ namespace mask_api
             return py::dict(
                 "size"_a = std::vector<uint64_t>{this->h, this->w},
                 "counts"_a = py::bytes(this->toString()));
+        }
+
+        std::tuple<uint64_t, uint64_t, std::string> RLE::toTuple() const
+        {
+            return std::tuple<uint64_t, uint64_t, std::string>{this->h, this->w, this->toString()};
+        }
+
+        RLE RLE::frTuple(const std::tuple<uint64_t, uint64_t, std::string> &w_h_rlestring)
+        {
+            return RLE::frString(std::get<2>(w_h_rlestring), std::get<0>(w_h_rlestring), std::get<1>(w_h_rlestring));
         }
 
         RLE RLE::frUncompressedRLE(const py::dict &ucRle)
@@ -514,6 +557,12 @@ namespace mask_api
                 if (sub_type == "<class 'list'>")
                 {
                     return RLE::frUncompressedRLE(pyobj);
+                }
+                else if (sub_type == "<class 'bytes'>" || sub_type == "<class 'str'>")
+                {
+                    std::pair<uint64_t, uint64_t> size = pyobj["size"].cast<std::pair<uint64_t, uint64_t>>();
+                    std::string counts = pyobj["counts"].cast<std::string>();
+                    return RLE::frString(counts, size.first, size.second);
                 }
                 else
                 {
