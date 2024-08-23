@@ -376,37 +376,37 @@ namespace mask_api
                 ic++;
             }
 
-            ic = 0;
-            std::vector<uint> clean_cnts;
-            bool last_zero = false;
-            for (size_t i = 0; i < cnts.size(); i++)
-            {
-                if (i > 0)
-                {
-                    if (cnts[i] == 0 || last_zero)
-                    {
-                        clean_cnts[ic - 1] += cnts[i];
-                    }
-                    else
-                    {
-                        clean_cnts.emplace_back(cnts[i]);
-                        ic++;
-                    }
-                }
-                else
-                {
-                    clean_cnts.emplace_back(cnts[i]);
-                    ic++;
-                }
-                last_zero = cnts[i] == 0;
-            }
-
-            return RLE(this->h, this->w, clean_cnts.size(), clean_cnts);
+            // ic = 0;
+            // std::vector<uint> clean_cnts;
+            // bool last_zero = false;
+            // for (size_t i = 0; i < cnts.size(); i++)
+            // {
+            //     if (i > 0)
+            //     {
+            //         if (cnts[i] == 0 || last_zero)
+            //         {
+            //             clean_cnts[ic - 1] += cnts[i];
+            //         }
+            //         else
+            //         {
+            //             clean_cnts.emplace_back(cnts[i]);
+            //             ic++;
+            //         }
+            //     }
+            //     else
+            //     {
+            //         clean_cnts.emplace_back(cnts[i]);
+            //         ic++;
+            //     }
+            //     last_zero = cnts[i] == 0;
+            // }
+            // return RLE(this->h, this->w, clean_cnts.size(), clean_cnts);
+            return RLE(this->h, this->w, cnts.size(), cnts);
         }
 
         RLE RLE::merge(const std::vector<RLE> &R, const int &intersect)
         {
-            uint64_t n = R.size();
+            size_t n = R.size();
 
             if (n == 0)
             {
@@ -418,80 +418,57 @@ namespace mask_api
             }
             else
             {
-                uint64_t h = R[0].h, w = R[0].w;
-                uint c, ca, cb, cc, ct;
-                bool v, va, vb, vp;
-                uint64_t m = R[0].m;
-                uint64_t i, a, b;
-
-                std::vector<uint> cnts(h * w + 1);
-                for (a = 0; a < m; a++)
-                {
-                    cnts[a] = R[0].cnts[a];
-                }
-
-                RLE B(0, 0, {});
-                RLE A(h, w, m, {});
-
-                for (i = 1; i < n; i++)
-                {
-                    B = R[i];
-                    if (B.h != h || B.w != w)
-                    {
-                        h = w = m = 0;
-                        break;
+                int v = 0;
+                size_t cc = 0;
+                size_t max_len = R[0].w * R[0].h;
+                std::vector<int> _counts(max_len, false);
+                std::vector<int>::iterator ptr = _counts.begin();
+                std::for_each(R[0].cnts.begin(), R[0].cnts.end(), [&v, &ptr](uint count)
+                              {
+                    if(v){
+                        std::fill_n(ptr, count, 1);
                     }
-                    A = RLE(h, w, m, cnts);
-                    ca = A.cnts[0];
-                    cb = B.cnts[0];
-                    v = va = vb = false;
-                    m = 0;
-                    a = b = 1;
+                    
+                    v = !v;
+                    ptr += count; });
+
+                for (size_t i = 1; i < n; i++)
+                {
+                    if (R[i].h != R[0].h || R[i].w != R[0].w)
+                    {
+                        return RLE(0, 0, 0, {});
+                    }
+                    v = 0;
                     cc = 0;
-                    ct = 1;
-                    while (ct > 0)
+                    std::for_each(R[i].cnts.begin(), R[i].cnts.end(), [&_counts, &cc, &v, intersect](uint count)
+                                  {
+                        for(size_t j = cc; j < (cc+count); j++){
+                            if(intersect == 0){
+                                _counts[j] = _counts[j] | v;
+                            }else if (intersect == 1){
+                                _counts[j] = _counts[j] & v;
+                            }else{
+                                _counts[j] = _counts[j] ^ v;
+                            }
+                        }
+                        v = !v;
+                        cc += count; });
+                }
+                std::vector<uint> out_cnts(1, 0);
+                v = 0;
+                for (size_t i = 0; i < max_len; i++)
+                {
+                    if (_counts[i] != v)
                     {
-                        c = umin(ca, cb);
-                        cc += c;
-                        ct = 0;
-                        ca -= c;
-                        if (!ca && a < A.m)
-                        {
-                            ca = A.cnts[a++];
-                            va = !va;
-                        }
-                        ct += ca;
-                        cb -= c;
-                        if (!cb && b < B.m)
-                        {
-                            cb = B.cnts[b++];
-                            vb = !vb;
-                        }
-                        ct += cb;
-                        vp = v;
-
-                        if (intersect == 1)
-                        {
-                            v = va && vb;
-                        }
-                        else if (intersect == 0)
-                        {
-                            v = va || vb;
-                        }
-                        else
-                        {
-                            v = va != vb;
-                        }
-
-                        if (v != vp || ct == 0)
-                        {
-                            cnts[m++] = cc;
-                            cc = 0;
-                        }
+                        out_cnts.emplace_back(1);
+                        v = !v;
+                    }
+                    else
+                    {
+                        out_cnts.back()++;
                     }
                 }
-
-                return RLE(h, w, m, cnts);
+                return RLE(R[0].h, R[0].w, out_cnts.size(), out_cnts);
             }
         }
 

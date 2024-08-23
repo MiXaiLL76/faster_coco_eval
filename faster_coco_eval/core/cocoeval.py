@@ -171,14 +171,16 @@ class COCOeval:
             if p.compute_rle:
                 get_img_size_by_id(gt["image_id"])
 
-        for gt in maskUtils.calculateRleForAllAnnotations(
+        maskUtils.calculateRleForAllAnnotations(
             gts,
             img_sizes,
             p.compute_rle,
             p.compute_boundary,
             self.boundary_dilation_ratio,
             self.boundary_cpu_count,
-        ):
+        )
+
+        for gt in gts:
             self.gt_dataset.append(gt["image_id"], gt["category_id"], gt)
 
         for dt in dts:
@@ -198,14 +200,16 @@ class COCOeval:
             if p.compute_rle:
                 get_img_size_by_id(dt["image_id"])
 
-        for dt in maskUtils.calculateRleForAllAnnotations(
+        maskUtils.calculateRleForAllAnnotations(
             dts,
             img_sizes,
             p.compute_rle,
             p.compute_boundary,
             self.boundary_dilation_ratio,
             self.boundary_cpu_count,
-        ):
+        )
+
+        for dt in dts:
             if not dt.get("drop", False):
                 self.dt_dataset.append(dt["image_id"], dt["category_id"], dt)
 

@@ -93,7 +93,7 @@ namespace mask_api
         std::variant<pybind11::dict, std::vector<pybind11::dict>> frPyObjects(const py::object &pyobj, const uint64_t &h, const uint64_t &w);
         std::variant<pybind11::dict, py::object> segmToRle(const py::object &pyobj, const uint64_t &w, const uint64_t &h);
         std::vector<py::dict> processRleToBoundary(const std::vector<RLE> &rles, const double &dilation_ratio, const size_t &cpu_count);
-        std::vector<py::dict> calculateRleForAllAnnotations(
+        void calculateRleForAllAnnotations(
             const std::vector<py::dict> &anns,
             const std::unordered_map<uint64_t, std::tuple<uint64_t, uint64_t>> &image_info,
             const bool &compute_rle,

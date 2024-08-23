@@ -624,8 +624,9 @@ namespace mask_api
                     {
                         end = rles.size();
                     }
-                    if (start > rles.size())
+                    if (start >= rles.size())
                     {
+                        thread++;
                         break;
                     }
                 }
@@ -651,7 +652,7 @@ namespace mask_api
             return py_result;
         }
 
-        std::vector<py::dict> calculateRleForAllAnnotations(
+        void calculateRleForAllAnnotations(
             const std::vector<py::dict> &anns,
             const std::unordered_map<uint64_t, std::tuple<uint64_t, uint64_t>> &image_info,
             const bool &compute_rle,
@@ -668,7 +669,6 @@ namespace mask_api
                     if (anns[i].contains("segmentation"))
                     {
                         uint64_t image_id = anns[i]["image_id"].cast<uint64_t>();
-                        // printf("image_id=%zu\n", image_id);
                         std::tuple<uint64_t, uint64_t> image_hw = image_info.at(image_id);
                         rles[i] = RLE::frSegm(anns[i]["segmentation"], std::get<1>(image_hw), std::get<0>(image_hw));
                     }
@@ -689,7 +689,6 @@ namespace mask_api
                     }
                 }
             }
-            return anns;
         }
 
     } // namespace Mask
