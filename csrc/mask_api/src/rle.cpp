@@ -259,7 +259,7 @@ namespace mask_api
         RLE RLE::erode_3x3(int dilation) const
         {
             bool v = false;
-            int64_t max_len = this->w * this->h;
+            long max_len = this->w * this->h;
             std::vector<bool> _counts(max_len, false);
             std::vector<bool>::iterator ptr = _counts.begin();
             std::for_each(this->cnts.begin(), this->cnts.end(), [&v, &ptr](uint count)
@@ -299,11 +299,12 @@ namespace mask_api
                 ofsvec_bottom.push_back(i * this->h + dilation);
             }
 
-            int64_t c = 0;
-            int64_t ic = 0;
+            long c = 0;
+            long x = 0;
+            long ic = 0;
             std::vector<uint> cnts;
             bool _min = false, _prev_min = false;
-            uint64_t rle_h = this->h;
+            long rle_h = this->h;
 
             v = true;
             for (uint j : this->cnts)
@@ -317,33 +318,31 @@ namespace mask_api
 
                     for (uint k = 0; k < j; k++)
                     {
-                        if (c % rle_h != 0)
+                        x = c % rle_h;
+
+                        if (_prev_min)
                         {
-                            if (_prev_min)
-                            {
-                                _min = std::all_of(ofsvec_bottom.begin(), ofsvec_bottom.end(), [c, max_len, rle_h, &_counts](int o)
-                                                   {
-                                    int64_t test_ptr = c + o;
-                                    return (
-                                        (test_ptr > 0) && 
-                                        (test_ptr < max_len) && _counts[test_ptr] && (test_ptr % rle_h != 0)
-                                    ); });
-                            }
-                            else
-                            {
-                                _min = std::all_of(ofsvec.begin(), ofsvec.end(), [c, max_len, rle_h, &_counts](int o)
-                                                   {
-                                    int64_t test_ptr = c + o;
-                                    int64_t _test_ptr = c - o;
-                                    return (
-                                        (_test_ptr > 0) && _counts[_test_ptr] && 
-                                        (test_ptr < max_len) && _counts[test_ptr] && ((test_ptr + 1) % rle_h != 0)
-                                    ); });
-                            }
+                            _min = std::all_of(ofsvec_bottom.begin(), ofsvec_bottom.end(), [c, max_len, rle_h, &_counts, x, dilation](int o)
+                                               {
+                                long test_ptr = c + o;
+                                return (
+                                    (test_ptr >= 0) && 
+                                    (test_ptr < max_len) && _counts[test_ptr] && 
+                                    (std::abs((test_ptr % rle_h) - x) <= dilation )
+                                ); });
                         }
                         else
                         {
-                            _min = false;
+                            _min = std::all_of(ofsvec.begin(), ofsvec.end(), [c, max_len, rle_h, &_counts, x, dilation](int o)
+                                               {
+                                long test_ptr = c + o;
+                                long _test_ptr = c - o;
+                                
+                                return (
+                                    (_test_ptr >= 0) && _counts[_test_ptr] && 
+                                    (test_ptr < max_len) && _counts[test_ptr] && 
+                                    (std::abs((test_ptr % rle_h) - x) <= dilation )
+                                ); });
                         }
 
                         if (_min)
@@ -376,32 +375,36 @@ namespace mask_api
                 ic++;
             }
 
-            // ic = 0;
-            // std::vector<uint> clean_cnts;
-            // bool last_zero = false;
-            // for (size_t i = 0; i < cnts.size(); i++)
-            // {
-            //     if (i > 0)
-            //     {
-            //         if (cnts[i] == 0 || last_zero)
-            //         {
-            //             clean_cnts[ic - 1] += cnts[i];
-            //         }
-            //         else
-            //         {
-            //             clean_cnts.emplace_back(cnts[i]);
-            //             ic++;
-            //         }
-            //     }
-            //     else
-            //     {
-            //         clean_cnts.emplace_back(cnts[i]);
-            //         ic++;
-            //     }
-            //     last_zero = cnts[i] == 0;
-            // }
-            // return RLE(this->h, this->w, clean_cnts.size(), clean_cnts);
-            return RLE(this->h, this->w, cnts.size(), cnts);
+            return RLE(this->h, this->w, cnts.size(), cnts).clear_duplicates();
+        }
+
+        RLE RLE::clear_duplicates() const
+        {
+            size_t ic = 0;
+            std::vector<uint> clean_cnts;
+            bool last_zero = false;
+            for (size_t i = 0; i < this->cnts.size(); i++)
+            {
+                if (i > 0)
+                {
+                    if (this->cnts[i] == 0 || last_zero)
+                    {
+                        clean_cnts[ic - 1] += this->cnts[i];
+                    }
+                    else
+                    {
+                        clean_cnts.emplace_back(this->cnts[i]);
+                        ic++;
+                    }
+                }
+                else
+                {
+                    clean_cnts.emplace_back(this->cnts[i]);
+                    ic++;
+                }
+                last_zero = this->cnts[i] == 0;
+            }
+            return RLE(this->h, this->w, clean_cnts.size(), clean_cnts);
         }
 
         RLE RLE::merge(const std::vector<RLE> &R, const int &intersect)

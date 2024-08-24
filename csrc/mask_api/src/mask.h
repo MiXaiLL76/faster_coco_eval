@@ -46,6 +46,7 @@ namespace mask_api
             std::vector<uint> toBbox() const;
             RLE erode_3x3(int dilation) const;
             RLE toBoundary(double dilation_ratio) const;
+            RLE clear_duplicates() const;
             uint area() const;
             py::dict toDict() const;
 
