@@ -1,6 +1,6 @@
 import logging
 import os.path as osp
-from typing import Optional
+from typing import List, Literal, Optional
 
 import numpy as np
 import plotly.express as px
@@ -105,6 +105,8 @@ def display_image(
     display_gt: bool = True,
     data_folder: Optional[str] = None,
     categories: Optional[list] = None,
+    gt_ann_ids: Optional[set] = None,
+    dt_ann_ids: Optional[set] = None,
     return_fig: bool = False,
 ) -> Optional[go.Figure]:
     """
@@ -119,6 +121,8 @@ def display_image(
     display_gt: display ground truth
     data_folder: data folder
     categories: categories to display
+    gt_ann_ids: ground truth annotation ids
+    dt_ann_ids: detection annotation ids
     return_fig: return the figure
     """
     polygons = []
@@ -126,8 +130,17 @@ def display_image(
     image = cocoGt.imgs[image_id]
     gt_anns = {ann["id"]: ann for ann in cocoGt.imgToAnns[image_id]}
 
+    if gt_ann_ids is not None:
+        gt_anns = {id: ann for id, ann in gt_anns.items() if id in gt_ann_ids}
+
     if cocoDt is not None:
         dt_anns = {ann["id"]: ann for ann in cocoDt.imgToAnns[image_id]}
+
+        if dt_ann_ids is not None:
+            dt_anns = {
+                id: ann for id, ann in dt_anns.items() if id in dt_ann_ids
+            }
+
     else:
         dt_anns = {}
 
@@ -579,3 +592,25 @@ def plot_ced_metric(curves, normalize: bool = False, return_fig: bool = False):
         return fig
 
     fig.show()
+
+
+def show_anns(
+    cocoGt: COCO,
+    image_id: int,
+    ann_ids: Optional[List[int]] = None,
+    iouType: Literal["bbox", "segm"] = "bbox",
+    data_folder: Optional[str] = None,
+    return_fig: bool = False,
+):
+    return display_image(
+        cocoGt,
+        image_id=image_id,
+        iouType=iouType,
+        display_gt=True,
+        display_fn=False,
+        display_fp=False,
+        display_tp=False,
+        data_folder=data_folder,
+        gt_ann_ids=ann_ids,
+        return_fig=return_fig,
+    )
