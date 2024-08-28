@@ -5,6 +5,7 @@ import copy
 import json
 import logging
 import os
+import pathlib
 import time
 import warnings
 from collections import defaultdict
@@ -25,7 +26,9 @@ def _isArrayLike(obj):
 class COCO:
     def __init__(
         self,
-        annotation_file: Optional[Union[str, dict, os.PathLike]] = None,
+        annotation_file: Optional[
+            Union[str, dict, os.PathLike, pathlib.PosixPath]
+        ] = None,
         use_deepcopy: bool = False,
     ):
         """Constructor of Microsoft COCO helper class.
@@ -51,7 +54,7 @@ class COCO:
         if annotation_file is not None:
             self._print_function("loading annotations into memory...")
             tic = time.time()
-            if type(annotation_file) in [str, os.PathLike]:
+            if type(annotation_file) in [str, os.PathLike, pathlib.PosixPath]:
                 self.dataset = self.load_json(annotation_file)
             elif type(annotation_file) is dict:
                 if self.use_deepcopy:
