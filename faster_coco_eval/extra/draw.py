@@ -306,32 +306,25 @@ def display_matrix(
     else:
         hovertemplate += "Count: %{z:.0f}<extra></extra>"
 
-    heatmap = go.Heatmap(
-        z=conf_matrix,
-        x=_labels,
-        y=_labels[:-2],
-        colorscale="Blues",
-        hovertemplate=hovertemplate,
-    )
-
     annotations = []
     for j, row in enumerate(conf_matrix):
-        for i, value in enumerate(row):
+        annotations.append([])
+        for value in row:
             text_value = "{:.0f}".format(value)
             if normalize:
                 text_value += "%"
 
-            annotations.append(
-                {
-                    "x": _labels[i],
-                    "y": _labels[j],
-                    "font": {"color": "white"},
-                    "text": text_value,
-                    "xref": "x1",
-                    "yref": "y1",
-                    "showarrow": False,
-                }
-            )
+            annotations[j].append(text_value)
+
+    heatmap = go.Heatmap(
+        z=conf_matrix,
+        x=_labels,
+        y=_labels[:-2],
+        text=annotations,
+        colorscale="Blues",
+        hovertemplate=hovertemplate,
+        texttemplate="%{text}",
+    )
 
     title = "Confusion Matrix"
     if normalize:
@@ -341,7 +334,6 @@ def display_matrix(
         "title": title,
         "xaxis": {"title": "Predicted value"},
         "yaxis": {"title": "Real value"},
-        "annotations": annotations,
     }
 
     fig = go.Figure(data=[heatmap], layout=layout)
