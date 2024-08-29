@@ -1,7 +1,7 @@
 import copy
 import logging
 from collections import defaultdict
-from typing import Dict
+from typing import Dict, Set
 
 import numpy as np
 
@@ -115,7 +115,7 @@ class ExtraEval:
                     del self.cocoDt.anns[ann_id]
 
     @property
-    def fp_image_ann_map(self) -> Dict[set]:
+    def fp_image_ann_map(self) -> Dict[int, Set[int]]:
         image_ann_map = defaultdict(set)
         for ann_id, ann in self.cocoDt.anns.items():
             if ann.get("fp"):
@@ -123,7 +123,7 @@ class ExtraEval:
         return image_ann_map
 
     @property
-    def fn_image_ann_map(self) -> Dict[set]:
+    def fn_image_ann_map(self) -> Dict[int, Set[int]]:
         image_ann_map = defaultdict(set)
         for ann_id, ann in self.cocoGt.anns.items():
             if ann.get("fn"):
