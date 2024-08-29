@@ -109,21 +109,28 @@ def display_image(
     dt_ann_ids: Optional[set] = None,
     return_fig: bool = False,
 ) -> Optional[go.Figure]:
-    """
-    Display the image with the results
-    cocoGt: ground truth
-    cocoDt: detection
-    image_id: image id
-    iouType: type of the annotation bbox or segm or keypoints
-    display_fp: display false positive
-    display_fn: display false negative
-    display_tp: display true positive
-    display_gt: display ground truth
-    data_folder: data folder
-    categories: categories to display
-    gt_ann_ids: ground truth annotation ids
-    dt_ann_ids: detection annotation ids
-    return_fig: return the figure
+    """Display the image with the results.
+
+    Args:
+        cocoGt (COCO): Ground truth COCO object
+        cocoDt (COCO, optional): Detection COCO object
+        image_id (int, optional): Image id to display
+        iouType (str, optional): Type of the annotation
+            bbox or segm or keypoints
+        display_fp (bool, optional): Display false positive annotations
+        display_fn (bool, optional): Display false negative annotations
+        display_tp (bool, optional): Display true positive annotations
+        display_gt (bool, optional): Display ground truth annotations
+        data_folder (str, optional): Folder containing the images
+        categories (list, optional): List of categories to display
+        gt_ann_ids (set, optional): Set of GT annotation ids to display
+        dt_ann_ids (set, optional): Set of DT annotation ids to display
+        return_fig (bool, optional): Return the figure object
+
+    Returns:
+            Plotly figure or None:
+                The figure object if return_fig is True, otherwise None.
+
     """
     polygons = []
 
@@ -286,13 +293,20 @@ def display_matrix(
     normalize: bool = False,
     return_fig: bool = False,
 ) -> Optional[go.Figure]:
+    """Display the confusion matrix.
+
+    Args:
+        conf_matrix (np.ndarray): Confusion matrix
+        labels (list): List of labels
+        normalize (bool, optional): Normalize the confusion matrix
+        return_fig (bool, optional): Return the figure object
+
+    Returns:
+            Plotly figure or None:
+                The figure object if return_fig is True, otherwise None.
+
     """
-    Display the confusion matrix
-    conf_matrix: confusion matrix
-    labels: labels of the matrix
-    normalize: normalize the matrix
-    return_fig: return the figure
-    """
+
     _labels = labels + ["fp", "fn"]
 
     if normalize:
@@ -347,10 +361,16 @@ def display_matrix(
 
 
 def plot_pre_rec(curves, return_fig: bool = False):
-    """
-    Plot the precision-recall curve
-    curves: list of curves to plot
-    return_fig: return the figure
+    """Plot the precision-recall curve.
+
+    Args:
+        curves (list): List of curves to plot
+        return_fig (bool, optional): Return the figure object
+
+    Returns:
+        Plotly figure or None:
+            The figure object if return_fig is True, otherwise None.
+
     """
     fig = go.Figure()
 
@@ -400,10 +420,16 @@ def plot_pre_rec(curves, return_fig: bool = False):
 
 
 def plot_f1_confidence(curves, return_fig: bool = False):
-    """
-    Plot the F1 confidence curve
-    curves: list of curves to plot
-    return_fig: return the figure
+    """Plot the F1 confidence curve.
+
+    Args:
+        curves (list): List of curves to plot
+        return_fig (bool, optional): Return the figure object
+
+    Returns:
+        Plotly figure or None:
+            The figure object if return_fig is True, otherwise None.
+
     """
     fig = go.Figure()
     eps = 1e-16

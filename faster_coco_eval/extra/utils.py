@@ -13,12 +13,17 @@ import faster_coco_eval.core.mask as mask_util
 def conver_mask_to_poly(mask: np.ndarray, bbox: list, boxes_margin=0.1) -> list:
     """Convert mask (uint8) to list of poly as coco style.
 
-    :param mask (np.ndarray): numpy array in uint8 0-255
-    :param bbox (list): x,y,w,h of this ann
-    :param boxes_margin (float): margin for increase bbox
-    :return: list of poly as coco style
+    Args:
+        mask (np.ndarray): mask image
+        bbox (list): x,y,w,h of this ann
+        boxes_margin (float, optional): margin for increase bbox.
+            Defaults to 0.1.
+
+    Returns:
+        list: list of poly as coco style
 
     """
+
     x1, y1, w, h = bbox
     x2 = x1 + w
     y2 = y1 + h
@@ -56,9 +61,12 @@ def conver_mask_to_poly(mask: np.ndarray, bbox: list, boxes_margin=0.1) -> list:
 def convert_rle_to_poly(rle: dict, bbox: list):
     """Convert rle (dict) to list of poly as coco style.
 
-    :param rle (dict): rle of mask image
-    :param bbox (list): x,y,w,h of this ann
-    :return: list of poly as coco style
+    Args:
+        rle (dict): rle of mask image
+        bbox (list): x,y,w,h of this ann
+
+    Returns:
+        list: list of poly as coco style
 
     """
     mask = mask_util.decode(rle) * 255
@@ -68,8 +76,11 @@ def convert_rle_to_poly(rle: dict, bbox: list):
 def convert_ann_rle_to_poly(ann: dict):
     """Convert ann segm from rle to poly style; Save rle in *count* var;
 
-    :param ann (dict): ann row
-    :return: ann
+    Args:
+        ann (dict): ann dict
+
+    Returns:
+        ann (dict): ann dict with poly segm
 
     """
     if type(ann["segmentation"]) is dict:
