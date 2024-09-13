@@ -25,7 +25,7 @@ jobs:
           CIBW_PROJECT_REQUIRES_PYTHON: ">=3.6"
           CIBW_SKIP: "pp* *musllinux*"
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
-          CIBW_TEST_COMMAND: cd {project}/ && python tests/test_basic.py
+          CIBW_TEST_COMMAND: cd {project}/ && python -m pip install parameterized && python tests/test_basic.py
         with:
           package-dir: ./
 
