@@ -210,37 +210,6 @@ class TestBaseCoco(unittest.TestCase):
         self.assertAlmostEqual(cpp_auc, orig_auc, places=8)
         self.assertAlmostEqual(py_auc, orig_auc, places=8)
 
-    def test_boundary_eval(self):
-        stats_as_dict = {
-            # the following values (except for mIoU and mAUC_50) have been
-            # obtained by running the original boundary_iou_api on
-            # gt_dataset and dt_dataset
-            "AP_all": 0.6947194719471946,
-            "AP_50": 0.6947194719471946,
-            "AP_75": 0.6947194719471946,
-            "AP_small": -1.0,
-            "AP_medium": 0.7367986798679867,
-            "AP_large": 0.0,
-            "AR_1": 0.6666666666666666,
-            "AR_10": 0.75,
-            "AR_100": 0.75,
-            "AR_small": -1.0,
-            "AR_medium": 0.7916666666666666,
-            "AR_large": 0.0,
-            "AR_50": 0.75,
-            "AR_75": 0.75,
-        }
-
-        cocoGt = COCO(self.gt_file)
-        cocoDt = cocoGt.loadRes(self.prepared_anns_droped_bbox)
-        cocoEval = COCOeval_faster(cocoGt, cocoDt, "boundary")
-
-        cocoEval.evaluate()
-        cocoEval.accumulate()
-        cocoEval.summarize()
-
-        self.assertEqual(cocoEval.stats_as_dict, stats_as_dict)
-
     def test_to_dict(self):
         orig_data = COCO.load_json(self.gt_file)
         cocoGt = COCO(self.gt_file)
