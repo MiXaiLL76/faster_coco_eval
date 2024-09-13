@@ -59,10 +59,6 @@ This package wraps a facebook C++ implementation of COCO-eval operations found i
 This implementation greatly speeds up the evaluation time
 for coco's AP metrics, especially when dealing with a high number of instances in an image.
 
-### Attention :bangbang:
-
-> Mask-api does not support working in multiple threads/processes. I am studying this issue, if you have the competence, I need help.
-
 ## Comparison
 
 For our use case with a test dataset of 5000 images from the coco val dataset.

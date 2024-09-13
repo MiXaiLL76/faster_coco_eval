@@ -270,6 +270,10 @@ class COCOeval:
         elif p.iouType == "bbox":
             g = [g["bbox"] for g in gt]
             d = [d["bbox"] for d in dt]
+        else:
+            ValueError(
+                f"p.iouType must be bbox or segm or boundary. Get {p.iouType}"
+            )
 
         iscrowd = [int(o.get("iscrowd", 0)) for o in gt]
         # compute iou between each dt and gt region
@@ -573,11 +577,18 @@ class COCOeval:
 
         if not self.eval:
             raise Exception("Please run accumulate() first")
+
         iouType = self.params.iouType
+
         if iouType in set(["segm", "bbox", "boundary"]):
             summarize = _summarizeDets
         elif iouType == "keypoints":
             summarize = _summarizeKps
+        else:
+            ValueError(
+                "iouType must be bbox, segm, boundary or keypoints. Get"
+                f" {iouType}"
+            )
 
         self.all_stats = summarize()
         self.stats = self.all_stats[:12]

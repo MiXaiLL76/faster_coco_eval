@@ -279,7 +279,7 @@ class COCO:
         """
 
         if _isArrayLike(ids):
-            return [self.anns[id] for id in ids]
+            return [self.anns[i] for i in ids]
         elif type(ids) is int:
             return [self.anns[ids]]
 
@@ -294,7 +294,7 @@ class COCO:
 
         """
         if _isArrayLike(ids):
-            return [self.cats[id] for id in ids]
+            return [self.cats[i] for i in ids]
         elif type(ids) is int:
             return [self.cats[ids]]
 
@@ -309,7 +309,7 @@ class COCO:
 
         """
         if _isArrayLike(ids):
-            return [self.imgs[id] for id in ids]
+            return [self.imgs[i] for i in ids]
         elif type(ids) is int:
             return [self.imgs[ids]]
 
@@ -375,42 +375,42 @@ class COCO:
             res.dataset["images"] = [
                 img for img in res.dataset["images"] if img["id"] in imgIds
             ]
-            for id, ann in enumerate(anns):
-                ann["id"] = id + 1
+            for index, ann in enumerate(anns):
+                ann["id"] = index + 1
         elif "bbox" in anns[0] and not anns[0]["bbox"] == []:
             res.dataset["categories"] = copy.deepcopy(
                 self.dataset["categories"]
             )
-            for id, ann in enumerate(anns):
+            for index, ann in enumerate(anns):
                 bb = ann["bbox"]
                 x1, x2, y1, y2 = [bb[0], bb[0] + bb[2], bb[1], bb[1] + bb[3]]
                 if "segmentation" not in ann:
                     ann["segmentation"] = [[x1, y1, x1, y2, x2, y2, x2, y1]]
                 ann["area"] = bb[2] * bb[3]
-                ann["id"] = id + 1
+                ann["id"] = index + 1
                 ann["iscrowd"] = 0
         elif "segmentation" in anns[0]:
             res.dataset["categories"] = copy.deepcopy(
                 self.dataset["categories"]
             )
-            for id, ann in enumerate(anns):
+            for index, ann in enumerate(anns):
                 # now only support compressed RLE format as segmentation results
                 ann["area"] = maskUtils.area(ann["segmentation"])
                 if "bbox" not in ann:
                     ann["bbox"] = maskUtils.toBbox(ann["segmentation"])
-                ann["id"] = id + 1
+                ann["id"] = index + 1
                 ann["iscrowd"] = 0
         elif "keypoints" in anns[0]:
             res.dataset["categories"] = copy.deepcopy(
                 self.dataset["categories"]
             )
-            for id, ann in enumerate(anns):
+            for index, ann in enumerate(anns):
                 s = ann["keypoints"]
                 x = s[0::3]
                 y = s[1::3]
                 x0, x1, y0, y1 = np.min(x), np.max(x), np.min(y), np.max(y)
                 ann["area"] = (x1 - x0) * (y1 - y0)
-                ann["id"] = id + 1
+                ann["id"] = index + 1
                 ann["bbox"] = [x0, y0, x1 - x0, y1 - y0]
         self.print_function("DONE (t={:0.2f}s)".format(time.time() - tic))
 
@@ -552,38 +552,38 @@ class COCO:
         """
         return self.getImgIds(img_ids, cat_ids)
 
-    def load_anns(self, ids: List[int]) -> List[int]:
+    def load_anns(self, ids: List[int]) -> List[dict]:
         """Load anns with the specified ids.
 
         Args:
             ids (int array)       : integer ids specifying ann
 
         Returns:
-            anns (object array)  : loaded ann objects
+            anns (dict array)  : loaded ann objects
 
         """
         return self.loadAnns(ids)
 
-    def load_cats(self, ids: List[int]) -> List[int]:
+    def load_cats(self, ids: List[int]) -> List[dict]:
         """Load cats with the specified ids.
 
         Args:
             ids (int array)       : integer ids specifying cat
 
         Returns:
-            cats (object array)  : loaded cat objects
+            cats (dict array)  : loaded cat objects
 
         """
         return self.loadCats(ids)
 
-    def load_imgs(self, ids: List[int]) -> List[int]:
+    def load_imgs(self, ids: List[int]) -> List[dict]:
         """Load imgs with the specified ids.
 
         Args:
             ids (int array)       : integer ids specifying img
 
         Returns:
-            imgs (object array)  : loaded img objects
+            imgs (dict array)  : loaded img objects
 
         """
         return self.loadImgs(ids)

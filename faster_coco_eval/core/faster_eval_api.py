@@ -52,7 +52,10 @@ class COCOeval_faster(COCOevalBase):
         elif p.iouType == "keypoints":
             computeIoU = self.computeOks
         else:
-            raise ValueError("Invalid iouType: {}".format(p.iouType))
+            raise ValueError(
+                "p.iouType must be segm, bbox, boundary or keypoints. Get"
+                f" {p.iouType}"
+            )
 
         self.ious = {
             (imgId, catId): computeIoU(imgId, catId)
