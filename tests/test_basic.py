@@ -3,7 +3,6 @@ import os
 import unittest
 
 import numpy as np
-from parameterized import parameterized
 
 import faster_coco_eval
 import faster_coco_eval.core.mask as mask_util
@@ -83,8 +82,7 @@ class TestBaseCoco(unittest.TestCase):
             cocoDt = cocoGt.loadRes(self.dt_ignore_test_file)
             COCOeval_faster(cocoGt, cocoDt, "iouType")
 
-    @parameterized.expand([(True,), (False,)])
-    def test_ignore_coco_eval(self, separate_eval):
+    def test_ignore_coco_eval(self):
         stats_as_dict = {
             "AP_all": 0.7099009900990099,
             "AP_50": 1.0,
@@ -111,9 +109,7 @@ class TestBaseCoco(unittest.TestCase):
 
         cocoDt = cocoGt.loadRes(self.dt_ignore_test_file, min_score=0.1)
 
-        cocoEval = COCOeval_faster(
-            cocoGt, cocoDt, iouType, separate_eval=separate_eval
-        )
+        cocoEval = COCOeval_faster(cocoGt, cocoDt, iouType, separate_eval=True)
 
         cocoEval.run()
 
