@@ -83,7 +83,7 @@ class TestBaseCoco(unittest.TestCase):
             cocoDt = cocoGt.loadRes(self.dt_ignore_test_file)
             COCOeval_faster(cocoGt, cocoDt, "iouType")
 
-    @parameterized.expand([(True, ), (False, )])
+    @parameterized.expand([(True,), (False,)])
     def test_ignore_coco_eval(self, separate_eval):
         stats_as_dict = {
             "AP_all": 0.7099009900990099,
