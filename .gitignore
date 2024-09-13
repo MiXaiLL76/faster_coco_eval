@@ -11,3 +11,4 @@ tests/synth_test_dataset
 examples/ultralytics
 examples/comparison/ultralytics/runs/*
 examples/comparison/ultralytics/*.pt
+*.whl
