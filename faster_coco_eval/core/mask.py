@@ -1,6 +1,6 @@
 # Original work Copyright (c) Piotr Dollar and Tsung-Yi Lin, 2014.
 # Modified work Copyright (c) 2024 MiXaiLL76
-from typing import Dict, List, Literal, Union
+from typing import Dict, List, Union
 
 import numpy as np
 
@@ -70,7 +70,7 @@ def rleToBoundaryCV(rle: dict, dilation_ratio: float = 0.02) -> dict:
 def rleToBoundary(
     rle: dict,
     dilation_ratio: float = 0.02,
-    backend: Literal["mask_api", "opencv"] = "mask_api",
+    backend: str = "mask_api",
 ) -> dict:
     """Convert run-length encoding to boundary rle.
 
