@@ -1,6 +1,14 @@
 import logging
 import os.path as osp
-from typing import List, Literal, Optional
+import sys
+from typing import List, Optional
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+
+    showAnnsiouTypeT = Literal["segm", "bbox"]
+else:
+    showAnnsiouTypeT = str
 
 import numpy as np
 import plotly.express as px
@@ -616,7 +624,7 @@ def show_anns(
     cocoGt: COCO,
     image_id: int,
     ann_ids: Optional[List[int]] = None,
-    iouType: Literal["bbox", "segm"] = "bbox",
+    iouType: showAnnsiouTypeT = "bbox",
     data_folder: Optional[str] = None,
     return_fig: bool = False,
 ):
