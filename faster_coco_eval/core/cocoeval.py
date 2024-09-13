@@ -3,8 +3,16 @@
 
 import logging
 import os
+import sys
 from collections import defaultdict
-from typing import Callable, List, Literal, Optional, Union
+from typing import Callable, List, Optional, Union
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+
+    iouTypeT = Literal["segm", "bbox", "keypoints", "boundary"]
+else:
+    iouTypeT = str
 
 import numpy as np
 
@@ -21,7 +29,7 @@ class COCOeval:
         self,
         cocoGt: Optional[COCO] = None,
         cocoDt: Optional[COCO] = None,
-        iouType: Literal["segm", "bbox", "keypoints", "boundary"] = "segm",
+        iouType: iouTypeT = "segm",
         print_function: Callable = logger.debug,
         extra_calc: bool = False,
         kpt_oks_sigmas: Optional[List[float]] = None,
@@ -653,7 +661,7 @@ class Params:
 
     def __init__(
         self,
-        iouType: Literal["bbox", "keypoints", "segm", "boundary"] = "segm",
+        iouType: iouTypeT = "segm",
         kpt_sigmas: Optional[List[float]] = None,
     ):
         """Params for coco evaluation api.
