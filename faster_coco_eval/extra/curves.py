@@ -1,4 +1,5 @@
 import logging
+from typing import List, Optional
 
 import numpy as np
 
@@ -10,8 +11,17 @@ logger = logging.getLogger(__name__)
 
 
 class Curves(ExtraEval):
-    def build_curve(self, label: str):
-        """Build the curve for a given label."""
+    def build_curve(self, label: str) -> List[dict]:
+        """Build the curve for a given label.
+
+        Args:
+            label (str): The label to build the curve for.
+
+        Returns:
+            list: A list of dictionaries
+                containing the curve data for each category.
+
+        """
         assert self.eval is not None, "Run first self.evaluate()"
 
         curve = []
@@ -50,13 +60,22 @@ class Curves(ExtraEval):
         return curve
 
     def plot_pre_rec(
-        self, curves=None, label: str = "category_id", return_fig: bool = False
+        self,
+        curves: Optional[List[dict]] = None,
+        label: Optional[str] = "category_id",
+        return_fig: Optional[bool] = False,
     ):
         """Plot the precision-recall curve.
 
-        curves: list of curves to plot
-        label: label of the curves
-        return_fig: return the figure
+        Args:
+            curves (list, optional): List of curves to plot.
+                If None, it will build the curves.
+            label (str, optional): Label for the curves.
+            return_fig (bool, optional): Return the figure object.
+
+        Returns:
+            Plotly figure or None:
+                The figure object if return_fig is True, otherwise None.
 
         """
         if curves is None:
@@ -65,13 +84,21 @@ class Curves(ExtraEval):
         return plot_pre_rec(curves, return_fig=return_fig)
 
     def plot_f1_confidence(
-        self, curves=None, label: str = "category_id", return_fig: bool = False
+        self,
+        curves: Optional[List[dict]] = None,
+        label: Optional[str] = "category_id",
+        return_fig: Optional[bool] = False,
     ):
         """Plot the F1 confidence curve.
 
-        curves: list of curves to plot
-        label: label of the curves
-        return_fig: return the figure
+        Args:
+            curves: list of curves to plot
+            label: label for the curves
+            return_fig: return the figure
+
+        Returns:
+            Plotly figure or None:
+                The figure object if return_fig is True, otherwise None.
 
         """
         if curves is None:
@@ -170,13 +197,21 @@ class Curves(ExtraEval):
         return curves
 
     def plot_ced_metric(
-        self, curves=None, normalize: bool = True, return_fig: bool = False
+        self,
+        curves: Optional[List[dict]] = None,
+        normalize: Optional[bool] = True,
+        return_fig: Optional[bool] = False,
     ):
         """Plot the CED metric curve.
 
-        curves: list of curves to plot
-        normalize: normalize the curve
-        return_fig: return the figure
+        Args:
+            curves: list of curves to plot
+            normalize: normalize the curves
+            return_fig: return the figure
+
+        Returns:
+            Plotly figure or None:
+                The figure object if return_fig is True, otherwise None.
 
         """
         if curves is None:

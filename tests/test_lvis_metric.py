@@ -3,6 +3,8 @@
 import os
 import unittest
 
+import numpy as np
+
 from faster_coco_eval import COCO, COCOeval_faster
 
 
@@ -13,18 +15,28 @@ class TestBaseLvis(unittest.TestCase):
     prepared_anns = None
 
     def setUp(self):
-        gt_file = "lvis_dataset/lvis_val_100.json"
-        dt_file = "lvis_dataset/lvis_results_100.json"
+        self.gt_file = "lvis_dataset/lvis_val_100.json"
+        self.dt_file = "lvis_dataset/lvis_results_100.json"
 
-        if not os.path.exists(gt_file):
-            gt_file = os.path.join("tests", gt_file)
-            dt_file = os.path.join("tests", dt_file)
+        if not os.path.exists(self.gt_file):
+            self.gt_file = os.path.join("tests", self.gt_file)
+            self.dt_file = os.path.join("tests", self.dt_file)
 
-        self.prepared_coco_in_dict = COCO.load_json(gt_file)
-        self.prepared_anns = COCO.load_json(dt_file)
+        self.prepared_coco_in_dict = COCO.load_json(self.gt_file)
+        self.prepared_anns = COCO.load_json(self.dt_file)
 
-    def test_coco_eval(self):
-        stats_as_dict = {
+        self.prepared_anns_numpy = []
+        for ann in self.prepared_anns:
+            self.prepared_anns_numpy.append(
+                [ann["image_id"]]
+                + ann["bbox"]
+                + [ann["score"]]
+                + [ann["category_id"]]
+            )
+
+        self.prepared_anns_numpy = np.array(self.prepared_anns_numpy)
+
+        self.stats_as_dict_result = {
             "AP_all": 0.3676645003471999,
             "AP_50": 0.626197183778713,
             "AP_75": 0.3842680457694463,
@@ -44,6 +56,7 @@ class TestBaseLvis(unittest.TestCase):
             "APf": 0.3875839974389359,
         }
 
+    def test_lvis_eval(self):
         iouType = "bbox"
         cocoGt = COCO(self.prepared_coco_in_dict)
         cocoDt = cocoGt.loadRes(self.prepared_anns)
@@ -55,7 +68,139 @@ class TestBaseLvis(unittest.TestCase):
         cocoEval.accumulate()
         cocoEval.summarize()
 
-        self.assertEqual(cocoEval.stats_as_dict, stats_as_dict)
+        self.assertEqual(cocoEval.stats_as_dict, self.stats_as_dict_result)
+
+    def test_loadNumpyAnnotations(self):
+        iouType = "bbox"
+        cocoGt = COCO(self.prepared_coco_in_dict)
+        cocoDt = cocoGt.loadRes(self.prepared_anns_numpy)
+
+        cocoEval = COCOeval_faster(cocoGt, cocoDt, iouType, lvis_style=True)
+        cocoEval.params.maxDets = [300]
+
+        cocoEval.evaluate()
+        cocoEval.accumulate()
+        cocoEval.summarize()
+
+        self.assertEqual(cocoEval.stats_as_dict, self.stats_as_dict_result)
+
+    def test_getAnnIds(self):
+        cocoGt = COCO(self.gt_file)
+        self.assertEqual(cocoGt.getAnnIds(), list(cocoGt.anns.keys()))
+
+        category_id = 1
+        self.assertEqual(
+            cocoGt.getAnnIds(catIds=[category_id]),
+            [
+                key
+                for key, val in cocoGt.anns.items()
+                if int(val["category_id"]) == category_id
+            ],
+        )
+
+        image_id = 521509
+        category_id = 191
+        self.assertEqual(
+            cocoGt.getAnnIds(catIds=[category_id], imgIds=[image_id]),
+            [
+                key
+                for key, val in cocoGt.anns.items()
+                if (int(val["category_id"]) == category_id)
+                and (int(val["image_id"]) == image_id)
+            ],
+        )
+
+        image_id = 521509
+        areaRng = [0, 300]
+        self.assertEqual(
+            cocoGt.get_ann_ids(
+                img_ids=[image_id], area_rng=areaRng, iscrowd=False
+            ),
+            [
+                key
+                for key, val in cocoGt.anns.items()
+                if (val["area"] > areaRng[0] and val["area"] < areaRng[1])
+                and (int(val["image_id"]) == image_id)
+            ],
+        )
+
+    def test_getCatIds(self):
+        cocoGt = COCO(self.gt_file)
+        self.assertEqual(cocoGt.getCatIds(), list(cocoGt.cats.keys()))
+
+        category_name = "acorn"
+        self.assertEqual(
+            cocoGt.get_cat_ids(cat_names=[category_name]),
+            [
+                key
+                for key, val in cocoGt.cats.items()
+                if val["name"] == category_name
+            ],
+        )
+
+        category_id = 191
+        self.assertEqual(
+            cocoGt.get_cat_ids(cat_ids=[category_id]),
+            [
+                key
+                for key, val in cocoGt.cats.items()
+                if val["id"] == category_id
+            ],
+        )
+
+    def test_getImgIds(self):
+        cocoGt = COCO(self.gt_file)
+        self.assertEqual(cocoGt.getImgIds(), list(cocoGt.imgs.keys()))
+
+        category_id = 191
+
+        self.assertEqual(
+            cocoGt.get_img_ids(cat_ids=[category_id]),
+            list(
+                set(
+                    [
+                        val["image_id"]
+                        for _, val in cocoGt.anns.items()
+                        if int(val["category_id"]) == category_id
+                    ]
+                )
+            ),
+        )
+
+        self.assertEqual(
+            cocoGt.get_img_ids(cat_ids=[category_id], img_ids=[121744]),
+            [121744],
+        )
+
+    def test_load_all(self):
+        cocoGt = COCO(self.gt_file)
+
+        with self.assertRaises(TypeError):
+            self.assertEqual(cocoGt.load_anns(), list(cocoGt.imgs.keys()))
+
+        with self.assertRaises(TypeError):
+            self.assertEqual(cocoGt.load_imgs(), list(cocoGt.imgs.keys()))
+
+        with self.assertRaises(TypeError):
+            self.assertEqual(cocoGt.load_cats(), list(cocoGt.cats.keys()))
+
+        image_id = 521509
+        self.assertEqual(cocoGt.load_imgs(ids=image_id), [cocoGt.imgs[521509]])
+
+        self.assertEqual(
+            cocoGt.load_imgs(ids=[image_id]), [cocoGt.imgs[521509]]
+        )
+
+        category_id = 191
+        self.assertEqual(
+            cocoGt.load_cats(ids=category_id), [cocoGt.cats[category_id]]
+        )
+        self.assertEqual(
+            cocoGt.load_cats(ids=[category_id]), [cocoGt.cats[category_id]]
+        )
+
+        ann_id = 1
+        self.assertEqual(cocoGt.load_anns(ids=ann_id), [cocoGt.anns[ann_id]])
 
 
 if __name__ == "__main__":

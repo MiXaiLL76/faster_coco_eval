@@ -1,6 +1,6 @@
 import logging
 import os.path as osp
-from typing import Optional
+from typing import List, Literal, Optional
 
 import numpy as np
 import plotly.express as px
@@ -105,29 +105,49 @@ def display_image(
     display_gt: bool = True,
     data_folder: Optional[str] = None,
     categories: Optional[list] = None,
+    gt_ann_ids: Optional[set] = None,
+    dt_ann_ids: Optional[set] = None,
     return_fig: bool = False,
 ) -> Optional[go.Figure]:
-    """
-    Display the image with the results
-    cocoGt: ground truth
-    cocoDt: detection
-    image_id: image id
-    iouType: type of the annotation bbox or segm or keypoints
-    display_fp: display false positive
-    display_fn: display false negative
-    display_tp: display true positive
-    display_gt: display ground truth
-    data_folder: data folder
-    categories: categories to display
-    return_fig: return the figure
+    """Display the image with the results.
+
+    Args:
+        cocoGt (COCO): Ground truth COCO object
+        cocoDt (COCO, optional): Detection COCO object
+        image_id (int, optional): Image id to display
+        iouType (str, optional): Type of the annotation
+            bbox or segm or keypoints
+        display_fp (bool, optional): Display false positive annotations
+        display_fn (bool, optional): Display false negative annotations
+        display_tp (bool, optional): Display true positive annotations
+        display_gt (bool, optional): Display ground truth annotations
+        data_folder (str, optional): Folder containing the images
+        categories (list, optional): List of categories to display
+        gt_ann_ids (set, optional): Set of GT annotation ids to display
+        dt_ann_ids (set, optional): Set of DT annotation ids to display
+        return_fig (bool, optional): Return the figure object
+
+    Returns:
+            Plotly figure or None:
+                The figure object if return_fig is True, otherwise None.
+
     """
     polygons = []
 
     image = cocoGt.imgs[image_id]
     gt_anns = {ann["id"]: ann for ann in cocoGt.imgToAnns[image_id]}
 
+    if gt_ann_ids is not None:
+        gt_anns = {id: ann for id, ann in gt_anns.items() if id in gt_ann_ids}
+
     if cocoDt is not None:
         dt_anns = {ann["id"]: ann for ann in cocoDt.imgToAnns[image_id]}
+
+        if dt_ann_ids is not None:
+            dt_anns = {
+                id: ann for id, ann in dt_anns.items() if id in dt_ann_ids
+            }
+
     else:
         dt_anns = {}
 
@@ -273,13 +293,20 @@ def display_matrix(
     normalize: bool = False,
     return_fig: bool = False,
 ) -> Optional[go.Figure]:
+    """Display the confusion matrix.
+
+    Args:
+        conf_matrix (np.ndarray): Confusion matrix
+        labels (list): List of labels
+        normalize (bool, optional): Normalize the confusion matrix
+        return_fig (bool, optional): Return the figure object
+
+    Returns:
+            Plotly figure or None:
+                The figure object if return_fig is True, otherwise None.
+
     """
-    Display the confusion matrix
-    conf_matrix: confusion matrix
-    labels: labels of the matrix
-    normalize: normalize the matrix
-    return_fig: return the figure
-    """
+
     _labels = labels + ["fp", "fn"]
 
     if normalize:
@@ -293,32 +320,25 @@ def display_matrix(
     else:
         hovertemplate += "Count: %{z:.0f}<extra></extra>"
 
-    heatmap = go.Heatmap(
-        z=conf_matrix,
-        x=_labels,
-        y=_labels[:-2],
-        colorscale="Blues",
-        hovertemplate=hovertemplate,
-    )
-
     annotations = []
     for j, row in enumerate(conf_matrix):
-        for i, value in enumerate(row):
+        annotations.append([])
+        for value in row:
             text_value = "{:.0f}".format(value)
             if normalize:
                 text_value += "%"
 
-            annotations.append(
-                {
-                    "x": _labels[i],
-                    "y": _labels[j],
-                    "font": {"color": "white"},
-                    "text": text_value,
-                    "xref": "x1",
-                    "yref": "y1",
-                    "showarrow": False,
-                }
-            )
+            annotations[j].append(text_value)
+
+    heatmap = go.Heatmap(
+        z=conf_matrix,
+        x=_labels,
+        y=_labels[:-2],
+        text=annotations,
+        colorscale="Blues",
+        hovertemplate=hovertemplate,
+        texttemplate="%{text}",
+    )
 
     title = "Confusion Matrix"
     if normalize:
@@ -328,7 +348,6 @@ def display_matrix(
         "title": title,
         "xaxis": {"title": "Predicted value"},
         "yaxis": {"title": "Real value"},
-        "annotations": annotations,
     }
 
     fig = go.Figure(data=[heatmap], layout=layout)
@@ -342,10 +361,16 @@ def display_matrix(
 
 
 def plot_pre_rec(curves, return_fig: bool = False):
-    """
-    Plot the precision-recall curve
-    curves: list of curves to plot
-    return_fig: return the figure
+    """Plot the precision-recall curve.
+
+    Args:
+        curves (list): List of curves to plot
+        return_fig (bool, optional): Return the figure object
+
+    Returns:
+        Plotly figure or None:
+            The figure object if return_fig is True, otherwise None.
+
     """
     fig = go.Figure()
 
@@ -395,10 +420,16 @@ def plot_pre_rec(curves, return_fig: bool = False):
 
 
 def plot_f1_confidence(curves, return_fig: bool = False):
-    """
-    Plot the F1 confidence curve
-    curves: list of curves to plot
-    return_fig: return the figure
+    """Plot the F1 confidence curve.
+
+    Args:
+        curves (list): List of curves to plot
+        return_fig (bool, optional): Return the figure object
+
+    Returns:
+        Plotly figure or None:
+            The figure object if return_fig is True, otherwise None.
+
     """
     fig = go.Figure()
     eps = 1e-16
@@ -579,3 +610,25 @@ def plot_ced_metric(curves, normalize: bool = False, return_fig: bool = False):
         return fig
 
     fig.show()
+
+
+def show_anns(
+    cocoGt: COCO,
+    image_id: int,
+    ann_ids: Optional[List[int]] = None,
+    iouType: Literal["bbox", "segm"] = "bbox",
+    data_folder: Optional[str] = None,
+    return_fig: bool = False,
+):
+    return display_image(
+        cocoGt,
+        image_id=image_id,
+        iouType=iouType,
+        display_gt=True,
+        display_fn=False,
+        display_fp=False,
+        display_tp=False,
+        data_folder=data_folder,
+        gt_ann_ids=ann_ids,
+        return_fig=return_fig,
+    )

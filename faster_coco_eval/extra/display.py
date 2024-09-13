@@ -19,18 +19,28 @@ class PreviewResults(ExtraEval):
         display_gt: bool = True,
         data_folder: Optional[str] = None,
         categories: Optional[list] = None,
+        gt_ann_ids: Optional[set] = None,
+        dt_ann_ids: Optional[set] = None,
         return_fig: bool = False,
     ):
-        """
-        Display the image with the results
-        image_id: image id
-        display_fp: display false positive
-        display_fn: display false negative
-        display_tp: display true positive
-        display_gt: display ground truth
-        data_folder: data folder
-        categories: categories to display
-        return_fig: return the figure
+        """Display the image with the results.
+
+        Args:
+            image_id: image id
+            display_fp: display false positives
+            display_fn: display false negatives
+            display_tp: display true positives
+            display_gt: display ground truth
+            data_folder: data folder
+            categories: categories to display
+            gt_ann_ids: ground truth annotation ids
+            dt_ann_ids: detected annotation ids
+            return_fig: return the figure
+
+        Returns:
+            Plotly figure or None:
+                The figure object if return_fig is True, otherwise None.
+
         """
         return display_image(
             self.cocoGt,
@@ -43,6 +53,8 @@ class PreviewResults(ExtraEval):
             display_gt=display_gt,
             data_folder=data_folder,
             categories=categories,
+            gt_ann_ids=gt_ann_ids,
+            dt_ann_ids=dt_ann_ids,
             return_fig=return_fig,
         )
 
@@ -74,13 +86,20 @@ class PreviewResults(ExtraEval):
                 categories=categories,
             )
 
-    def _compute_confusion_matrix(self, y_true, y_pred, fp={}, fn={}):
-        """
-        Compute the confusion matrix
-        y_true: true labels
-        y_pred: predicted labels
-        fp: false positive
-        fn: false negative
+    def _compute_confusion_matrix(
+        self, y_true, y_pred, fp={}, fn={}
+    ) -> np.ndarray:
+        """Compute the confusion matrix.
+
+        Args:
+            y_true: true labels
+            y_pred: predicted labels
+            fp: false positive
+            fn: false negative
+
+        Return:
+            confusion matrix
+
         """
         categories_real_ids = list(self.cocoGt.cats)
         categories_enum_ids = {
@@ -115,7 +134,7 @@ class PreviewResults(ExtraEval):
         fn = {}
         fp = {}
 
-        for ann_id, ann in self.cocoGt.anns.items():
+        for _, ann in self.cocoGt.anns.items():
             if ann.get("dt_id") is not None:
                 dt_ann = self.cocoDt.anns[ann["dt_id"]]
 
@@ -127,7 +146,7 @@ class PreviewResults(ExtraEval):
                     fn[ann["category_id"]] = 0
                 fn[ann["category_id"]] += 1
 
-        for ann_id, ann in self.cocoDt.anns.items():
+        for _, ann in self.cocoDt.anns.items():
             if ann.get("gt_id") is None:
                 if fp.get(ann["category_id"]) is None:
                     fp[ann["category_id"]] = 0
@@ -140,11 +159,17 @@ class PreviewResults(ExtraEval):
     def display_matrix(
         self, normalize=False, conf_matrix=None, return_fig: bool = False
     ):
-        """
-        Display the confusion matrix
-        normalize: normalize the matrix
-        conf_matrix: confusion matrix to display
-        return_fig: return the figure
+        """Display the confusion matrix.
+
+        Args:
+            normalize: normalize the matrix
+            conf_matrix: confusion matrix
+            return_fig: return the figure
+
+        Returns:
+            Plotly figure or None:
+                The figure object if return_fig is True, otherwise None.
+
         """
         if conf_matrix is None:
             conf_matrix = self.compute_confusion_matrix()

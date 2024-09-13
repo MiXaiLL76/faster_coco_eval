@@ -1,6 +1,17 @@
 
 # history
 
+## v1.6.0
+
+- [x] Rework [mask_api](csrc/mask_api/mask_api.cpp) with pybind11 C++ .
+- [x] Rework [RLE support](csrc/mask_api/src/rle.cpp).
+- [x] Create test files for all components.
+- [x] The math_matches function has been reworked, with an emphasis on using C++ code.
+- [x] Added more documentation of functions. Optimized existing ones.
+- [x] Added rleToBoundary func with 2 backend ["mask_api", "opencv"]
+- [x] IoU type [boundary](https://github.com/bowenc0221/boundary-iou-api/tree/master) support (further testing is needed)
+- [x] Create async rle and boundary comput [discussion](https://github.com/MiXaiLL76/faster_coco_eval/pull/31#issuecomment-2308369319)
+
 ## v1.5.7
 
 - [x] Compare COCOEval bug fix. 
@@ -26,8 +37,6 @@ cocoEval.params.maxDets = [300]
 - [x] Add CED MSE curve
 - [x] Review tests
 - [x] Review **COCOeval_faster.math_matches** function and **COCOeval_faster.compute_mIoU** function
-- [x] Add img+category to ann ids mapping via **COCO.img_cat_ann_idx_map**
-- [x] Add img to ann ids mapping via **COCO.img_ann_idx_map**
 
 ## v1.5.3 - v1.5.4
 

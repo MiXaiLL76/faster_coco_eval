@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 
 import glob
-import platform
 
-import numpy as np
 import setuptools
-from pybind11.setup_helpers import Pybind11Extension, build_ext
-from setuptools import Extension, setup
+from pybind11.setup_helpers import ParallelCompile, Pybind11Extension, build_ext
+from setuptools import setup
+
+ParallelCompile("4").install()
 
 
 def readme():
@@ -107,41 +107,36 @@ def get_extensions(version_info):
     ]
     print("Sources: {}".format(sources))
 
+    extra_compile_args = [
+        "-std=c++17",
+        "-fPIC",
+        "-ffinite-math-only",
+        "-fno-signed-zeros",
+        "-ftree-vectorize",
+    ]
+
     ext_modules += [
         Pybind11Extension(
             name="faster_coco_eval.faster_eval_api_cpp",
             sources=sources,
             define_macros=[("VERSION_INFO", version_info)],
+            extra_compile_args=extra_compile_args,
         )
     ]
 
     sources = [
-        "csrc/mask/common/maskApi.c",
-        "csrc/mask/pycocotools/_mask.pyx",
+        "csrc/mask_api/src/mask.cpp",
+        "csrc/mask_api/src/rle.cpp",
+        "csrc/mask_api/mask_api.cpp",
     ]
-    include_dirs = [np.get_include(), "csrc/mask/common"]
-
     print("Sources: {}".format(sources))
-    print("Include: {}".format(include_dirs))
 
     ext_modules += [
-        Extension(
-            "faster_coco_eval.mask_api_cpp",
+        Pybind11Extension(
+            name="faster_coco_eval.mask_api_new_cpp",
             sources=sources,
-            include_dirs=include_dirs,
-            extra_compile_args=(
-                []
-                if platform.system() == "Windows"
-                else [
-                    "-Wno-cpp",
-                    "-Wno-unused-function",
-                    "-std=c99",
-                    "-O3",
-                    "-Wno-maybe-uninitialized",
-                    "-Wno-misleading-indentation",
-                ]
-            ),
-            extra_link_args=[],
+            define_macros=[("VERSION_INFO", version_info)],
+            extra_compile_args=extra_compile_args,
         )
     ]
 

@@ -1,85 +1,205 @@
-__author__ = "tsungyi"
+# Original work Copyright (c) Piotr Dollar and Tsung-Yi Lin, 2014.
+# Modified work Copyright (c) 2024 MiXaiLL76
+from typing import Dict, List, Literal, Union
 
-import faster_coco_eval.mask_api_cpp as _mask
+import numpy as np
 
-# Interface for manipulating masks stored in RLE format.
-#
-# RLE is a simple yet efficient format for storing binary masks. RLE
-# first divides a vector (or vectorized image) into a series of piecewise
-# constant regions and then for each piece simply stores the length of
-# that piece. For example, given M=[0 0 1 1 1 0 1] the RLE counts would
-# be [2 3 1 1], or for M=[1 1 1 1 1 1 0] the counts would be [0 6 1]
-# (note that the odd counts are always the numbers of zeros). Instead of
-# storing the counts directly, additional compression is achieved with a
-# variable bitrate representation based on a common scheme called LEB128.
-#
-# Compression is greatest given large piecewise constant regions.
-# Specifically, the size of the RLE is proportional to the number of
-# *boundaries* in M (or for an image the number of boundaries in the y
-# direction). Assuming fairly simple shapes, the RLE representation is
-# O(sqrt(n)) where n is number of pixels in the object. Hence space usage
-# is substantially lower, especially for large simple objects (large n).
-#
-# Many common operations on masks can be computed directly using the RLE
-# (without need for decoding). This includes computations such as area,
-# union, intersection, etc. All of these operations are linear in the
-# size of the RLE, in other words they are O(sqrt(n)) where n is the area
-# of the object. Computing these operations on the original mask is O(n).
-# Thus, using the RLE can result in substantial computational savings.
-#
-# The following API functions are defined:
-#  encode         - Encode binary masks using RLE.
-#  decode         - Decode binary masks encoded via RLE.
-#  merge          - Compute union or intersection of encoded masks.
-#  iou            - Compute intersection over union between masks.
-#  area           - Compute area of encoded masks.
-#  toBbox         - Get bounding boxes surrounding encoded masks.
-#  frPyObjects    - Convert polygon, bbox, and uncompressed RLE to encoded RLE mask. # noqa: E501
-#
-# Usage:
-#  Rs     = encode( masks )
-#  masks  = decode( Rs )
-#  R      = merge( Rs, intersect=false )
-#  o      = iou( dt, gt, iscrowd )
-#  a      = area( Rs )
-#  bbs    = toBbox( Rs )
-#  Rs     = frPyObjects( [pyObjects], h, w )
-#
-# In the API the following formats are used:
-#  Rs      - [dict] Run-length encoding of binary masks
-#  R       - dict Run-length encoding of binary mask
-#  masks   - [hxwxn] Binary mask(s) (must have type np.ndarray(dtype=uint8) in column-major order) # noqa: E501
-#  iscrowd - [nx1] list of np.ndarray. 1 indicates corresponding gt image has crowd region to ignore # noqa: E501
-#  bbs     - [nx4] Bounding box(es) stored as [x y w h]
-#  poly    - Polygon stored as [[x1 y1 x2 y2...],[x1 y1 ...],...] (2D list)
-#  dt,gt   - May be either bounding boxes or encoded masks
-# Both poly and bbs are 0-indexed (bbox=[0 0 1 1] encloses first pixel).
-#
-# Finally, a note about the intersection over union (iou) computation.
-# The standard iou of a ground truth (gt) and detected (dt) object is
-#  iou(gt,dt) = area(intersect(gt,dt)) / area(union(gt,dt))
-# For "crowd" regions, we use a modified criteria. If a gt object is
-# marked as "iscrowd", we allow a dt to match any subregion of the gt.
-# Choosing gt' in the crowd gt that best matches the dt can be done using
-# gt'=intersect(dt,gt). Since by definition union(gt',dt)=dt, computing
-#  iou(gt,dt,iscrowd) = iou(gt',dt) = area(intersect(gt,dt)) / area(dt)
-# For crowd gt regions we use this modified criteria above for the iou.
-#
-# To compile run "python setup.py build_ext --inplace"
-# Please do not contact us for help with compiling.
-#
-# Microsoft COCO Toolbox.      version 2.0
-# Data, paper, and tutorials available at:  http://mscoco.org/
-# Code written by Piotr Dollar and Tsung-Yi Lin, 2015.
-# Licensed under the Simplified BSD License [see coco/license.txt]
+try:
+    import cv2
 
-iou = _mask.iou
-merge = _mask.merge
-frPyObjects = _mask.frPyObjects
+    opencv_available = True
+except ImportError:
+    opencv_available = False
+
+import faster_coco_eval.mask_api_new_cpp as _mask
+
+ValidRleType = Union[
+    List[np.ndarray], List[List[float]], np.ndarray, List[dict]
+]
 
 
-def encode(bimask):
-    """Encode binary masks using RLE."""
+def segmToRle(segm: Union[List[float], List[int], dict], w: int, h: int):
+    """Convert segm array to run-length encoding.
+
+    Args:
+        segm (list of float or int): segmentation map
+        w (int): width of the image
+        h (int): height of the image
+
+    Returns:
+        rle (dict): run-length encoding of the segmentation map
+
+    """
+
+    return _mask.segmToRle(segm, w, h)
+
+
+def rleToBoundaryCV(rle: dict, dilation_ratio: float = 0.02) -> dict:
+    """Convert run-length encoding to boundary rle.
+
+    Args:
+        rle (dict): run-length encoding of a binary mask
+        dilation_ratio (float): ratio of dilation to apply to the mask
+
+    Returns:
+        boundary_rle (dict): run-length encoding of the boundary mask
+
+    """
+
+    mask = _mask.decode([rle])[:, :, 0]
+    h, w = rle["size"]
+
+    img_diag = np.sqrt(h**2 + w**2)
+    dilation = int(round(dilation_ratio * img_diag))
+    if dilation < 1:
+        dilation = 1
+
+    # Pad image so mask truncated by the image border is
+    # also considered as boundary.
+    new_mask = cv2.copyMakeBorder(
+        mask, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=0
+    )
+    kernel = np.ones((3, 3), dtype=np.uint8)
+    new_mask_erode = cv2.erode(new_mask, kernel, iterations=dilation)
+    mask_erode = new_mask_erode[1 : h + 1, 1 : w + 1]
+    # G_d intersects G in the paper.
+    boundary_mask = mask - mask_erode
+    return _mask.encode(boundary_mask[..., None])[0]
+
+
+def rleToBoundary(
+    rle: dict,
+    dilation_ratio: float = 0.02,
+    backend: Literal["mask_api", "opencv"] = "mask_api",
+) -> dict:
+    """Convert run-length encoding to boundary rle.
+
+    Args:
+        rle (dict): run-length encoding of a binary mask
+        dilation_ratio (float): ratio of dilation to apply to the mask
+        backend (str): backend to use for conversion
+            - "mask_api": uses the faster_eval_api_cpp backend
+            - "opencv": uses OpenCV for conversion
+
+    Returns:
+        boundary_rle (dict): run-length encoding of the boundary mask
+
+    """
+
+    if backend == "mask_api":
+        return _mask.toBoundary([rle], dilation_ratio)[0]
+    else:
+        if not opencv_available:
+            raise ImportError(
+                "OpenCV is not available. Please install OpenCV to use this"
+                " function."
+            )
+        return rleToBoundaryCV(rle, dilation_ratio)
+
+
+def calculateRleForAllAnnotations(
+    anns: List[dict],
+    img_sizes: Dict[int, tuple],
+    compute_rle: bool,
+    compute_boundary: bool,
+    boundary_dilation_ratio: float,
+    boundary_cpu_count: int,
+):
+    """Calculate run-length encoding for all annotations.
+
+    Args:
+        anns (list of dict): annotations
+        img_sizes (dict): dictionary mapping image ids to their sizes (h,w)
+        compute_rle (bool): whether to compute run-length encoding
+        compute_boundary (bool): whether to compute boundary run-length encoding
+        boundary_dilation_ratio (float): ratio of dilation to apply to the mask
+        boundary_cpu_count (int): number of CPUs to use for boundary computation
+
+    """
+    return _mask.calculateRleForAllAnnotations(
+        anns,
+        img_sizes,
+        compute_rle,
+        compute_boundary,
+        boundary_dilation_ratio,
+        boundary_cpu_count,
+    )
+
+
+def iou(
+    dt: ValidRleType,
+    gt: ValidRleType,
+    iscrowd: List[int],
+) -> Union[list, np.ndarray]:
+    """Compute intersection over union between two sets of run-length encoded
+    masks.
+
+    Args:
+        dt (list of dict or dict): detected masks
+        gt (list of dict or dict): ground truth masks
+        iscrowd (list of int): flag indicating whether the mask is crowd
+
+    Returns:
+        iou (list or ndarray): intersection over union between dt and gt masks
+
+    """
+
+    return _mask.iou(dt, gt, iscrowd)
+
+
+def merge(rleObjs: List[dict], intersect: int = 0):
+    """Merge a list of run-length encoded objects.
+
+    Args:
+        rleObjs (list of dict): run-length encoding of binary masks
+        intersect (int): flag for type of merge to perform
+
+    Returns:
+        merged (dict): run-length encoding of merged mask
+
+    """
+
+    return _mask.merge(rleObjs, intersect)
+
+
+def frPyObjects(
+    objs: Union[
+        ValidRleType,
+        np.ndarray,
+        List[float],
+        dict,
+    ],
+    h: int,
+    w: int,
+) -> Union[dict, List[dict]]:
+    """Convert a list of objects to a format suitable for use in the
+    _mask.frPyObjects function.
+
+    Args:
+        objs (np.ndarray or list of list of float or dict):
+            objects to be converted
+        h (int): height of the image
+        w (int): width of the image
+
+    Returns:
+        rle (dict or list of dict): run-length encoding of the objects
+
+    """
+
+    return _mask.frPyObjects(objs, h, w)
+
+
+def encode(bimask: np.ndarray) -> dict:
+    """Encode binary masks using RLE.
+
+    Args:
+        bimask (ndarray): binary mask
+
+    Returns:
+        rle (dict): run-length encoding of the binary mask
+
+    """
+
     if len(bimask.shape) == 3:
         return _mask.encode(bimask)
     elif len(bimask.shape) == 2:
@@ -87,24 +207,50 @@ def encode(bimask):
         return _mask.encode(bimask.reshape((h, w, 1), order="F"))[0]
 
 
-def decode(rleObjs):
-    """Decode binary masks encoded via RLE."""
+def decode(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
+    """Decode binary masks encoded via RLE.
+
+    Args:
+        rleObjs (dict or list of dict): run-length encoding of binary mask
+
+    Returns:
+        bimask (ndarray): decoded binary mask
+
+    """
+
     if type(rleObjs) is list:
         return _mask.decode(rleObjs)
     else:
         return _mask.decode([rleObjs])[:, :, 0]
 
 
-def area(rleObjs):
-    """Compute area of encoded masks."""
+def area(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
+    """
+    Compute area of encoded masks.
+    Args:
+        rleObjs (dict or list of dict): run-length encoding of binary mask
+
+    Returns:
+        area (np.ndarray): area of run-length encodings
+    """
+
     if type(rleObjs) is list:
         return _mask.area(rleObjs)
     else:
         return _mask.area([rleObjs])[0]
 
 
-def toBbox(rleObjs):
-    """Get bounding boxes surrounding encoded masks."""
+def toBbox(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
+    """Get bounding boxes surrounding encoded masks.
+
+    Args:
+        rleObjs (dict or list of dict): run-length encoding of binary mask
+
+    Returns:
+        bbox (np.ndarray): bounding box of run-length encodings
+
+    """
+
     if type(rleObjs) is list:
         return _mask.toBbox(rleObjs)
     else:

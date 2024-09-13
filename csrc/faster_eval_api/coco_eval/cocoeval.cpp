@@ -11,6 +11,20 @@ namespace coco_eval
 
   namespace COCOeval
   {
+    template <typename T>
+    int v_index(const std::vector<T> &v, const T &key)
+    {
+      auto itr = std::find(v.begin(), v.end(), key);
+
+      if (itr != v.cend())
+      {
+        return std::distance(v.begin(), itr);
+      }
+      else
+      {
+        return -1;
+      }
+    }
 
     // Sort detections from highest score to lowest, such that
     // detection_instances[detection_sorted_indices[t]] >=
@@ -44,7 +58,7 @@ namespace coco_eval
       ignores->reserve(ground_truth_instances.size());
       for (auto o : ground_truth_instances)
       {
-        ignores->push_back(
+        ignores->emplace_back(
             o.ignore || o.area < area_range[0] || o.area > area_range[1]);
       }
 
@@ -83,9 +97,6 @@ namespace coco_eval
       // num_iou_thresholds * num_ground_truth, 0);
       std::vector<int64_t> &ground_truth_matches = results->ground_truth_matches;
       ground_truth_matches.resize(num_iou_thresholds * num_ground_truth, 0);
-
-      std::vector<int64_t> &ground_truth_orig_id = results->ground_truth_orig_id;
-      ground_truth_orig_id.resize(num_iou_thresholds * num_ground_truth, -1);
 
       std::vector<int64_t> &detection_matches = results->detection_matches;
 
@@ -141,7 +152,12 @@ namespace coco_eval
                 ground_truth_instances[ground_truth_sorted_indices[match]].id;
             ground_truth_matches[t * num_ground_truth + match] =
                 detection_instances[detection_sorted_indices[d]].id;
-            ground_truth_orig_id[t * num_ground_truth + match] = (long)ground_truth_instances[ground_truth_sorted_indices[match]].id;
+
+            results->matched_annotations.push_back(
+                MatchedAnnotation(
+                    ground_truth_matches[t * num_ground_truth + match], // DT_ID
+                    detection_matches[t * num_detections + d],          // GT_ID
+                    best_iou));
           }
 
           // set unmatched detections outside of area range to ignore
@@ -280,9 +296,9 @@ namespace coco_eval
              d < (int)evaluation.detection_scores.size() && d < max_detections;
              ++d)
         { // detected instances
-          evaluation_indices->push_back(evaluation_index + i);
-          image_detection_indices->push_back(d);
-          detection_scores->push_back(evaluation.detection_scores[d]);
+          evaluation_indices->emplace_back(evaluation_index + i);
+          image_detection_indices->emplace_back(d);
+          detection_scores->emplace_back(evaluation.detection_scores[d]);
         }
         for (auto ground_truth_ignore : evaluation.ground_truth_ignores)
         {
@@ -373,13 +389,13 @@ namespace coco_eval
 
         const double recall =
             static_cast<double>(true_positives_sum) / num_valid_ground_truth;
-        recalls->push_back(recall);
+        recalls->emplace_back(recall);
         const int64_t num_valid_detections =
             true_positives_sum + false_positives_sum;
         const double precision = num_valid_detections > 0
                                      ? static_cast<double>(true_positives_sum) / num_valid_detections
                                      : 0.0;
-        precisions->push_back(precision);
+        precisions->emplace_back(precision);
       }
 
       (*recalls_out)[recalls_out_index] = !recalls->empty() ? recalls->back() : 0;
@@ -544,14 +560,26 @@ namespace coco_eval
 
       int evaluations_size = static_cast<int>(evaluations.size());
 
-      std::vector<int64_t> out_detection_matches = {};
-      std::vector<int64_t> out_ground_truth_matches = {};
-      std::vector<int64_t> out_ground_truth_orig_id = {};
+      std::unordered_map<std::string, double> matched;
+
       for (auto eval : evaluations)
       {
-        out_detection_matches.insert(out_detection_matches.end(), eval.detection_matches.begin(), eval.detection_matches.end());
-        out_ground_truth_matches.insert(out_ground_truth_matches.end(), eval.ground_truth_matches.begin(), eval.ground_truth_matches.end());
-        out_ground_truth_orig_id.insert(out_ground_truth_orig_id.end(), eval.ground_truth_orig_id.begin(), eval.ground_truth_orig_id.end());
+        for (auto matched_annotation : eval.matched_annotations)
+        {
+          std::string key = std::to_string(matched_annotation.dt_id) + "_" + std::to_string(matched_annotation.gt_id);
+
+          if (matched.find(key) != matched.end())
+          {
+            if (matched[key] < matched_annotation.iou)
+            {
+              matched[key] = matched_annotation.iou;
+            }
+          }
+          else
+          {
+            matched[key] = matched_annotation.iou;
+          }
+        }
       }
 
       std::vector<int64_t> counts = {
@@ -573,16 +601,14 @@ namespace coco_eval
           "counts"_a = counts,
           "date"_a = py::str(buffer),
 
+          "matched"_a = matched,
+
           // precision and scores are num_iou_thresholds X num_recall_thresholds X num_categories X num_area_ranges X num_max_detections
           "precision"_a = py::array(precisions_out.size(), precisions_out.data()).reshape(counts),
           "scores"_a = py::array(scores_out.size(), scores_out.data()).reshape(counts),
 
           // recall is num_iou_thresholds X num_categories X num_area_ranges X num_max_detections
           "recall"_a = py::array(recalls_out.size(), recalls_out.data()).reshape(recall_counts),
-
-          "detection_matches"_a = py::array(out_detection_matches.size(), out_detection_matches.data()).reshape(matches_shape),
-          "ground_truth_matches"_a = py::array(out_ground_truth_matches.size(), out_ground_truth_matches.data()).reshape(matches_shape),
-          "ground_truth_orig_id"_a = py::array(out_ground_truth_orig_id.size(), out_ground_truth_orig_id.data()).reshape(matches_shape),
           "evaluations_size"_a = evaluations_size);
     }
 
@@ -601,6 +627,244 @@ namespace coco_eval
       std::vector<ImageEvaluation> result = EvaluateImages(area_ranges, max_detections.back(), iou_thresholds, image_category_ious, image_category_ground_truth_instances, image_category_detection_instances);
       return Accumulate(params, result);
     }
+
+    void Dataset::append(int64_t img_id, int64_t cat_id, py::dict ann)
+    {
+      this->data[{img_id, cat_id}].emplace_back(ann);
+    }
+    std::vector<py::dict> Dataset::get(const int64_t &img_id, const int64_t &cat_id)
+    {
+      std::pair<int64_t, int64_t> key(img_id, cat_id);
+
+      if (this->data.find(key) != this->data.end())
+      {
+        return this->data[key];
+      }
+      else
+      {
+        return std::vector<py::dict>();
+      }
+    }
+
+    InstanceAnnotation parseInstanceAnnotation(const py::dict &ann)
+    {
+      uint64_t id = 0;
+      double score = 0.;
+      double area = 0.;
+      bool is_crowd = false;
+      bool ignore = false;
+      bool lvis_mark = false;
+
+      for (auto it : ann)
+      {
+        std::string key = it.first.cast<std::string>();
+
+        if (key == "id")
+        {
+          id = it.second.cast<uint64_t>();
+        }
+        else if (key == "score")
+        {
+          score = it.second.cast<double>();
+        }
+        else if (key == "area")
+        {
+          area = it.second.cast<double>();
+        }
+        else if ((key == "is_crowd") || key == "iscrowd")
+        {
+          is_crowd = it.second.cast<bool>();
+        }
+        else if (key == "ignore")
+        {
+          ignore = it.second.cast<bool>();
+        }
+        else if (key == "lvis_mark")
+        {
+          lvis_mark = it.second.cast<bool>();
+        }
+      }
+      return InstanceAnnotation(id, score, area, is_crowd, ignore, lvis_mark);
+    }
+
+    std::vector<InstanceAnnotation> Dataset::get_cpp_annotations(
+        const int64_t &img_id, const int64_t &cat_id)
+    {
+      std::vector<py::dict> anns = get(img_id, cat_id);
+      std::vector<InstanceAnnotation> result;
+      for (size_t i = 0; i < anns.size(); i++)
+      {
+        result.push_back(parseInstanceAnnotation(anns[i]));
+      }
+      return result;
+    }
+
+    std::vector<std::vector<std::vector<InstanceAnnotation>>> Dataset::get_cpp_instances(
+        const std::vector<int64_t> &img_ids, const std::vector<int64_t> &cat_ids, const bool &useCats)
+    {
+      std::vector<std::vector<std::vector<InstanceAnnotation>>> result;
+      for (size_t i = 0; i < img_ids.size(); i++)
+      {
+        int64_t img_id = img_ids[i];
+        result.push_back(std::vector<std::vector<InstanceAnnotation>>());
+        if (!useCats)
+        {
+          result[i].push_back(std::vector<InstanceAnnotation>());
+        }
+
+        for (size_t j = 0; j < cat_ids.size(); j++)
+        {
+          int64_t cat_id = cat_ids[j];
+
+          std::vector<InstanceAnnotation> anns = this->get_cpp_annotations(img_id, cat_id);
+
+          if (useCats)
+          {
+            result[i].emplace_back(anns);
+          }
+          else
+          {
+            result[i][0].insert(result[i][0].end(), anns.begin(), anns.end());
+          }
+        }
+      }
+      return result;
+    }
+
+    std::vector<std::vector<std::vector<py::dict>>> Dataset::get_instances(
+        const std::vector<int64_t> &img_ids, const std::vector<int64_t> &cat_ids, const bool &useCats)
+    {
+      std::vector<std::vector<std::vector<py::dict>>> result;
+      for (size_t i = 0; i < img_ids.size(); i++)
+      {
+        int64_t img_id = img_ids[i];
+        result.push_back(std::vector<std::vector<py::dict>>());
+        if (!useCats)
+        {
+          result[i].push_back(std::vector<py::dict>());
+        }
+
+        for (size_t j = 0; j < cat_ids.size(); j++)
+        {
+          int64_t cat_id = cat_ids[j];
+
+          std::vector<py::dict> anns = this->get(img_id, cat_id);
+
+          if (useCats)
+          {
+            result[i].emplace_back(anns);
+          }
+          else
+          {
+            result[i][0].insert(result[i][0].end(), anns.begin(), anns.end());
+          }
+        }
+      }
+      return result;
+    }
+
+    long double calc_auc(const std::vector<long double> &recall_list, const std::vector<long double> &precision_list)
+    {
+      std::vector<long double> mpre = precision_list;
+
+      for (size_t i = mpre.size() - 1; i > 0; i--)
+      {
+        mpre[i - 1] = std::max(mpre[i - 1], mpre[i]);
+      }
+
+      long double result = 0;
+
+      for (size_t i = 1; i < recall_list.size(); i++)
+      {
+        if (recall_list[i - 1] != recall_list[i])
+        {
+          result += (recall_list[i] - recall_list[i - 1]) * mpre[i];
+        }
+      }
+
+      return result;
+    }
+
+    long double _summarize(const int &ap, const double &iouThr, const std::string &areaRng, const int &maxDet, const std::vector<int> &catIds, const py::object &params, const std::vector<size_t> &counts, const py::object &nums_array)
+    {
+      std::vector<std::string> areaRngLbl = list_to_vec<std::string>(params.attr("areaRngLbl"));
+      std::vector<int> maxDets = list_to_vec<int>(params.attr("maxDets"));
+      std::vector<double> iouThrs = list_to_vec<double>(params.attr("iouThrs"));
+
+      std::vector<int> _catIds;
+
+      int iou_ind = v_index(iouThrs, iouThr);
+      int aind = v_index(areaRngLbl, areaRng);
+      int mind = v_index(maxDets, maxDet);
+
+      if (catIds.size() == 0)
+      {
+        for (size_t category = 0; category < counts[2]; category++)
+        {
+          _catIds.emplace_back(category);
+        }
+      }
+      else
+      {
+        _catIds = catIds;
+      }
+
+      std::vector<long double> result;
+
+      if (ap == 1)
+      {
+        // # dimension of precision: [TxRxKxAxM]
+        std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>> precision = nums_array.cast<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>();
+        if (iou_ind != -1)
+        {
+          precision = {precision[iou_ind]};
+        }
+        for (size_t iou_threshold = 0; iou_threshold < precision.size(); iou_threshold++)
+        {
+          for (size_t recall_threshold = 0; recall_threshold < counts[1]; recall_threshold++)
+          {
+            for (const auto &category : _catIds)
+            {
+              long double pre = (long double)precision[iou_threshold][recall_threshold][category][aind][mind];
+              if (pre != -1)
+              {
+                result.emplace_back(pre);
+              }
+            }
+          }
+        }
+      }
+      else
+      {
+        // # dimension of recall: [TxKxAxM]
+        std::vector<std::vector<std::vector<std::vector<double>>>> recall = nums_array.cast<std::vector<std::vector<std::vector<std::vector<double>>>>>();
+        if (iou_ind != -1)
+        {
+          recall = {recall[iou_ind]};
+        }
+        for (size_t iou_threshold = 0; iou_threshold < recall.size(); iou_threshold++)
+        {
+          for (const auto &category : catIds)
+          {
+            long double rec = (long double)recall[iou_threshold][category][aind][mind];
+            if (rec != -1)
+            {
+              result.emplace_back(rec);
+            }
+          }
+        }
+      }
+
+      if (result.size() > 0)
+      {
+        return std::accumulate(result.begin(), result.end(), 0.0) / result.size();
+      }
+      else
+      {
+        return -1;
+      }
+    }
+
   } // namespace COCOeval
 
 } // namespace coco_eval
