@@ -24,7 +24,7 @@ jobs:
           CIBW_SKIP: "pp* *musllinux* *cp36* *cp313*"
           CIBW_ARCHS: x86_64
           CIBW_TEST_REQUIRES: pytest
-          CIBW_TEST_COMMAND: "cd {project}/tests && pytest"
+          CIBW_TEST_COMMAND: "cd {project}/tests && pytest ."
         with:
           package-dir: ./
 
