@@ -169,15 +169,15 @@ class COCOeval:
 
         img_sizes = defaultdict(tuple)
 
-        def get_img_size_by_id(image_id) -> tuple:
+        def get_img_size_by_id(image_id, dataset: COCO) -> tuple:
             if img_sizes.get(image_id) is None:
-                t = self.cocoGt.imgs[image_id]
+                t = dataset.imgs[image_id]
                 img_sizes[image_id] = t["height"], t["width"]
             return img_sizes[image_id]
 
         for gt in gts:
             if p.compute_rle:
-                get_img_size_by_id(gt["image_id"])
+                get_img_size_by_id(gt["image_id"], self.cocoGt)
 
         maskUtils.calculateRleForAllAnnotations(
             gts,
@@ -206,7 +206,7 @@ class COCOeval:
                 )
 
             if p.compute_rle:
-                get_img_size_by_id(dt["image_id"])
+                get_img_size_by_id(dt["image_id"], self.cocoDt)
 
         maskUtils.calculateRleForAllAnnotations(
             dts,
