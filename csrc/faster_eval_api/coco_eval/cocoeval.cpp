@@ -12,7 +12,7 @@ namespace coco_eval
   namespace COCOeval
   {
     template <typename T>
-    int v_index(const std::vector<T> &v, const T &key)
+    int64_t v_index(const std::vector<T> &v, const T &key)
     {
       auto itr = std::find(v.begin(), v.end(), key);
 
@@ -90,9 +90,9 @@ namespace coco_eval
         ImageEvaluation *results)
     {
       // Initialize memory to store return data matches and ignore
-      const int num_iou_thresholds = iou_thresholds.size();
-      const int num_ground_truth = ground_truth_sorted_indices.size();
-      const int num_detections = detection_sorted_indices.size();
+      const int num_iou_thresholds = (const int) iou_thresholds.size();
+      const int num_ground_truth = (const int) ground_truth_sorted_indices.size();
+      const int num_detections = (const int) detection_sorted_indices.size();
       // std::vector<uint64_t> ground_truth_matches(
       // num_iou_thresholds * num_ground_truth, 0);
       std::vector<int64_t> &ground_truth_matches = results->ground_truth_matches;
@@ -189,10 +189,9 @@ namespace coco_eval
         const ImageCategoryInstances<InstanceAnnotation> &
             image_category_detection_instances)
     {
-      const int num_area_ranges = area_ranges.size();
-      const int num_images = image_category_ground_truth_instances.size();
-      const int num_categories =
-          image_category_ious.size() > 0 ? image_category_ious[0].size() : 0;
+      const int num_area_ranges = (const int) area_ranges.size();
+      const int num_images = (const int) image_category_ground_truth_instances.size();
+      const int num_categories = (const int) (image_category_ious.size() > 0 ? image_category_ious[0].size() : 0);
       std::vector<uint64_t> detection_sorted_indices;
       std::vector<uint64_t> ground_truth_sorted_indices;
       std::vector<bool> ignores;
@@ -440,14 +439,12 @@ namespace coco_eval
           list_to_vec<double>(params.attr("recThrs"));
       const std::vector<int> max_detections =
           list_to_vec<int>(params.attr("maxDets"));
-      const int num_iou_thresholds = py::len(params.attr("iouThrs"));
-      const int num_recall_thresholds = py::len(params.attr("recThrs"));
-      const int num_categories = params.attr("useCats").cast<int>() == 1
-                                     ? py::len(params.attr("catIds"))
-                                     : 1;
-      const int num_area_ranges = py::len(params.attr("areaRng"));
-      const int num_max_detections = py::len(params.attr("maxDets"));
-      const int num_images = py::len(params.attr("imgIds"));
+      const int num_iou_thresholds = (const int) py::len(params.attr("iouThrs"));
+      const int num_recall_thresholds = (const int) py::len(params.attr("recThrs"));
+      const int num_categories = (const int)(params.attr("useCats").cast<int>() == 1 ? py::len(params.attr("catIds")) : 1);
+      const int num_area_ranges = (const int) py::len(params.attr("areaRng"));
+      const int num_max_detections = (const int) py::len(params.attr("maxDets"));
+      const int num_images = (const int) py::len(params.attr("imgIds"));
 
       std::vector<double> precisions_out(
           num_iou_thresholds * num_recall_thresholds * num_categories *
@@ -793,9 +790,9 @@ namespace coco_eval
 
       std::vector<int> _catIds;
 
-      int iou_ind = v_index(iouThrs, iouThr);
-      int aind = v_index(areaRngLbl, areaRng);
-      int mind = v_index(maxDets, maxDet);
+      int64_t iou_ind = v_index(iouThrs, iouThr);
+      int64_t aind = v_index(areaRngLbl, areaRng);
+      int64_t mind = v_index(maxDets, maxDet);
 
       if (catIds.size() == 0)
       {
