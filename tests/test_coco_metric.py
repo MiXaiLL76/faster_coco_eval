@@ -6,8 +6,13 @@ from unittest import TestCase
 
 import numpy as np
 from parameterized import parameterized
-from pycocotools.coco import COCO as origCOCO
-from pycocotools.cocoeval import COCOeval as origCOCOeval
+
+try:
+    from pycocotools.coco import COCO as origCOCO
+    from pycocotools.cocoeval import COCOeval as origCOCOeval
+except ImportError:
+    origCOCO = None
+    origCOCOeval = None
 
 import faster_coco_eval.core.mask as mask_util
 from faster_coco_eval import COCO, COCOeval_faster
@@ -136,6 +141,9 @@ class TestCocoMetric(TestCase):
 
     @parameterized.expand([(COCO, COCOeval_faster), (origCOCO, origCOCOeval)])
     def test_evaluate(self, coco_cls, cocoeval_cls):
+        if coco_cls is None:
+            raise unittest.SkipTest("Skipping pycocotools test.")
+
         # create dummy data
         fake_json_file = osp.join(self.tmp_dir.name, "fake_data.json")
         self._create_dummy_coco_json(fake_json_file)
@@ -190,6 +198,9 @@ class TestCocoMetric(TestCase):
 
     @parameterized.expand([(COCO, COCOeval_faster), (origCOCO, origCOCOeval)])
     def test_detectron2_eval(self, coco_cls, cocoeval_cls):
+        if coco_cls is None:
+            raise unittest.SkipTest("Skipping pycocotools test.")
+
         # https://github.com/facebookresearch/detectron2/blob/main/tests/data/test_coco_evaluation.py
         # A small set of images/categories from COCO val
         # fmt: off

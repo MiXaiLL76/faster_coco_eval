@@ -3,8 +3,13 @@ import unittest
 from unittest import TestCase
 
 from parameterized import parameterized
-from pycocotools.coco import COCO as origCOCO
-from pycocotools.cocoeval import COCOeval as origCOCOeval
+
+try:
+    from pycocotools.coco import COCO as origCOCO
+    from pycocotools.cocoeval import COCOeval as origCOCOeval
+except ImportError:
+    origCOCO = None
+    origCOCOeval = None
 
 from faster_coco_eval import COCO, COCOeval_faster
 
@@ -32,6 +37,9 @@ class TestKeypointsMetric(TestCase):
 
     @parameterized.expand([(COCO, COCOeval_faster), (origCOCO, origCOCOeval)])
     def test_evaluate(self, coco_cls, cocoeval_cls):
+        if coco_cls is None:
+            raise unittest.SkipTest("Skipping pycocotools test.")
+
         cocoGt = coco_cls(self.gt_file)
         cocoGt.info()
 
