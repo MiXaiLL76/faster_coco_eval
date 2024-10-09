@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import glob
+import os
 
 import setuptools
 from pybind11.setup_helpers import ParallelCompile, Pybind11Extension, build_ext
@@ -107,13 +108,19 @@ def get_extensions(version_info):
     ]
     print("Sources: {}".format(sources))
 
-    extra_compile_args = [
-        "-std=c++17",
-        "-fPIC",
-        "-ffinite-math-only",
-        "-fno-signed-zeros",
-        "-ftree-vectorize",
-    ]
+    if os.name == "nt":
+        extra_compile_args = [
+            "/std:c++17",
+            "/fp:fast",
+        ]
+    else:
+        extra_compile_args = [
+            "-std=c++17",
+            "-fPIC",
+            "-ffinite-math-only",
+            "-fno-signed-zeros",
+            "-ftree-vectorize",
+        ]
 
     ext_modules += [
         Pybind11Extension(

@@ -116,7 +116,7 @@ def calculateRleForAllAnnotations(
         boundary_cpu_count (int): number of CPUs to use for boundary computation
 
     """
-    return _mask.calculateRleForAllAnnotations(
+    _mask.calculateRleForAllAnnotations(
         anns,
         img_sizes,
         compute_rle,

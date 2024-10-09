@@ -81,7 +81,7 @@ namespace mask_api
                     x += cnts[cnts.size() - 2];
                 }
 
-                cnts.emplace_back(x);
+                cnts.emplace_back((uint)x);
             }
 
             return RLE(h, w, cnts.size(), cnts);
@@ -208,7 +208,7 @@ namespace mask_api
                     if (yd < 0)
                         yd = 0;
                     else if (yd > h)
-                        yd = h;
+                        yd = (double)h;
 
                     yd = ceil(yd);
                     x.emplace_back((int)xd);
@@ -259,7 +259,7 @@ namespace mask_api
         RLE RLE::erode_3x3(int dilation) const
         {
             bool v = false;
-            long max_len = this->w * this->h;
+            long max_len = (long)(this->w * this->h);
             std::vector<bool> _counts(max_len, false);
             std::vector<bool>::iterator ptr = _counts.begin();
             std::for_each(this->cnts.begin(), this->cnts.end(), [&v, &ptr](uint count)
@@ -285,7 +285,7 @@ namespace mask_api
                     }
                     if (i > 0)
                     {
-                        ofsvec.push_back(i * this->h + j);
+                        ofsvec.push_back((int)(i * this->h + j));
                     }
                     else
                     {
@@ -296,7 +296,7 @@ namespace mask_api
 
             for (int i = dilation; i >= -dilation; i--)
             {
-                ofsvec_bottom.push_back(i * this->h + dilation);
+                ofsvec_bottom.push_back((int)(i * this->h + dilation));
             }
 
             long c = 0;
@@ -304,7 +304,7 @@ namespace mask_api
             long ic = 0;
             std::vector<uint> cnts;
             bool _min = false, _prev_min = false;
-            long rle_h = this->h;
+            long rle_h = (long)this->h;
 
             v = true;
             for (uint j : this->cnts)

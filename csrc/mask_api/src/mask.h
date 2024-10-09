@@ -10,6 +10,8 @@
 
 namespace py = pybind11;
 
+typedef unsigned int uint;
+
 namespace mask_api
 {
 
