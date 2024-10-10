@@ -1,6 +1,10 @@
 
 # history
 
+## v1.6.1 - v1.6.3
+
+- [x] fix windows & macos build for [torchmetrics](https://github.com/Lightning-AI/torchmetrics/pull/2750)
+
 ## v1.6.0
 
 - [x] Rework [mask_api](csrc/mask_api/mask_api.cpp) with pybind11 C++ .
