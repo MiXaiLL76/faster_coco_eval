@@ -143,7 +143,7 @@ namespace mask_api
             {
                 uint64_t h = (R[0].h), w = (R[0].w);
                 
-                py::array_t<uint8_t> M({h, w, n});
+                py::array_t<uint8_t, py::array::f_style> M({(size_t)h, (size_t)w, (size_t)n});
                 auto mask = M.mutable_unchecked();
                 uint64_t s = h * w * n;
 

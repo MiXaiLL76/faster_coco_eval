@@ -66,7 +66,7 @@ namespace mask_api
                     c = s[i] - 48;
                     x |= (c & 0x1f) << 5 * k;
                     more = c & 0x20;
-                    c &= 0x10 ? -1 : 0;
+                    
                     i += 1;
                     k += 1;
 
