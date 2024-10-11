@@ -9,7 +9,7 @@ sdist:
 
 whl_file = $(shell ls dist/*.whl)
 
-install: clean wheel 
+install: clean wheel
 	pip3 install "$(whl_file)[tests]"
 
 FORMAT_DIRS = ./faster_coco_eval ./tests setup.py
@@ -17,16 +17,10 @@ LINE_LENGTH = 80
 BLACK_CONFIG = --preview --enable-unstable-feature string_processing
 
 format:
-	python3 -m docformatter --in-place --recursive --blank $(FORMAT_DIRS)
-	python3 -m black $(BLACK_CONFIG) --line-length $(LINE_LENGTH) $(FORMAT_DIRS)
-	python3 -m isort --line-length $(LINE_LENGTH) --profile black $(FORMAT_DIRS)
-	$(MAKE) linter
+	pre-commit run --all-files
 
 linter:
-	python3 -m docformatter --check --recursive --blank $(FORMAT_DIRS)
-	python3 -m black $(BLACK_CONFIG) --line-length $(LINE_LENGTH) $(FORMAT_DIRS) --check --diff
-	python3 -m isort --line-length $(LINE_LENGTH) --profile black $(FORMAT_DIRS) --check --diff
-	flake8 --max-line-length $(LINE_LENGTH) $(FORMAT_DIRS) --ignore=E203,W503 --exclude "*/model/*"
+	pre-commit check --all-files
 
 clean:
 	rm -rf build

@@ -44,7 +44,6 @@ def generate_ann_polygon(
     text: text to display
     legendgroup: legend group to display
     category_id_to_skeleton: dictionary of category id to skeleton
-
     """
     all_x = []
     all_y = []
@@ -72,9 +71,7 @@ def generate_ann_polygon(
         xyz = np.int0(keypoints).reshape(-1, 3)
         ready_bones = {i: True for i in range(xyz.shape[0])}
         for p1, p2 in skeleton:
-            if ready_bones.get(p1 - 1, False) and ready_bones.get(
-                p2 - 1, False
-            ):
+            if ready_bones.get(p1 - 1, False) and ready_bones.get(p2 - 1, False):
                 all_x += [xyz[int(p1 - 1), 0], xyz[int(p2 - 1), 0], None]
                 all_y += [xyz[int(p1 - 1), 1], xyz[int(p2 - 1), 1], None]
 
@@ -97,8 +94,8 @@ def generate_ann_polygon(
         legendgrouptitle_text=legendgroup,
         showlegend=False,
         fill="toself",
-        fillcolor="rgba{}".format(color),
-        line=dict(color="rgb{}".format(color[:3])),
+        fillcolor=f"rgba{color}",
+        line=dict(color=f"rgb{color[:3]}"),
     )
 
 
@@ -138,7 +135,6 @@ def display_image(
     Returns:
             Plotly figure or None:
                 The figure object if return_fig is True, otherwise None.
-
     """
     polygons = []
 
@@ -152,9 +148,7 @@ def display_image(
         dt_anns = {ann["id"]: ann for ann in cocoDt.imgToAnns[image_id]}
 
         if dt_ann_ids is not None:
-            dt_anns = {
-                id: ann for id, ann in dt_anns.items() if id in dt_ann_ids
-            }
+            dt_anns = {id: ann for id, ann in dt_anns.items() if id in dt_ann_ids}
 
     else:
         dt_anns = {}
@@ -168,21 +162,12 @@ def display_image(
     if osp.exists(image_load_path):
         im = Image.open(image_load_path).convert("RGB")
     else:
-        logger.warning(
-            "[{}] not found!\nLoading default empty image".format(
-                image_load_path
-            )
-        )
+        logger.warning(f"[{image_load_path}] not found!\nLoading default empty image")
 
         im = Image.new("RGB", (image["width"], image["height"]))
 
-    categories_labels = {
-        category["id"]: category["name"] for _, category in cocoGt.cats.items()
-    }
-    category_id_to_skeleton = {
-        category["id"]: category.get("skeleton")
-        for _, category in cocoGt.cats.items()
-    }
+    categories_labels = {category["id"]: category["name"] for _, category in cocoGt.cats.items()}
+    category_id_to_skeleton = {category["id"]: category.get("skeleton") for _, category in cocoGt.cats.items()}
 
     if len(gt_anns) > 0:
         for ann in gt_anns.values():
@@ -279,7 +264,7 @@ def display_image(
         fig.add_trace(poly)
 
     layout = {
-        "title": "image_id={}<br>image_fn={}".format(image_id, image_fn),
+        "title": f"image_id={image_id}<br>image_fn={image_fn}",
         "autosize": True,
         "height": 700,
         "width": 900,
@@ -312,7 +297,6 @@ def display_matrix(
     Returns:
             Plotly figure or None:
                 The figure object if return_fig is True, otherwise None.
-
     """
 
     _labels = labels + ["fp", "fn"]
@@ -332,7 +316,7 @@ def display_matrix(
     for j, row in enumerate(conf_matrix):
         annotations.append([])
         for value in row:
-            text_value = "{:.0f}".format(value)
+            text_value = f"{value:.0f}"
             if normalize:
                 text_value += "%"
 
@@ -378,7 +362,6 @@ def plot_pre_rec(curves, return_fig: bool = False):
     Returns:
         Plotly figure or None:
             The figure object if return_fig is True, otherwise None.
-
     """
     fig = go.Figure()
 
@@ -394,9 +377,7 @@ def plot_pre_rec(curves, return_fig: bool = False):
                 y=precision_list,
                 name=name,
                 text=scores,
-                hovertemplate="Pre: %{y:.3f}<br>"
-                + "Rec: %{x:.3f}<br>"
-                + "Score: %{text:.3f}<extra></extra>",
+                hovertemplate="Pre: %{y:.3f}<br>" + "Rec: %{x:.3f}<br>" + "Score: %{text:.3f}<extra></extra>",
                 showlegend=True,
                 mode="lines",
             )
@@ -437,7 +418,6 @@ def plot_f1_confidence(curves, return_fig: bool = False):
     Returns:
         Plotly figure or None:
             The figure object if return_fig is True, otherwise None.
-
     """
     fig = go.Figure()
     eps = 1e-16
@@ -445,12 +425,7 @@ def plot_f1_confidence(curves, return_fig: bool = False):
         recall_list = _curve["recall_list"]
         precision_list = _curve["precision_list"][: len(recall_list)]
         scores = _curve["scores"]
-        f1_curve = (
-            2
-            * precision_list
-            * recall_list
-            / (precision_list + recall_list + eps)
-        )
+        f1_curve = 2 * precision_list * recall_list / (precision_list + recall_list + eps)
 
         name = _curve["label"] if len(_curve["label"]) > 0 else "F1-Confidence"
 
@@ -459,8 +434,7 @@ def plot_f1_confidence(curves, return_fig: bool = False):
                 x=scores,
                 y=f1_curve,
                 name=name,
-                hovertemplate="F1: %{y:.3f}<br>"
-                + "Confidence: %{x:.3f}<br><extra></extra>",
+                hovertemplate="F1: %{y:.3f}<br>" + "Confidence: %{x:.3f}<br><extra></extra>",
                 showlegend=True,
                 mode="lines",
             )
@@ -495,9 +469,7 @@ def plot_ced_metric(curves, normalize: bool = False, return_fig: bool = False):
     fig = go.Figure()
 
     if normalize:
-        fig.layout.yaxis.title = (
-            "The proportion of the sample to the total sample [%]"
-        )
+        fig.layout.yaxis.title = "The proportion of the sample to the total sample [%]"
         _hovertemplate_y = "%{y:.2f}%<br>"
     else:
         fig.layout.yaxis.title = "Number of samples"
@@ -515,11 +487,9 @@ def plot_ced_metric(curves, normalize: bool = False, return_fig: bool = False):
 
             category_name = ced_curve["category"]["name"]
 
-            legendgrouptitle = "CED Curve [{}]".format(category_name)
+            legendgrouptitle = f"CED Curve [{category_name}]"
             if ced_curve.get("label") is not None:
-                legendgrouptitle = (
-                    "[{}] ".format(ced_curve["label"]) + legendgrouptitle
-                )
+                legendgrouptitle = "[{}] ".format(ced_curve["label"]) + legendgrouptitle
 
             traces.append(
                 go.Scatter(
@@ -527,10 +497,7 @@ def plot_ced_metric(curves, normalize: bool = False, return_fig: bool = False):
                     y=y,
                     name=key,
                     hovertemplate=(
-                        _hovertemplate_y
-                        + "mae: %{x:.2f}<br>"
-                        + "{} -> {}<br>".format(category_name, key)
-                        + "<extra></extra>"
+                        _hovertemplate_y + "mae: %{x:.2f}<br>" + f"{category_name} -> {key}<br>" + "<extra></extra>"
                     ),
                     showlegend=True,
                     mode="lines",
@@ -552,54 +519,40 @@ def plot_ced_metric(curves, normalize: bool = False, return_fig: bool = False):
             direction="down",
             y=1.1,
             x=1,
-            buttons=list(
-                [
-                    dict(
-                        args=[{"xaxis.type": "linear"}],
-                        label="Linear Scale",
-                        method="relayout",
-                    ),
-                    dict(
-                        args=[{"xaxis.type": "log"}],
-                        label="Log Scale",
-                        method="relayout",
-                    ),
-                ]
-            ),
+            buttons=list([
+                dict(
+                    args=[{"xaxis.type": "linear"}],
+                    label="Linear Scale",
+                    method="relayout",
+                ),
+                dict(
+                    args=[{"xaxis.type": "log"}],
+                    label="Log Scale",
+                    method="relayout",
+                ),
+            ]),
         ),
         dict(
             type="dropdown",
             direction="down",
             y=1.1,
             x=0.85,
-            buttons=list(
-                [
-                    dict(
-                        args=[
-                            {
-                                "visible": [
-                                    x.name == "MEAN"
-                                    for i, x in enumerate(traces)
-                                ]
-                            },
-                        ],
-                        label="Display MEAN",
-                        method="restyle",
-                    ),
-                    dict(
-                        args=[
-                            {
-                                "visible": [
-                                    x.name != "MEAN"
-                                    for i, x in enumerate(traces)
-                                ]
-                            },
-                        ],
-                        label="Display ALL",
-                        method="restyle",
-                    ),
-                ]
-            ),
+            buttons=list([
+                dict(
+                    args=[
+                        {"visible": [x.name == "MEAN" for i, x in enumerate(traces)]},
+                    ],
+                    label="Display MEAN",
+                    method="restyle",
+                ),
+                dict(
+                    args=[
+                        {"visible": [x.name != "MEAN" for i, x in enumerate(traces)]},
+                    ],
+                    label="Display ALL",
+                    method="restyle",
+                ),
+            ]),
         ),
     ]
 

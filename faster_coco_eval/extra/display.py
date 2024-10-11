@@ -40,7 +40,6 @@ class PreviewResults(ExtraEval):
         Returns:
             Plotly figure or None:
                 The figure object if return_fig is True, otherwise None.
-
         """
         return display_image(
             self.cocoGt,
@@ -73,7 +72,7 @@ class PreviewResults(ExtraEval):
 
         for image_id in image_ids:
             if self.cocoGt.imgs.get(image_id) is None:
-                logger.warning("Image {} not found".format(image_id))
+                logger.warning(f"Image {image_id} not found")
                 continue
 
             self.display_image(
@@ -86,9 +85,7 @@ class PreviewResults(ExtraEval):
                 categories=categories,
             )
 
-    def _compute_confusion_matrix(
-        self, y_true, y_pred, fp={}, fn={}
-    ) -> np.ndarray:
+    def _compute_confusion_matrix(self, y_true, y_pred, fp={}, fn={}) -> np.ndarray:
         """Compute the confusion matrix.
 
         Args:
@@ -99,13 +96,9 @@ class PreviewResults(ExtraEval):
 
         Return:
             confusion matrix
-
         """
         categories_real_ids = list(self.cocoGt.cats)
-        categories_enum_ids = {
-            category_id: _i
-            for _i, category_id in enumerate(categories_real_ids)
-        }
+        categories_enum_ids = {category_id: _i for _i, category_id in enumerate(categories_real_ids)}
         K = len(categories_enum_ids)
 
         cm = np.zeros((K, K + 2), dtype=np.float32)
@@ -123,10 +116,7 @@ class PreviewResults(ExtraEval):
         assert self.eval is not None, "Run first self.evaluate()"
 
         if self.useCats:
-            logger.warning(
-                "The calculation may not be accurate. No intersection of"
-                " classes. useCats={}".format(self.useCats)
-            )
+            logger.warning(f"The calculation may not be accurate. No intersection of classes. useCats={self.useCats}")
 
         y_true = []
         y_pred = []
@@ -156,9 +146,7 @@ class PreviewResults(ExtraEval):
         cm = self._compute_confusion_matrix(y_true, y_pred, fp=fp, fn=fn)
         return cm
 
-    def display_matrix(
-        self, normalize=False, conf_matrix=None, return_fig: bool = False
-    ):
+    def display_matrix(self, normalize=False, conf_matrix=None, return_fig: bool = False):
         """Display the confusion matrix.
 
         Args:
@@ -169,13 +157,10 @@ class PreviewResults(ExtraEval):
         Returns:
             Plotly figure or None:
                 The figure object if return_fig is True, otherwise None.
-
         """
         if conf_matrix is None:
             conf_matrix = self.compute_confusion_matrix()
 
         labels = [category["name"] for _, category in self.cocoGt.cats.items()]
 
-        return display_matrix(
-            conf_matrix, labels, normalize=normalize, return_fig=return_fig
-        )
+        return display_matrix(conf_matrix, labels, normalize=normalize, return_fig=return_fig)

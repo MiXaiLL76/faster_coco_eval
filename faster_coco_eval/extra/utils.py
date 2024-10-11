@@ -21,7 +21,6 @@ def conver_mask_to_poly(mask: np.ndarray, bbox: list, boxes_margin=0.1) -> list:
 
     Returns:
         list: list of poly as coco style
-
     """
 
     x1, y1, w, h = bbox
@@ -51,9 +50,7 @@ def conver_mask_to_poly(mask: np.ndarray, bbox: list, boxes_margin=0.1) -> list:
         for cnt_idx, cnt in enumerate(coords):
             coords[cnt_idx] = cnt + [x1, y1]
 
-        coords = [
-            _cnt.ravel().tolist() for _cnt in coords if _cnt.shape[0] >= 6
-        ]
+        coords = [_cnt.ravel().tolist() for _cnt in coords if _cnt.shape[0] >= 6]
 
     return coords
 
@@ -67,7 +64,6 @@ def convert_rle_to_poly(rle: dict, bbox: list):
 
     Returns:
         list: list of poly as coco style
-
     """
     mask = mask_util.decode(rle) * 255
     return conver_mask_to_poly(mask, bbox)
@@ -81,17 +77,11 @@ def convert_ann_rle_to_poly(ann: dict):
 
     Returns:
         ann (dict): ann dict with poly segm
-
     """
     if type(ann["segmentation"]) is dict:
         if not opencv_available:
-            raise Exception(
-                "Your dataset needs to be converted to polygons. Install"
-                " **opencv-python** for this."
-            )
+            raise Exception("Your dataset needs to be converted to polygons. Install **opencv-python** for this.")
 
         ann["counts"] = ann["segmentation"]
-        ann["segmentation"] = convert_rle_to_poly(
-            ann["segmentation"], ann["bbox"]
-        )
+        ann["segmentation"] = convert_rle_to_poly(ann["segmentation"], ann["bbox"])
     return ann

@@ -20,7 +20,6 @@ class Curves(ExtraEval):
         Returns:
             list: A list of dictionaries
                 containing the curve data for each category.
-
         """
         assert self.eval is not None, "Run first self.evaluate()"
 
@@ -32,24 +31,20 @@ class Curves(ExtraEval):
             cat_ids = [0]
 
         for category_id in cat_ids:
-            _label = "[{}={}] ".format(label, category_id)
+            _label = f"[{label}={category_id}] "
             if len(cat_ids) == 1:
                 _label = ""
 
-            precision_list = self.eval["precision"][
-                :, :, category_id, :, :
-            ].ravel()
+            precision_list = self.eval["precision"][:, :, category_id, :, :].ravel()
             recall_list = self.recThrs
             scores = self.eval["scores"][:, :, category_id, :, :].ravel()
-            auc = round(
-                COCOeval_faster.calc_auc(recall_list, precision_list), 4
-            )
+            auc = round(COCOeval_faster.calc_auc(recall_list, precision_list), 4)
 
             curve.append(
                 dict(
                     recall_list=recall_list,
                     precision_list=precision_list,
-                    name="{}auc: {:.3f}".format(_label, auc),
+                    name=f"{_label}auc: {auc:.3f}",
                     label=_label,
                     scores=scores,
                     auc=auc,
@@ -76,7 +71,6 @@ class Curves(ExtraEval):
         Returns:
             Plotly figure or None:
                 The figure object if return_fig is True, otherwise None.
-
         """
         if curves is None:
             curves = self.build_curve(label)
@@ -99,7 +93,6 @@ class Curves(ExtraEval):
         Returns:
             Plotly figure or None:
                 The figure object if return_fig is True, otherwise None.
-
         """
         if curves is None:
             curves = self.build_curve(label)
@@ -119,9 +112,7 @@ class Curves(ExtraEval):
             }
             for ann_id in self.cocoGt.get_ann_ids(cat_ids=[category_id]):
                 gt_ann = self.cocoGt.anns[ann_id]
-                if gt_ann.get("keypoints", False) and gt_ann.get(
-                    "matched", False
-                ):
+                if gt_ann.get("keypoints", False) and gt_ann.get("matched", False):
                     dt_ann = self.cocoDt.anns[gt_ann["dt_id"]]
 
                     if self.iouType == "keypoints":
@@ -131,13 +122,7 @@ class Curves(ExtraEval):
                         dt_ann["mae_keypoints"] = []
                         for _id, kp_name in enumerate(category["keypoints"]):
                             dt_ann["mae_keypoints"].append(
-                                np.mean(
-                                    np.abs(
-                                        np.subtract(
-                                            gt_xyv[_id, :2], dt_xyv[_id, :2]
-                                        )
-                                    )
-                                )
+                                np.mean(np.abs(np.subtract(gt_xyv[_id, :2], dt_xyv[_id, :2])))
                             )
 
                             if _curve["mae"].get(kp_name) is None:
@@ -145,19 +130,13 @@ class Curves(ExtraEval):
                                     "all_mae": [],
                                 }
 
-                            _curve["mae"][kp_name]["all_mae"].append(
-                                dt_ann["mae_keypoints"][_id]
-                            )
+                            _curve["mae"][kp_name]["all_mae"].append(dt_ann["mae_keypoints"][_id])
 
                         dt_ann["mae"] = np.mean(dt_ann["mae_keypoints"])
                         _curve["all_mae"].append(dt_ann["mae"])
 
                     else:
-                        raise ValueError(
-                            "not supported iouType {} for CED".format(
-                                self.iouType
-                            )
-                        )
+                        raise ValueError(f"not supported iouType {self.iouType} for CED")
 
             if len(_curve["all_mae"]) == 0:
                 continue
@@ -187,9 +166,7 @@ class Curves(ExtraEval):
             }
 
             for _id, kp_name in enumerate(category["keypoints"]):
-                _result = create_curve(
-                    _curve["mae"][kp_name]["all_mae"], mae_count
-                )
+                _result = create_curve(_curve["mae"][kp_name]["all_mae"], mae_count)
                 _curve["mae"][kp_name]["x"] = _result["x"]
                 _curve["mae"][kp_name]["y"] = _result["y"]
 
@@ -212,11 +189,8 @@ class Curves(ExtraEval):
         Returns:
             Plotly figure or None:
                 The figure object if return_fig is True, otherwise None.
-
         """
         if curves is None:
             curves = self.build_ced_curve()
 
-        return plot_ced_metric(
-            curves, normalize=normalize, return_fig=return_fig
-        )
+        return plot_ced_metric(curves, normalize=normalize, return_fig=return_fig)

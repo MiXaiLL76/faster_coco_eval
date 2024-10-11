@@ -62,7 +62,6 @@ class COCOeval:
             boundary_cpu_count (int):
                 number of CPUs for boundary comput,
                     defaults to min(os.cpu_count(), 4)
-
         """
         self.cocoGt: COCO = cocoGt  # ground truth COCO API
         self.cocoDt: COCO = cocoDt  # detections COCO API
@@ -71,9 +70,7 @@ class COCOeval:
         self.eval: dict = {}  # accumulated evaluation results
         # self._gts = defaultdict(list)  # gt for evaluation
         # self._dts = defaultdict(list)  # dt for evaluation
-        self.params = Params(
-            iouType=iouType, kpt_sigmas=kpt_oks_sigmas
-        )  # parameters
+        self.params = Params(iouType=iouType, kpt_sigmas=kpt_oks_sigmas)  # parameters
         self._paramsEval: dict = {}  # parameters for evaluation
         self.stats: list = []  # result summarization
         self.ious: dict = {}  # ious between all gts and dts
@@ -94,9 +91,7 @@ class COCOeval:
             self.params.catIds = sorted(self.cocoGt.getCatIds())
 
             if iouType == "keypoints":
-                self.params.catIds = sorted(
-                    list(self.cocoGt.cat_img_map.keys())
-                )
+                self.params.catIds = sorted(list(self.cocoGt.cat_img_map.keys()))
 
         self._print_function = print_function  # output print function
 
@@ -126,12 +121,8 @@ class COCOeval:
 
         cat_ids = p.catIds if p.catIds else None
 
-        gts = self.cocoGt.loadAnns(
-            self.cocoGt.getAnnIds(imgIds=p.imgIds, catIds=cat_ids)
-        )
-        dts = self.cocoDt.loadAnns(
-            self.cocoDt.getAnnIds(imgIds=p.imgIds, catIds=cat_ids)
-        )
+        gts = self.cocoGt.loadAnns(self.cocoGt.getAnnIds(imgIds=p.imgIds, catIds=cat_ids))
+        dts = self.cocoDt.loadAnns(self.cocoDt.getAnnIds(imgIds=p.imgIds, catIds=cat_ids))
 
         # set ignore flag
         for gt in gts:
@@ -140,9 +131,7 @@ class COCOeval:
             if p.iouType == "keypoints":
                 gt["ignore"] = (gt.get("num_keypoints") == 0) or gt["ignore"]
 
-        img_pl = defaultdict(
-            set
-        )  # per image list of categories present in image
+        img_pl = defaultdict(set)  # per image list of categories present in image
         img_nl = {}  # per image map of categories not present in image
 
         if self.lvis_style:
@@ -160,10 +149,7 @@ class COCOeval:
                 img_pl[ann["image_id"]].add(ann["category_id"])
             # per image map of categoires which have missing gt. For these
             # categories we don't penalize the detector for flase positives.
-            self.img_nel = {
-                d["id"]: d.get("not_exhaustive_category_ids", [])
-                for d in img_data
-            }
+            self.img_nel = {d["id"]: d.get("not_exhaustive_category_ids", []) for d in img_data}
 
             self.freq_groups = self._prepare_freq_group()
 
@@ -194,16 +180,11 @@ class COCOeval:
         for dt in dts:
             img_id, cat_id = dt["image_id"], dt["category_id"]
             if self.lvis_style:
-                if (
-                    cat_id not in img_nl.get(img_id, [])
-                    and cat_id not in img_pl[img_id]
-                ) and self.lvis_style:
+                if (cat_id not in img_nl.get(img_id, []) and cat_id not in img_pl[img_id]) and self.lvis_style:
                     dt["drop"] = True
                     continue
 
-                dt["lvis_mark"] = (
-                    dt["category_id"] in self.img_nel[dt["image_id"]]
-                )
+                dt["lvis_mark"] = dt["category_id"] in self.img_nel[dt["image_id"]]
 
             if p.compute_rle:
                 get_img_size_by_id(dt["image_id"], self.cocoDt)
@@ -226,7 +207,6 @@ class COCOeval:
 
         Returns:
             list: frequency groups
-
         """
         p = self.params
         freq_groups = [[] for _ in p.img_count_lbl]
@@ -236,9 +216,7 @@ class COCOeval:
             freq_groups[p.img_count_lbl.index(frequency)].append(idx)
         return freq_groups
 
-    def computeIoU(
-        self, imgId: int, catId: int
-    ) -> Union[List[float], np.ndarray]:
+    def computeIoU(self, imgId: int, catId: int) -> Union[List[float], np.ndarray]:
         """Compute IoU between gt and dt for a given image and category.
 
         Args:
@@ -248,19 +226,14 @@ class COCOeval:
         Return:
             ious (list or ndarray):
                 ious between gt and dt for a given image and category
-
         """
         p = self.params
 
-        gt = self.gt_dataset.get_instances(
-            [imgId], [catId] if p.useCats else p.catIds, bool(p.useCats)
-        )[0][
+        gt = self.gt_dataset.get_instances([imgId], [catId] if p.useCats else p.catIds, bool(p.useCats))[0][
             0
         ]  # 1 imgId  1 catId
 
-        dt = self.dt_dataset.get_instances(
-            [imgId], [catId] if p.useCats else p.catIds, bool(p.useCats)
-        )[0][
+        dt = self.dt_dataset.get_instances([imgId], [catId] if p.useCats else p.catIds, bool(p.useCats))[0][
             0
         ]  # 1 imgId  1 catId
 
@@ -279,9 +252,7 @@ class COCOeval:
             g = [g["bbox"] for g in gt]
             d = [d["bbox"] for d in dt]
         else:
-            ValueError(
-                f"p.iouType must be bbox or segm or boundary. Get {p.iouType}"
-            )
+            ValueError(f"p.iouType must be bbox or segm or boundary. Get {p.iouType}")
 
         iscrowd = [int(o.get("iscrowd", 0)) for o in gt]
         # compute iou between each dt and gt region
@@ -298,9 +269,7 @@ class COCOeval:
             boundary_ious = np.array(boundary_ious)
             iscrowd = np.array(iscrowd)
             if len(gt) and len(dt):
-                ious[:, iscrowd == 0] = np.minimum(
-                    ious[:, iscrowd == 0], boundary_ious[:, iscrowd == 0]
-                )
+                ious[:, iscrowd == 0] = np.minimum(ious[:, iscrowd == 0], boundary_ious[:, iscrowd == 0])
             else:
                 ious = np.minimum(ious, boundary_ious)
 
@@ -316,7 +285,6 @@ class COCOeval:
         Return:
             oks (ndarray):
                 oks between gt and dt for a given image and category
-
         """
         p = self.params
         # dimention here should be Nxm
@@ -357,13 +325,9 @@ class COCOeval:
                     dy = yd - yg
                 else:
                     # measure minimum distance to keypoints in (x0,y0) & (x1,y1)
-                    z = np.zeros((k))
-                    dx = np.max((z, x0 - xd), axis=0) + np.max(
-                        (z, xd - x1), axis=0
-                    )
-                    dy = np.max((z, y0 - yd), axis=0) + np.max(
-                        (z, yd - y1), axis=0
-                    )
+                    z = np.zeros(k)
+                    dx = np.max((z, x0 - xd), axis=0) + np.max((z, xd - x1), axis=0)
+                    dy = np.max((z, y0 - yd), axis=0) + np.max((z, yd - y1), axis=0)
                 e = (dx**2 + dy**2) / vars / (gt["area"] + np.spacing(1)) / 2
                 if k1 > 0:
                     e = e[vg > 0]
@@ -371,22 +335,13 @@ class COCOeval:
         return ious
 
     def evaluateImg(self, imgId, catId, aRng, maxDet):
-        raise DeprecationWarning(
-            "COCOeval.evaluateImg deprecated! Use COCOeval_faster.evaluateImg"
-            " instead."
-        )
+        raise DeprecationWarning("COCOeval.evaluateImg deprecated! Use COCOeval_faster.evaluateImg instead.")
 
     def accumulate(self, p=None):
-        raise DeprecationWarning(
-            "COCOeval.accumulate deprecated! Use COCOeval_faster.accumulate"
-            " instead."
-        )
+        raise DeprecationWarning("COCOeval.accumulate deprecated! Use COCOeval_faster.accumulate instead.")
 
     def evaluate(self):
-        raise DeprecationWarning(
-            "COCOeval.evaluate deprecated! Use COCOeval_faster.evaluate"
-            " instead."
-        )
+        raise DeprecationWarning("COCOeval.evaluate deprecated! Use COCOeval_faster.evaluate instead.")
 
     def _summarize(
         self,
@@ -398,20 +353,13 @@ class COCOeval:
         catIds=None,
     ):
         p = self.params
-        iStr = (
-            " {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} {}] ="
-            " {:0.3f}"
-        )
+        iStr = " {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} {}] = {:0.3f}"
 
         freq_str = "catIds={:>3s}".format("all") if self.lvis_style else ""
 
         titleStr = "Average Precision" if ap == 1 else "Average Recall"
         typeStr = "(AP)" if ap == 1 else "(AR)"
-        iouStr = (
-            "{:0.2f}:{:0.2f}".format(p.iouThrs[0], p.iouThrs[-1])
-            if iouThr is None
-            else "{:0.2f}".format(iouThr)
-        )
+        iouStr = f"{p.iouThrs[0]:0.2f}:{p.iouThrs[-1]:0.2f}" if iouThr is None else f"{iouThr:0.2f}"
 
         if catIds is not None:
             # catNames = [
@@ -420,11 +368,11 @@ class COCOeval:
             #     )
             #     for used_cat_idx in catIds
             # ]
-            freq_str = "catIds=={:>3s}".format(str(catIds))
+            freq_str = f"catIds=={str(catIds):>3s}"
 
         if self.lvis_style and (freq_group_idx is not None):
             catIds = self.freq_groups[freq_group_idx]
-            freq_str = "catIds={:>3s}".format(p.imgCountLbl[freq_group_idx])
+            freq_str = f"catIds={p.imgCountLbl[freq_group_idx]:>3s}"
 
         # In my case, C++ too slow...
         # mean_s = _C._summarize(
@@ -487,100 +435,51 @@ class COCOeval:
 
         Note this functin can *only* be applied on the default parameter
         setting
-
         """
 
         def _summarizeDets():
             _count = 17 if self.lvis_style else 14
             stats = np.zeros((_count,))
-            stats[0] = self._summarize(
-                1, maxDets=self.params.maxDets[-1]
-            )  # AP_all
-            stats[1] = self._summarize(
-                1, iouThr=0.5, maxDets=self.params.maxDets[-1]
-            )  # AP_50
-            stats[2] = self._summarize(
-                1, iouThr=0.75, maxDets=self.params.maxDets[-1]
-            )  # AP_75
-            stats[3] = self._summarize(
-                1, areaRng="small", maxDets=self.params.maxDets[-1]
-            )  # AP_small
-            stats[4] = self._summarize(
-                1, areaRng="medium", maxDets=self.params.maxDets[-1]
-            )  # AP_medium
-            stats[5] = self._summarize(
-                1, areaRng="large", maxDets=self.params.maxDets[-1]
-            )  # AP_large
+            stats[0] = self._summarize(1, maxDets=self.params.maxDets[-1])  # AP_all
+            stats[1] = self._summarize(1, iouThr=0.5, maxDets=self.params.maxDets[-1])  # AP_50
+            stats[2] = self._summarize(1, iouThr=0.75, maxDets=self.params.maxDets[-1])  # AP_75
+            stats[3] = self._summarize(1, areaRng="small", maxDets=self.params.maxDets[-1])  # AP_small
+            stats[4] = self._summarize(1, areaRng="medium", maxDets=self.params.maxDets[-1])  # AP_medium
+            stats[5] = self._summarize(1, areaRng="large", maxDets=self.params.maxDets[-1])  # AP_large
 
             if self.lvis_style:
-                stats[14] = self._summarize(
-                    1, maxDets=self.params.maxDets[-1], freq_group_idx=0
-                )  # APr
-                stats[15] = self._summarize(
-                    1, maxDets=self.params.maxDets[-1], freq_group_idx=1
-                )  # APc
-                stats[16] = self._summarize(
-                    1, maxDets=self.params.maxDets[-1], freq_group_idx=2
-                )  # APf
+                stats[14] = self._summarize(1, maxDets=self.params.maxDets[-1], freq_group_idx=0)  # APr
+                stats[15] = self._summarize(1, maxDets=self.params.maxDets[-1], freq_group_idx=1)  # APc
+                stats[16] = self._summarize(1, maxDets=self.params.maxDets[-1], freq_group_idx=2)  # APf
 
             # AR_first or AR_all
             stats[6] = self._summarize(0, maxDets=self.params.maxDets[0])
             if len(self.params.maxDets) >= 2:
-                stats[7] = self._summarize(
-                    0, maxDets=self.params.maxDets[1]
-                )  # AR_second
+                stats[7] = self._summarize(0, maxDets=self.params.maxDets[1])  # AR_second
             if len(self.params.maxDets) >= 3:
-                stats[8] = self._summarize(
-                    0, maxDets=self.params.maxDets[2]
-                )  # AR_third
+                stats[8] = self._summarize(0, maxDets=self.params.maxDets[2])  # AR_third
 
-            stats[9] = self._summarize(
-                0, areaRng="small", maxDets=self.params.maxDets[-1]
-            )  # AR_small
-            stats[10] = self._summarize(
-                0, areaRng="medium", maxDets=self.params.maxDets[-1]
-            )  # AR_medium
-            stats[11] = self._summarize(
-                0, areaRng="large", maxDets=self.params.maxDets[-1]
-            )  # AR_large
+            stats[9] = self._summarize(0, areaRng="small", maxDets=self.params.maxDets[-1])  # AR_small
+            stats[10] = self._summarize(0, areaRng="medium", maxDets=self.params.maxDets[-1])  # AR_medium
+            stats[11] = self._summarize(0, areaRng="large", maxDets=self.params.maxDets[-1])  # AR_large
 
-            stats[12] = self._summarize(
-                0, iouThr=0.5, maxDets=self.params.maxDets[-1]
-            )  # AR_50
-            stats[13] = self._summarize(
-                0, iouThr=0.75, maxDets=self.params.maxDets[-1]
-            )  # AR_75
+            stats[12] = self._summarize(0, iouThr=0.5, maxDets=self.params.maxDets[-1])  # AR_50
+            stats[13] = self._summarize(0, iouThr=0.75, maxDets=self.params.maxDets[-1])  # AR_75
 
             return stats
 
         def _summarizeKps():
             stats = np.zeros((10,))
             stats[0] = self._summarize(1, maxDets=self.params.maxDets[-1])
-            stats[1] = self._summarize(
-                1, maxDets=self.params.maxDets[-1], iouThr=0.5
-            )
-            stats[2] = self._summarize(
-                1, maxDets=self.params.maxDets[-1], iouThr=0.75
-            )
-            stats[3] = self._summarize(
-                1, maxDets=self.params.maxDets[-1], areaRng="medium"
-            )
-            stats[4] = self._summarize(
-                1, maxDets=self.params.maxDets[-1], areaRng="large"
-            )
+            stats[1] = self._summarize(1, maxDets=self.params.maxDets[-1], iouThr=0.5)
+            stats[2] = self._summarize(1, maxDets=self.params.maxDets[-1], iouThr=0.75)
+            stats[3] = self._summarize(1, maxDets=self.params.maxDets[-1], areaRng="medium")
+            stats[4] = self._summarize(1, maxDets=self.params.maxDets[-1], areaRng="large")
             stats[5] = self._summarize(0, maxDets=self.params.maxDets[-1])
-            stats[6] = self._summarize(
-                0, maxDets=self.params.maxDets[-1], iouThr=0.5
-            )
-            stats[7] = self._summarize(
-                0, maxDets=self.params.maxDets[-1], iouThr=0.75
-            )
-            stats[8] = self._summarize(
-                0, maxDets=self.params.maxDets[-1], areaRng="medium"
-            )
-            stats[9] = self._summarize(
-                0, maxDets=self.params.maxDets[-1], areaRng="large"
-            )
+            stats[6] = self._summarize(0, maxDets=self.params.maxDets[-1], iouThr=0.5)
+            stats[7] = self._summarize(0, maxDets=self.params.maxDets[-1], iouThr=0.75)
+            stats[8] = self._summarize(0, maxDets=self.params.maxDets[-1], areaRng="medium")
+            stats[9] = self._summarize(0, maxDets=self.params.maxDets[-1], areaRng="large")
             return stats
 
         if not self.eval:
@@ -593,10 +492,7 @@ class COCOeval:
         elif iouType == "keypoints":
             summarize = _summarizeKps
         else:
-            ValueError(
-                "iouType must be bbox, segm, boundary or keypoints. Get"
-                f" {iouType}"
-            )
+            ValueError(f"iouType must be bbox, segm, boundary or keypoints. Get {iouType}")
 
         self.all_stats = summarize()
         self.stats = self.all_stats[:12]
@@ -607,8 +503,8 @@ class COCOeval:
 
     def __repr__(self):
         s = self.__class__.__name__ + "() # "
-        s += "__author__='{}'; ".format(__author__)
-        s += "__version__='{}';".format(__version__)
+        s += f"__author__='{__author__}'; "
+        s += f"__version__='{__version__}';"
         return s
 
 
@@ -635,27 +531,25 @@ class Params:
         self.areaRngLbl = ["all", "medium", "large"]
 
         self.kpt_oks_sigmas = (
-            np.array(
-                [
-                    0.26,
-                    0.25,
-                    0.25,
-                    0.35,
-                    0.35,
-                    0.79,
-                    0.79,
-                    0.72,
-                    0.72,
-                    0.62,
-                    0.62,
-                    1.07,
-                    1.07,
-                    0.87,
-                    0.87,
-                    0.89,
-                    0.89,
-                ]
-            )
+            np.array([
+                0.26,
+                0.25,
+                0.25,
+                0.35,
+                0.35,
+                0.79,
+                0.79,
+                0.72,
+                0.72,
+                0.62,
+                0.62,
+                1.07,
+                1.07,
+                0.87,
+                0.87,
+                0.89,
+                0.89,
+            ])
             / 10.0
         )
 
@@ -669,18 +563,13 @@ class Params:
         Args:
             iouType: either "segm", "bbox" or "keypoints".
             kpt_sigmas: list of keypoint sigma values.
-
         """
 
         self.imgIds = []
         self.catIds = []
         # np.arange causes trouble.  the data point on arange is slightly larger than the true value # noqa: E501
-        self.iouThrs = np.linspace(
-            0.5, 0.95, int(np.round((0.95 - 0.5) / 0.05)) + 1, endpoint=True
-        )
-        self.recThrs = np.linspace(
-            0.0, 1.00, int(np.round((1.00 - 0.0) / 0.01)) + 1, endpoint=True
-        )
+        self.iouThrs = np.linspace(0.5, 0.95, int(np.round((0.95 - 0.5) / 0.05)) + 1, endpoint=True)
+        self.recThrs = np.linspace(0.0, 1.00, int(np.round((1.00 - 0.0) / 0.01)) + 1, endpoint=True)
         self.useCats = 1
 
         if iouType in set(["segm", "bbox", "boundary"]):
@@ -713,9 +602,7 @@ class Params:
         # add backward compatibility if useSegm is specified in params
         self.iouType = "segm" if value == 1 else "bbox"
 
-        logger.warning(
-            "useSegm is deprecated. Please use iouType (string) instead."
-        )
+        logger.warning("useSegm is deprecated. Please use iouType (string) instead.")
 
     @property
     def iou_type(self):

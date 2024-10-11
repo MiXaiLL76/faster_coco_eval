@@ -106,9 +106,7 @@ class ExtraEval:
 
             for image_id in set(bad_images_keys):
                 self.cocoDt.imgToAnns[image_id] = [
-                    ann
-                    for ann in self.cocoDt.imgToAnns[image_id]
-                    if bad_keys.get(image_id, {}).get(ann["id"]) is None
+                    ann for ann in self.cocoDt.imgToAnns[image_id] if bad_keys.get(image_id, {}).get(ann["id"]) is None
                 ]
 
                 for ann_id in bad_keys.get(image_id, {}).keys():

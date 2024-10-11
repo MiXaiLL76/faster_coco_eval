@@ -27,12 +27,7 @@ class TestBaseLvis(unittest.TestCase):
 
         self.prepared_anns_numpy = []
         for ann in self.prepared_anns:
-            self.prepared_anns_numpy.append(
-                [ann["image_id"]]
-                + ann["bbox"]
-                + [ann["score"]]
-                + [ann["category_id"]]
-            )
+            self.prepared_anns_numpy.append([ann["image_id"]] + ann["bbox"] + [ann["score"]] + [ann["category_id"]])
 
         self.prepared_anns_numpy = np.array(self.prepared_anns_numpy)
 
@@ -91,11 +86,7 @@ class TestBaseLvis(unittest.TestCase):
         category_id = 1
         self.assertEqual(
             cocoGt.getAnnIds(catIds=[category_id]),
-            [
-                key
-                for key, val in cocoGt.anns.items()
-                if int(val["category_id"]) == category_id
-            ],
+            [key for key, val in cocoGt.anns.items() if int(val["category_id"]) == category_id],
         )
 
         image_id = 521509
@@ -105,22 +96,18 @@ class TestBaseLvis(unittest.TestCase):
             [
                 key
                 for key, val in cocoGt.anns.items()
-                if (int(val["category_id"]) == category_id)
-                and (int(val["image_id"]) == image_id)
+                if (int(val["category_id"]) == category_id) and (int(val["image_id"]) == image_id)
             ],
         )
 
         image_id = 521509
         areaRng = [0, 300]
         self.assertEqual(
-            cocoGt.get_ann_ids(
-                img_ids=[image_id], area_rng=areaRng, iscrowd=False
-            ),
+            cocoGt.get_ann_ids(img_ids=[image_id], area_rng=areaRng, iscrowd=False),
             [
                 key
                 for key, val in cocoGt.anns.items()
-                if (val["area"] > areaRng[0] and val["area"] < areaRng[1])
-                and (int(val["image_id"]) == image_id)
+                if (val["area"] > areaRng[0] and val["area"] < areaRng[1]) and (int(val["image_id"]) == image_id)
             ],
         )
 
@@ -131,21 +118,13 @@ class TestBaseLvis(unittest.TestCase):
         category_name = "acorn"
         self.assertEqual(
             cocoGt.get_cat_ids(cat_names=[category_name]),
-            [
-                key
-                for key, val in cocoGt.cats.items()
-                if val["name"] == category_name
-            ],
+            [key for key, val in cocoGt.cats.items() if val["name"] == category_name],
         )
 
         category_id = 191
         self.assertEqual(
             cocoGt.get_cat_ids(cat_ids=[category_id]),
-            [
-                key
-                for key, val in cocoGt.cats.items()
-                if val["id"] == category_id
-            ],
+            [key for key, val in cocoGt.cats.items() if val["id"] == category_id],
         )
 
     def test_getImgIds(self):
@@ -156,15 +135,7 @@ class TestBaseLvis(unittest.TestCase):
 
         self.assertEqual(
             cocoGt.get_img_ids(cat_ids=[category_id]),
-            list(
-                set(
-                    [
-                        val["image_id"]
-                        for _, val in cocoGt.anns.items()
-                        if int(val["category_id"]) == category_id
-                    ]
-                )
-            ),
+            list(set([val["image_id"] for _, val in cocoGt.anns.items() if int(val["category_id"]) == category_id])),
         )
 
         self.assertEqual(
@@ -187,17 +158,11 @@ class TestBaseLvis(unittest.TestCase):
         image_id = 521509
         self.assertEqual(cocoGt.load_imgs(ids=image_id), [cocoGt.imgs[521509]])
 
-        self.assertEqual(
-            cocoGt.load_imgs(ids=[image_id]), [cocoGt.imgs[521509]]
-        )
+        self.assertEqual(cocoGt.load_imgs(ids=[image_id]), [cocoGt.imgs[521509]])
 
         category_id = 191
-        self.assertEqual(
-            cocoGt.load_cats(ids=category_id), [cocoGt.cats[category_id]]
-        )
-        self.assertEqual(
-            cocoGt.load_cats(ids=[category_id]), [cocoGt.cats[category_id]]
-        )
+        self.assertEqual(cocoGt.load_cats(ids=category_id), [cocoGt.cats[category_id]])
+        self.assertEqual(cocoGt.load_cats(ids=[category_id]), [cocoGt.cats[category_id]])
 
         ann_id = 1
         self.assertEqual(cocoGt.load_anns(ids=ann_id), [cocoGt.anns[ann_id]])

@@ -16,7 +16,6 @@ def _encode(x):
 
 
 class TestMaskApi(unittest.TestCase):
-
     def setUp(self):
         self.rleObjs = []
         self.areas = []
@@ -28,20 +27,18 @@ class TestMaskApi(unittest.TestCase):
                 self.areas.append(np.sum(x))
                 self.rleObjs += _mask.encode(np.asfortranarray(x, np.uint8))
 
-        self.bboxes = np.array(
-            [
-                [3.0, 5.0, 4.0, 1.0],
-                [5.0, 3.0, 3.0, 5.0],
-                [8.0, 5.0, 8.0, 5.0],
-                [3.0, 4.0, 7.0, 3.0],
-                [2.0, 5.0, 2.0, 7.0],
-                [8.0, 1.0, 9.0, 9.0],
-                [8.0, 1.0, 9.0, 6.0],
-                [7.0, 1.0, 9.0, 4.0],
-                [4.0, 5.0, 4.0, 5.0],
-                [2.0, 4.0, 5.0, 4.0],
-            ]
-        )
+        self.bboxes = np.array([
+            [3.0, 5.0, 4.0, 1.0],
+            [5.0, 3.0, 3.0, 5.0],
+            [8.0, 5.0, 8.0, 5.0],
+            [3.0, 4.0, 7.0, 3.0],
+            [2.0, 5.0, 2.0, 7.0],
+            [8.0, 1.0, 9.0, 9.0],
+            [8.0, 1.0, 9.0, 6.0],
+            [7.0, 1.0, 9.0, 4.0],
+            [4.0, 5.0, 4.0, 5.0],
+            [2.0, 4.0, 5.0, 4.0],
+        ])
 
         self.bbox_rles = [
             {"size": [20, 20], "counts": b"Q21c000000o7"},
@@ -108,14 +105,7 @@ class TestMaskApi(unittest.TestCase):
         self.assertEqual(area, self.areas[0])
 
     def test_rles(self):
-        self.assertTrue(
-            np.all(
-                [
-                    _mask.encode(_mask.decode([rle])) == [rle]
-                    for rle in self.rleObjs
-                ]
-            )
-        )
+        self.assertTrue(np.all([_mask.encode(_mask.decode([rle])) == [rle] for rle in self.rleObjs]))
 
     def test_frBbox(self):
         self.assertEqual(self.bbox_rles, _mask.frBbox(self.bboxes, 20, 20))
@@ -135,9 +125,7 @@ class TestMaskApi(unittest.TestCase):
             self.poly_rles,
             module.frPyObjects([p for p in self.poly], 20, 20),
         )
-        self.assertEqual(
-            self.bbox_rles, module.frPyObjects(self.bboxes, 20, 20)
-        )
+        self.assertEqual(self.bbox_rles, module.frPyObjects(self.bboxes, 20, 20))
 
         self.assertEqual(
             self.compressed_rle,
@@ -153,15 +141,11 @@ class TestMaskApi(unittest.TestCase):
         self.assertEqual(self.bbox_rles[0], module.merge([self.bbox_rles[0]]))
         self.assertEqual(self.bbox_rles_merged, module.merge(self.bbox_rles))
         self.assertEqual(self.bbox_rles_merged, module.merge(self.bbox_rles, 0))
-        self.assertEqual(
-            self.bbox_rles_merged_1, module.merge(self.bbox_rles, 1)
-        )
+        self.assertEqual(self.bbox_rles_merged_1, module.merge(self.bbox_rles, 1))
 
     @parameterized.expand([_mask, mask_util])
     def test_toBbox(self, module):
-        self.assertEqual(
-            self.bboxes.tolist(), module.toBbox(self.bbox_rles).tolist()
-        )
+        self.assertEqual(self.bboxes.tolist(), module.toBbox(self.bbox_rles).tolist())
 
     def test_toBbox_solo(self):
         self.assertEqual(
@@ -173,55 +157,39 @@ class TestMaskApi(unittest.TestCase):
     def test_iou(self, module):
         iou_11 = np.array([[1.0, 0.5], [0.13333333, 1.0]]).round(4)
 
-        result_iou_11 = module.iou(
-            self.bbox_rles[:2], self.bbox_rles[:2], [1, 1]
-        ).round(4)
+        result_iou_11 = module.iou(self.bbox_rles[:2], self.bbox_rles[:2], [1, 1]).round(4)
 
         self.assertEqual(iou_11.tolist(), result_iou_11.tolist())
 
         iou_00 = np.array([[1.0, 0.11764706], [0.11764706, 1.0]]).round(4)
-        result_iou_00 = module.iou(
-            self.bbox_rles[:2], self.bbox_rles[:2], [0, 0]
-        ).round(4)
+        result_iou_00 = module.iou(self.bbox_rles[:2], self.bbox_rles[:2], [0, 0]).round(4)
 
         self.assertEqual(iou_00.tolist(), result_iou_00.tolist())
 
         iou_10 = np.array([[1.0, 0.11764706], [0.13333333, 1.0]]).round(4)
-        result_iou_10 = module.iou(
-            self.bbox_rles[:2], self.bbox_rles[:2], [1, 0]
-        ).round(4)
+        result_iou_10 = module.iou(self.bbox_rles[:2], self.bbox_rles[:2], [1, 0]).round(4)
 
         self.assertEqual(iou_10.tolist(), result_iou_10.tolist())
 
         iou_01 = np.array([[1.0, 0.5], [0.11764706, 1.0]]).round(4)
-        result_iou_01 = module.iou(
-            self.bbox_rles[:2], self.bbox_rles[:2], [0, 1]
-        ).round(4)
+        result_iou_01 = module.iou(self.bbox_rles[:2], self.bbox_rles[:2], [0, 1]).round(4)
         self.assertEqual(iou_01.tolist(), result_iou_01.tolist())
 
-        poly_iou = np.array(
-            [[1.0, 0.1562, 0.1], [0.1562, 1.0, 0.2174], [0.1, 0.2174, 1.0]]
-        )
+        poly_iou = np.array([[1.0, 0.1562, 0.1], [0.1562, 1.0, 0.2174], [0.1, 0.2174, 1.0]])
 
-        result_poly_iou = module.iou(
-            self.poly_rles[:3], self.poly_rles[:3], [0, 0, 0]
-        ).round(4)
+        result_poly_iou = module.iou(self.poly_rles[:3], self.poly_rles[:3], [0, 0, 0]).round(4)
         self.assertEqual(poly_iou.tolist(), result_poly_iou.tolist())
 
     def testToBboxFullImage(self):
         mask = np.array([[0, 1], [1, 1]])
         bbox = mask_util.toBbox(_encode(mask))
-        self.assertTrue(
-            (bbox == np.array([0, 0, 2, 2], dtype="float32")).all(), bbox
-        )
+        self.assertTrue((bbox == np.array([0, 0, 2, 2], dtype="float32")).all(), bbox)
 
     def testToBboxNonFullImage(self):
         mask = np.zeros((10, 10, 1), dtype=np.uint8)
         mask[2:4, 3:6, :] = 1
         bbox = mask_util.toBbox(_encode(mask)[0])
-        self.assertTrue(
-            (bbox == np.array([3, 2, 3, 2], dtype="float32")).all(), bbox
-        )
+        self.assertTrue((bbox == np.array([3, 2, 3, 2], dtype="float32")).all(), bbox)
 
     def testInvalidRLECounts(self):
         rle = {
@@ -315,9 +283,7 @@ class TestMaskApi(unittest.TestCase):
         self.assertDictEqual(new_rle, self.poly_rles[0])
 
         mask = fake_gt.annToMask(fake_gt.anns[3])
-        self.assertEqual(
-            mask.tolist(), mask_util.decode(self.poly_rles[0]).tolist()
-        )
+        self.assertEqual(mask.tolist(), mask_util.decode(self.poly_rles[0]).tolist())
 
 
 if __name__ == "__main__":

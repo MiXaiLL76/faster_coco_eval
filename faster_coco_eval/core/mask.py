@@ -13,9 +13,7 @@ except ImportError:
 
 import faster_coco_eval.mask_api_new_cpp as _mask
 
-ValidRleType = Union[
-    List[np.ndarray], List[List[float]], np.ndarray, List[dict]
-]
+ValidRleType = Union[List[np.ndarray], List[List[float]], np.ndarray, List[dict]]
 
 
 def segmToRle(segm: Union[List[float], List[int], dict], w: int, h: int):
@@ -28,7 +26,6 @@ def segmToRle(segm: Union[List[float], List[int], dict], w: int, h: int):
 
     Returns:
         rle (dict): run-length encoding of the segmentation map
-
     """
 
     return _mask.segmToRle(segm, w, h)
@@ -43,7 +40,6 @@ def rleToBoundaryCV(rle: dict, dilation_ratio: float = 0.02) -> dict:
 
     Returns:
         boundary_rle (dict): run-length encoding of the boundary mask
-
     """
 
     mask = _mask.decode([rle])[:, :, 0]
@@ -56,9 +52,7 @@ def rleToBoundaryCV(rle: dict, dilation_ratio: float = 0.02) -> dict:
 
     # Pad image so mask truncated by the image border is
     # also considered as boundary.
-    new_mask = cv2.copyMakeBorder(
-        mask, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=0
-    )
+    new_mask = cv2.copyMakeBorder(mask, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=0)
     kernel = np.ones((3, 3), dtype=np.uint8)
     new_mask_erode = cv2.erode(new_mask, kernel, iterations=dilation)
     mask_erode = new_mask_erode[1 : h + 1, 1 : w + 1]
@@ -83,17 +77,13 @@ def rleToBoundary(
 
     Returns:
         boundary_rle (dict): run-length encoding of the boundary mask
-
     """
 
     if backend == "mask_api":
         return _mask.toBoundary([rle], dilation_ratio)[0]
     else:
         if not opencv_available:
-            raise ImportError(
-                "OpenCV is not available. Please install OpenCV to use this"
-                " function."
-            )
+            raise ImportError("OpenCV is not available. Please install OpenCV to use this function.")
         return rleToBoundaryCV(rle, dilation_ratio)
 
 
@@ -114,7 +104,6 @@ def calculateRleForAllAnnotations(
         compute_boundary (bool): whether to compute boundary run-length encoding
         boundary_dilation_ratio (float): ratio of dilation to apply to the mask
         boundary_cpu_count (int): number of CPUs to use for boundary computation
-
     """
     _mask.calculateRleForAllAnnotations(
         anns,
@@ -141,7 +130,6 @@ def iou(
 
     Returns:
         iou (list or ndarray): intersection over union between dt and gt masks
-
     """
 
     return _mask.iou(dt, gt, iscrowd)
@@ -156,7 +144,6 @@ def merge(rleObjs: List[dict], intersect: int = 0):
 
     Returns:
         merged (dict): run-length encoding of merged mask
-
     """
 
     return _mask.merge(rleObjs, intersect)
@@ -183,7 +170,6 @@ def frPyObjects(
 
     Returns:
         rle (dict or list of dict): run-length encoding of the objects
-
     """
 
     return _mask.frPyObjects(objs, h, w)
@@ -197,7 +183,6 @@ def encode(bimask: np.ndarray) -> dict:
 
     Returns:
         rle (dict): run-length encoding of the binary mask
-
     """
 
     if len(bimask.shape) == 3:
@@ -215,7 +200,6 @@ def decode(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
 
     Returns:
         bimask (ndarray): decoded binary mask
-
     """
 
     if type(rleObjs) is list:
@@ -248,7 +232,6 @@ def toBbox(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
 
     Returns:
         bbox (np.ndarray): bounding box of run-length encodings
-
     """
 
     if type(rleObjs) is list:
