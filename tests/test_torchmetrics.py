@@ -215,9 +215,7 @@ class TestTorchmetricsLib(TestCase):
 
     def test_evaluate(self):
         # Initialize metric
-        metric = MeanAveragePrecision(
-            iou_type="bbox", backend="faster_coco_eval"
-        )
+        metric = MeanAveragePrecision(iou_type="bbox", backend="faster_coco_eval")
 
         # Update metric with predictions and respective ground truth
         metric.update(self.preds, self.target)
@@ -252,7 +250,6 @@ class TestTorchmetricsLib(TestCase):
         Calculating macro on inputs that only have one label should be
         the same as micro. Calculating class metrics should be the same
         regardless of average argument.
-
         """
         backend = "pycocotools"
         backend = "faster_coco_eval"
@@ -272,24 +269,18 @@ class TestTorchmetricsLib(TestCase):
                 lambda x: torch.ones_like(x),
             )
 
-        metric_macro = MeanAveragePrecision(
-            average="macro", class_metrics=class_metrics, backend=backend
-        )
+        metric_macro = MeanAveragePrecision(average="macro", class_metrics=class_metrics, backend=backend)
         metric_macro.update(_preds[0], _target[0])
         metric_macro.update(_preds[1], _target[1])
         result_macro = metric_macro.compute()
 
-        metric_micro = MeanAveragePrecision(
-            average="micro", class_metrics=class_metrics, backend=backend
-        )
+        metric_micro = MeanAveragePrecision(average="micro", class_metrics=class_metrics, backend=backend)
         metric_micro.update(_inputs["preds"][0], _inputs["target"][0])
         metric_micro.update(_inputs["preds"][1], _inputs["target"][1])
         result_micro = metric_micro.compute()
 
         if class_metrics:
-            assert torch.allclose(
-                result_macro["map_per_class"], result_micro["map_per_class"]
-            )
+            assert torch.allclose(result_macro["map_per_class"], result_micro["map_per_class"])
             assert torch.allclose(
                 result_macro["mar_100_per_class"],
                 result_micro["mar_100_per_class"],

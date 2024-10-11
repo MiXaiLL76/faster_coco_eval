@@ -1,13 +1,13 @@
 # Faster-COCO-Eval
 
 [![PyPI](https://img.shields.io/pypi/v/faster-coco-eval)](https://pypi.org/project/faster-coco-eval)
-[![PyPI Downloads](https://img.shields.io/pypi/dm/faster-coco-eval.svg?label=PyPI%20downloads)](
-https://pypi.org/project/faster-coco-eval/)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/faster-coco-eval.svg?label=PyPI%20downloads)](https://pypi.org/project/faster-coco-eval/)
 
 [![docs](https://img.shields.io/badge/docs-latest-blue)](https://github.com/MiXaiLL76/faster_coco_eval/wiki)
 [![license](https://img.shields.io/github/license/MiXaiLL76/faster_coco_eval.svg)](https://github.com/MiXaiLL76/faster_coco_eval/blob/main/LICENSE)
 
 [![CI - Test](https://github.com/MiXaiLL76/faster_coco_eval/actions/workflows/unittest.yml/badge.svg)](https://github.com/MiXaiLL76/faster_coco_eval/actions/workflows/unittest.yml)
+
 <!-- [![Coverage](https://codecov.io/github/MiXaiLL76/faster_coco_eval/coverage.svg?branch=main)](https://codecov.io/gh/MiXaiLL76/faster_coco_eval)       -->
 
 ## Disclaimer
@@ -25,7 +25,7 @@ pip install faster-coco-eval
 
 ### Additional visualization options
 
-> Only 1 additional package needed opencv-python-headless  
+> Only 1 additional package needed opencv-python-headless
 
 ```bash
 pip install faster-coco-eval[extra]
@@ -65,6 +65,7 @@ For our use case with a test dataset of 5000 images from the coco val dataset.
 Testing was carried out using the mmdetection framework and the eval_metric.py script. The indicators are presented below.
 
 Visualization of testing **colab_example.ipynb** available in directory [examples/comparison](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/comparison)
+
 - [mmdet example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/comparison/mmdet/colab_example.ipynb)
 - [ultralytics example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/comparison/ultralytics/colab_example.ipynb)
 
@@ -77,7 +78,7 @@ Visualization of testing **colab_example.ipynb** available in directory [example
 
 ## Feautures
 
-This library provides not only validation functions, but also error visualization functions. Including visualization of errors in the image.  
+This library provides not only validation functions, but also error visualization functions. Including visualization of errors in the image.
 You can study in more detail in the [examples](https://github.com/MiXaiLL76/faster_coco_eval/blob/main/examples) and [Wiki](https://github.com/MiXaiLL76/faster_coco_eval/wiki).
 
 ## Usage

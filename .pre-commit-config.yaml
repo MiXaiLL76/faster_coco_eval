@@ -33,8 +33,8 @@ repos:
       - id: check-docstring-first
       - id: check-executables-have-shebangs
       - id: check-case-conflict
-      - id: check-added-large-files
-        args: ["--maxkb=100", "--enforce-all"]
+      # - id: check-added-large-files
+      #   args: ["--maxkb=100", "--enforce-all"]
       - id: detect-private-key
 
   - repo: https://github.com/PyCQA/docformatter

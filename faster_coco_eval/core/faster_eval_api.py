@@ -28,13 +28,12 @@ class COCOeval_faster(COCOevalBase):
         Unlike the original COCO PythonAPI, we don't populate the
         datastructure self.evalImgs because this datastructure is a
         computational bottleneck.
-
         """
         tic = time.time()
 
         p = self.params
 
-        self.print_function("Evaluate annotation type *{}*".format(p.iouType))
+        self.print_function(f"Evaluate annotation type *{p.iouType}*")
 
         p.imgIds = list(np.unique(p.imgIds))
         if p.useCats:
@@ -52,28 +51,18 @@ class COCOeval_faster(COCOevalBase):
         elif p.iouType == "keypoints":
             computeIoU = self.computeOks
         else:
-            raise ValueError(
-                "p.iouType must be segm, bbox, boundary or keypoints. Get"
-                f" {p.iouType}"
-            )
+            raise ValueError("p.iouType must be segm, bbox, boundary or keypoints. Get" f" {p.iouType}")
 
         self.ious = {
-            (imgId, catId): computeIoU(imgId, catId)
-            for (imgId, catId) in itertools.product(p.imgIds, catIds)
+            (imgId, catId): computeIoU(imgId, catId) for (imgId, catId) in itertools.product(p.imgIds, catIds)
         }  # bottleneck
 
         # Convert GT annotations, detections, and IOUs to a format that's fast to access in C++ # noqa: E501
-        ground_truth_instances = self.gt_dataset.get_cpp_instances(
-            p.imgIds, p.catIds, bool(p.useCats)
-        )
-        detected_instances = self.dt_dataset.get_cpp_instances(
-            p.imgIds, p.catIds, bool(p.useCats)
-        )
+        ground_truth_instances = self.gt_dataset.get_cpp_instances(p.imgIds, p.catIds, bool(p.useCats))
+        detected_instances = self.dt_dataset.get_cpp_instances(p.imgIds, p.catIds, bool(p.useCats))
 
         # List Comp faster then map of map
-        ious = [
-            [self.ious[imgId, catId] for catId in catIds] for imgId in p.imgIds
-        ]
+        ious = [[self.ious[imgId, catId] for catId in catIds] for imgId in p.imgIds]
 
         self._paramsEval = copy.deepcopy(self.params)
 
@@ -98,7 +87,7 @@ class COCOeval_faster(COCOevalBase):
         toc = time.time()
 
         self.print_function("COCOeval_opt.evaluate() finished...")
-        self.print_function("DONE (t={:0.2f}s).".format(toc - tic))
+        self.print_function(f"DONE (t={toc - tic:0.2f}s).")
 
     def accumulate(self):
         """Accumulate per image evaluation results and store the result in
@@ -106,17 +95,12 @@ class COCOeval_faster(COCOevalBase):
 
         Does not support changing parameter settings from those used by
         self.evaluate()
-
         """
         self.print_function("Accumulating evaluation results...")
         tic = time.time()
         if self.separate_eval:
-            assert hasattr(
-                self, "_evalImgs_cpp"
-            ), "evaluate() must be called before accmulate() is called."
-            self.eval = _C.COCOevalAccumulate(
-                self._paramsEval, self._evalImgs_cpp
-            )
+            assert hasattr(self, "_evalImgs_cpp"), "evaluate() must be called before accmulate() is called."
+            self.eval = _C.COCOevalAccumulate(self._paramsEval, self._evalImgs_cpp)
 
         self.matched = False
         if self.extra_calc:
@@ -124,12 +108,12 @@ class COCOeval_faster(COCOevalBase):
                 self.math_matches()
                 self.matched = True
             except Exception as e:
-                logger.error("{} math_matches error: ".format(e), exc_info=True)
+                logger.error(f"{e} math_matches error: ", exc_info=True)
 
         toc = time.time()
 
         self.print_function("COCOeval_opt.accumulate() finished...")
-        self.print_function("DONE (t={:0.2f}s).".format(toc - tic))
+        self.print_function(f"DONE (t={toc - tic:0.2f}s).")
 
     def math_matches(self):
         for dt_gt, iou in self.eval["matched"].items():
@@ -225,17 +209,15 @@ class COCOeval_faster(COCOevalBase):
 
         maxDets = self.params.maxDets
         if len(maxDets) > 1:
-            labels[6] = "AR_{}".format(maxDets[0])
+            labels[6] = f"AR_{maxDets[0]}"
 
         if len(maxDets) >= 2:
-            labels[7] = "AR_{}".format(maxDets[1])
+            labels[7] = f"AR_{maxDets[1]}"
 
         if len(maxDets) >= 3:
-            labels[8] = "AR_{}".format(maxDets[2])
+            labels[8] = f"AR_{maxDets[2]}"
 
-        return {
-            _label: float(self.all_stats[i]) for i, _label in enumerate(labels)
-        }
+        return {_label: float(self.all_stats[i]) for i, _label in enumerate(labels)}
 
     @staticmethod
     def calc_auc(
@@ -254,7 +236,6 @@ class COCOeval_faster(COCOevalBase):
 
         Returns:
             float: area under precision recall curve
-
         """
         # https://towardsdatascience.com/how-to-efficiently-implement-area-under-precision-recall-curve-pr-auc-a85872fd7f14
         if method == "c++":

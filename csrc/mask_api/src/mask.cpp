@@ -142,7 +142,7 @@ namespace mask_api
             if (n > 0)
             {
                 uint64_t h = (R[0].h), w = (R[0].w);
-                
+
                 py::array_t<uint8_t, py::array::f_style> M({(size_t)h, (size_t)w, (size_t)n});
                 auto mask = M.mutable_unchecked();
                 uint64_t s = h * w * n;
@@ -649,14 +649,14 @@ namespace mask_api
                         break;
                     }
                 }
-                
+
                 #ifndef _WIN32
                     for (size_t i = 0; i < thread; i++)
                     {
                         rle_futures[i].wait();
                     }
                     rle_futures.clear();
-                    rle_futures.shrink_to_fit();                
+                    rle_futures.shrink_to_fit();
                 #endif
             }
 

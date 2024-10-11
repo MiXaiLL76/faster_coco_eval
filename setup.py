@@ -36,7 +36,6 @@ def parse_requirements(fname="requirements/runtime.txt", with_version=True):
         List[str]: list of requirements items
     CommandLine:
         python -c "import setup; print(setup.parse_requirements())"
-
     """
     import re
     import sys
@@ -106,7 +105,7 @@ def get_extensions(version_info):
         "csrc/faster_eval_api/coco_eval/cocoeval.cpp",
         "csrc/faster_eval_api/faster_eval_api.cpp",
     ]
-    print("Sources: {}".format(sources))
+    print(f"Sources: {sources}")
 
     if os.name == "nt":
         extra_compile_args = [
@@ -136,7 +135,7 @@ def get_extensions(version_info):
         "csrc/mask_api/src/rle.cpp",
         "csrc/mask_api/mask_api.cpp",
     ]
-    print("Sources: {}".format(sources))
+    print(f"Sources: {sources}")
 
     ext_modules += [
         Pybind11Extension(
@@ -179,9 +178,7 @@ setup(
     data_files=glob.glob("requirements/*"),
     install_requires=parse_requirements("requirements/runtime.txt"),
     extras_require={
-        "extra": parse_requirements("requirements/runtime.txt")
-        + parse_requirements("requirements/extra.txt"),
-        "tests": parse_requirements("requirements/runtime.txt")
-        + parse_requirements("requirements/tests.txt"),
+        "extra": parse_requirements("requirements/runtime.txt") + parse_requirements("requirements/extra.txt"),
+        "tests": parse_requirements("requirements/runtime.txt") + parse_requirements("requirements/tests.txt"),
     },
 )

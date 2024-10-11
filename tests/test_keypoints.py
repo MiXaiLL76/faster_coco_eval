@@ -61,9 +61,7 @@ class TestKeypointsMetric(TestCase):
         cocoGt = COCO(self.gt_file)
         cocoDt = cocoGt.loadRes(self.dt_file)
 
-        cocoEval = COCOeval_faster(
-            cocoGt, cocoDt, "keypoints", lvis_style=True, print_function=print
-        )
+        cocoEval = COCOeval_faster(cocoGt, cocoDt, "keypoints", lvis_style=True, print_function=print)
         self.assertFalse(cocoEval.lvis_style)
         self.assertEqual(cocoEval.cocoGt.print_function, print)
 

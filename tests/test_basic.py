@@ -24,12 +24,8 @@ class TestBaseCoco(unittest.TestCase):
         if not os.path.exists(self.gt_file):
             self.gt_file = os.path.join("tests", self.gt_file)
             self.dt_file = os.path.join("tests", self.dt_file)
-            self.gt_ignore_test_file = os.path.join(
-                "tests", self.gt_ignore_test_file
-            )
-            self.dt_ignore_test_file = os.path.join(
-                "tests", self.dt_ignore_test_file
-            )
+            self.gt_ignore_test_file = os.path.join("tests", self.gt_ignore_test_file)
+            self.dt_ignore_test_file = os.path.join("tests", self.dt_ignore_test_file)
 
         prepared_anns = COCO.load_json(self.dt_file)
 
@@ -185,15 +181,13 @@ class TestBaseCoco(unittest.TestCase):
 
         self.assertEqual(
             repr(cocoGt),
-            "COCO(annotation_file) # __author__='{}'; __version__='{}';".format(
-                faster_coco_eval.__author__, faster_coco_eval.__version__
-            ),
+            f"COCO(annotation_file) # __author__='{faster_coco_eval.__author__}';"
+            f" __version__='{faster_coco_eval.__version__}';",
         )
         self.assertEqual(
             repr(cocoEval),
-            "COCOeval_faster() # __author__='{}'; __version__='{}';".format(
-                faster_coco_eval.__author__, faster_coco_eval.__version__
-            ),
+            f"COCOeval_faster() # __author__='{faster_coco_eval.__author__}';"
+            f" __version__='{faster_coco_eval.__version__}';",
         )
 
     def test_auc(self):
@@ -216,17 +210,13 @@ class TestBaseCoco(unittest.TestCase):
 
         parsed_data = cocoGt.to_dict()
 
-        self.assertListEqual(
-            parsed_data["annotations"], orig_data["annotations"]
-        )
+        self.assertListEqual(parsed_data["annotations"], orig_data["annotations"])
         self.assertListEqual(parsed_data["categories"], orig_data["categories"])
         self.assertListEqual(parsed_data["images"], orig_data["images"])
 
         parsed_data = dict(cocoGt)
 
-        self.assertListEqual(
-            parsed_data["annotations"], orig_data["annotations"]
-        )
+        self.assertListEqual(parsed_data["annotations"], orig_data["annotations"])
         self.assertListEqual(parsed_data["categories"], orig_data["categories"])
         self.assertListEqual(parsed_data["images"], orig_data["images"])
 

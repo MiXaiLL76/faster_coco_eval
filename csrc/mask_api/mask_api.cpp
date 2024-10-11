@@ -71,9 +71,9 @@ namespace mask_api
 
             /* Create a new C++ instance */
             Mask::RLE p = Mask::RLE(
-              t[0].cast<std::uint64_t>(), 
-              t[1].cast<std::uint64_t>(), 
-              t[2].cast<std::uint64_t>(), 
+              t[0].cast<std::uint64_t>(),
+              t[1].cast<std::uint64_t>(),
+              t[2].cast<std::uint64_t>(),
               t[3].cast<std::vector<uint>>()
             );
 

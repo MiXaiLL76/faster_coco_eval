@@ -66,7 +66,7 @@ namespace mask_api
                     c = s[i] - 48;
                     x |= (c & 0x1f) << 5 * k;
                     more = c & 0x20;
-                    
+
                     i += 1;
                     k += 1;
 
@@ -264,11 +264,11 @@ namespace mask_api
             std::vector<bool>::iterator ptr = _counts.begin();
             std::for_each(this->cnts.begin(), this->cnts.end(), [&v, &ptr](uint count)
                           {
-                
+
                 if(v){
                     std::fill_n(ptr, count, v);
                 }
-                
+
                 v = !v;
                 ptr += count; });
 
@@ -326,8 +326,8 @@ namespace mask_api
                                                {
                                 long test_ptr = c + o;
                                 return (
-                                    (test_ptr >= 0) && 
-                                    (test_ptr < max_len) && _counts[test_ptr] && 
+                                    (test_ptr >= 0) &&
+                                    (test_ptr < max_len) && _counts[test_ptr] &&
                                     (std::abs((test_ptr % rle_h) - x) <= dilation )
                                 ); });
                         }
@@ -337,10 +337,10 @@ namespace mask_api
                                                {
                                 long test_ptr = c + o;
                                 long _test_ptr = c - o;
-                                
+
                                 return (
-                                    (_test_ptr >= 0) && _counts[_test_ptr] && 
-                                    (test_ptr < max_len) && _counts[test_ptr] && 
+                                    (_test_ptr >= 0) && _counts[_test_ptr] &&
+                                    (test_ptr < max_len) && _counts[test_ptr] &&
                                     (std::abs((test_ptr % rle_h) - x) <= dilation )
                                 ); });
                         }
@@ -431,7 +431,7 @@ namespace mask_api
                     if(v){
                         std::fill_n(ptr, count, 1);
                     }
-                    
+
                     v = !v;
                     ptr += count; });
 

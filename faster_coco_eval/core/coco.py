@@ -26,9 +26,7 @@ def _isArrayLike(obj):
 class COCO:
     def __init__(
         self,
-        annotation_file: Optional[
-            Union[str, dict, os.PathLike, pathlib.PosixPath]
-        ] = None,
+        annotation_file: Optional[Union[str, dict, os.PathLike, pathlib.PosixPath]] = None,
         use_deepcopy: bool = False,
     ):
         """Constructor of Microsoft COCO helper class.
@@ -37,7 +35,6 @@ class COCO:
             annotation_file (str or dict or PathLike): path to annotation file
             use_deepcopy (bool, optional):
                 whether to copy the dict annotations. Defaults to False.
-
         """
 
         # load dataset
@@ -64,12 +61,8 @@ class COCO:
             else:
                 self.dataset = None
 
-            assert (
-                type(self.dataset) is dict
-            ), "annotation file format {} not supported".format(
-                type(self.dataset)
-            )
-            self.print_function("Done (t={:0.2f}s)".format(time.time() - tic))
+            assert type(self.dataset) is dict, f"annotation file format {type(self.dataset)} not supported"
+            self.print_function(f"Done (t={time.time() - tic:0.2f}s)")
             self.createIndex()
 
     @property
@@ -115,7 +108,7 @@ class COCO:
                 catToImgs[ann["category_id"]].append(ann["image_id"])
 
         self.print_function("index created!")
-        self.print_function("Done (t={:0.2f}s)".format(time.time() - tic))
+        self.print_function(f"Done (t={time.time() - tic:0.2f}s)")
 
         # create class members
         self.anns = anns
@@ -127,7 +120,7 @@ class COCO:
     def info(self):
         """Print information about the annotation file."""
         for key, value in self.dataset["info"].items():
-            self.print_function("{}: {}".format(key, value))
+            self.print_function(f"{key}: {value}")
 
     def getAnnIds(
         self,
@@ -148,7 +141,6 @@ class COCO:
 
         Returns:
             ids (int array) : integer array of ann ids that satisfy the criteria
-
         """
         imgIds = set(imgIds if _isArrayLike(imgIds) else [imgIds])
         catIds = set(catIds if _isArrayLike(catIds) else [catIds])
@@ -170,17 +162,12 @@ class COCO:
                 anns = self.dataset["annotations"]
 
             if check_cat:
-                anns = list(
-                    filter(lambda ann: ann["category_id"] in catIds, anns)
-                )
+                anns = list(filter(lambda ann: ann["category_id"] in catIds, anns))
 
             if check_area:
                 anns = list(
                     filter(
-                        lambda ann: (
-                            ann["area"] > areaRng[0]
-                            and ann["area"] < areaRng[1]
-                        ),
+                        lambda ann: (ann["area"] > areaRng[0] and ann["area"] < areaRng[1]),
                         anns,
                     )
                 )
@@ -188,9 +175,7 @@ class COCO:
             if check_crowd:
                 anns = list(
                     filter(
-                        lambda ann: (
-                            int(ann.get("iscrowd", 0)) == int(iscrowd)
-                        ),
+                        lambda ann: (int(ann.get("iscrowd", 0)) == int(iscrowd)),
                         anns,
                     )
                 )
@@ -213,7 +198,6 @@ class COCO:
 
         Returns:
             ids (int array)   : integer array of cat ids
-
         """
 
         catNms = set(catNms if _isArrayLike(catNms) else [catNms])
@@ -229,9 +213,7 @@ class COCO:
                 cats = list(filter(lambda cat: cat.get("name") in catNms, cats))
 
             if len(supNms) > 0:
-                cats = list(
-                    filter(lambda cat: cat.get("supercategory") in supNms, cats)
-                )
+                cats = list(filter(lambda cat: cat.get("supercategory") in supNms, cats))
 
             if len(catIds) > 0:
                 cats = list(filter(lambda cat: cat.get("id") in catIds, cats))
@@ -239,9 +221,7 @@ class COCO:
         ids = [cat["id"] for cat in cats]
         return ids
 
-    def getImgIds(
-        self, imgIds: List[int] = [], catIds: List[int] = []
-    ) -> List[int]:
+    def getImgIds(self, imgIds: List[int] = [], catIds: List[int] = []) -> List[int]:
         """Get image ids that satisfy given filter conditions.
 
         Args:
@@ -250,7 +230,6 @@ class COCO:
 
         Return:
             ids (int array)  : integer array of img ids
-
         """
 
         imgIds = imgIds if _isArrayLike(imgIds) else [imgIds]
@@ -275,7 +254,6 @@ class COCO:
 
         Return:
             anns (object array) : loaded ann objects
-
         """
 
         if _isArrayLike(ids):
@@ -291,7 +269,6 @@ class COCO:
 
         Return:
             cats (object array) : loaded cat objects
-
         """
         if _isArrayLike(ids):
             return [self.cats[i] for i in ids]
@@ -306,7 +283,6 @@ class COCO:
 
         Return:
             imgs (object array) : loaded img objects
-
         """
         if _isArrayLike(ids):
             return [self.imgs[i] for i in ids]
@@ -322,7 +298,6 @@ class COCO:
 
         Return:
             data (dict): Loaded json data
-
         """
 
         with open(json_file) as io:
@@ -342,7 +317,6 @@ class COCO:
 
         Return:
             res (obj)         : result api object
-
         """
         res = COCO()
         res.dataset["images"] = [img for img in self.dataset["images"]]
@@ -369,18 +343,12 @@ class COCO:
             set(annsImgIds) & set(self.getImgIds())
         ), "Results do not correspond to current coco set"
         if "caption" in anns[0]:
-            imgIds = set([img["id"] for img in res.dataset["images"]]) & set(
-                [ann["image_id"] for ann in anns]
-            )
-            res.dataset["images"] = [
-                img for img in res.dataset["images"] if img["id"] in imgIds
-            ]
+            imgIds = set([img["id"] for img in res.dataset["images"]]) & set([ann["image_id"] for ann in anns])
+            res.dataset["images"] = [img for img in res.dataset["images"] if img["id"] in imgIds]
             for index, ann in enumerate(anns):
                 ann["id"] = index + 1
         elif "bbox" in anns[0] and not anns[0]["bbox"] == []:
-            res.dataset["categories"] = copy.deepcopy(
-                self.dataset["categories"]
-            )
+            res.dataset["categories"] = copy.deepcopy(self.dataset["categories"])
             for index, ann in enumerate(anns):
                 bb = ann["bbox"]
                 x1, x2, y1, y2 = [bb[0], bb[0] + bb[2], bb[1], bb[1] + bb[3]]
@@ -390,9 +358,7 @@ class COCO:
                 ann["id"] = index + 1
                 ann["iscrowd"] = 0
         elif "segmentation" in anns[0]:
-            res.dataset["categories"] = copy.deepcopy(
-                self.dataset["categories"]
-            )
+            res.dataset["categories"] = copy.deepcopy(self.dataset["categories"])
             for index, ann in enumerate(anns):
                 # now only support compressed RLE format as segmentation results
                 ann["area"] = maskUtils.area(ann["segmentation"])
@@ -401,9 +367,7 @@ class COCO:
                 ann["id"] = index + 1
                 ann["iscrowd"] = 0
         elif "keypoints" in anns[0]:
-            res.dataset["categories"] = copy.deepcopy(
-                self.dataset["categories"]
-            )
+            res.dataset["categories"] = copy.deepcopy(self.dataset["categories"])
             for index, ann in enumerate(anns):
                 s = ann["keypoints"]
                 x = s[0::3]
@@ -412,7 +376,7 @@ class COCO:
                 ann["area"] = (x1 - x0) * (y1 - y0)
                 ann["id"] = index + 1
                 ann["bbox"] = [x0, y0, x1 - x0, y1 - y0]
-        self.print_function("DONE (t={:0.2f}s)".format(time.time() - tic))
+        self.print_function(f"DONE (t={time.time() - tic:0.2f}s)")
 
         res.dataset["annotations"] = anns
         res.createIndex()
@@ -433,7 +397,6 @@ class COCO:
 
         Return:
             anns (python nested list): converted annotations
-
         """
 
         self.print_function("Converting ndarray to lists...")
@@ -444,7 +407,7 @@ class COCO:
         ann = []
         for i in range(N):
             if i % 1000000 == 0:
-                self.print_function("{}/{}".format(i, N))
+                self.print_function(f"{i}/{N}")
             ann += [
                 {
                     "image_id": int(data[i, 0]),
@@ -463,7 +426,6 @@ class COCO:
 
         Return:
             rle (dict): run-length encoding of the annotation
-
         """
 
         t = self.imgs[ann["image_id"]]
@@ -491,7 +453,6 @@ class COCO:
 
         Return:
             mask (binary mask): mask of the annotation
-
         """
         rle = self.annToRLE(ann)
         mask = maskUtils.decode(rle)
@@ -514,7 +475,6 @@ class COCO:
 
         Returns:
             ids (int array)       : integer array of ann ids
-
         """
         return self.getAnnIds(img_ids, cat_ids, area_rng, iscrowd)
 
@@ -533,13 +493,10 @@ class COCO:
 
         Returns:
             ids (int array)       : integer array of cat ids
-
         """
         return self.getCatIds(cat_names, sup_names, cat_ids)
 
-    def get_img_ids(
-        self, img_ids: List[int] = [], cat_ids: List[int] = []
-    ) -> List[int]:
+    def get_img_ids(self, img_ids: List[int] = [], cat_ids: List[int] = []) -> List[int]:
         """Get img ids that satisfy given filter conditions.
 
         Args:
@@ -548,7 +505,6 @@ class COCO:
 
         Returns:
             ids (int array)       : integer array of img ids
-
         """
         return self.getImgIds(img_ids, cat_ids)
 
@@ -560,7 +516,6 @@ class COCO:
 
         Returns:
             anns (dict array)  : loaded ann objects
-
         """
         return self.loadAnns(ids)
 
@@ -572,7 +527,6 @@ class COCO:
 
         Returns:
             cats (dict array)  : loaded cat objects
-
         """
         return self.loadCats(ids)
 
@@ -584,7 +538,6 @@ class COCO:
 
         Returns:
             imgs (dict array)  : loaded img objects
-
         """
         return self.loadImgs(ids)
 
@@ -594,7 +547,6 @@ class COCO:
 
         Returns:
             imgToAnns (dict): mapping from image ids to annotation ids
-
         """
         return self.imgToAnns
 
@@ -604,7 +556,6 @@ class COCO:
 
         Args:
             value (dict): mapping from image ids to annotation ids
-
         """
         self.imgToAnns = value
 
@@ -614,7 +565,6 @@ class COCO:
 
         Returns:
             catToImgs (dict): mapping from category ids to image ids
-
         """
         return self.catToImgs
 
@@ -624,14 +574,13 @@ class COCO:
 
         Args:
             value (dict): mapping from category ids to image ids
-
         """
         self.catToImgs = value
 
     def __repr__(self):
         s = self.__class__.__name__ + "(annotation_file) # "
-        s += "__author__='{}'; ".format(__author__)
-        s += "__version__='{}';".format(__version__)
+        s += f"__author__='{__author__}'; "
+        s += f"__version__='{__version__}';"
         return s
 
     def to_dict(self, separate_fn: bool = False) -> dict:
@@ -642,7 +591,6 @@ class COCO:
 
         Returns:
             dict: a standard python dictionary
-
         """
 
         cats = list(self.cats.values())
@@ -656,7 +604,7 @@ class COCO:
                     **{
                         "id": (category["id"] + max_category_id),
                         "name": (category["name"] + "_fn"),
-                    }
+                    },
                 )
                 for category in cats
             ]
@@ -682,9 +630,8 @@ class COCO:
 
         Yields:
             key, val: the key-value pair of the annotation
-
         """
-        for key, val in self.to_dict().items():
+        for key, val in self.to_dict().items():  # noqa: UP028
             yield key, val
 
     def dump(self, output_file: Union[str, os.PathLike]):
@@ -692,7 +639,6 @@ class COCO:
 
         Args:
             output_file (str or PathLike): Path to the output json file
-
         """
         with open(output_file, "w") as io:
             json.dump(dict(self), io, ensure_ascii=False, indent=4)
