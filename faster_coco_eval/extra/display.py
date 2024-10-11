@@ -116,9 +116,7 @@ class PreviewResults(ExtraEval):
         assert self.eval is not None, "Run first self.evaluate()"
 
         if self.useCats:
-            logger.warning(
-                "The calculation may not be accurate. No intersection of" f" classes. useCats={self.useCats}"
-            )
+            logger.warning(f"The calculation may not be accurate. No intersection of classes. useCats={self.useCats}")
 
         y_true = []
         y_pred = []

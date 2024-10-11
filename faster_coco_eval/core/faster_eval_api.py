@@ -51,7 +51,7 @@ class COCOeval_faster(COCOevalBase):
         elif p.iouType == "keypoints":
             computeIoU = self.computeOks
         else:
-            raise ValueError("p.iouType must be segm, bbox, boundary or keypoints. Get" f" {p.iouType}")
+            raise ValueError(f"p.iouType must be segm, bbox, boundary or keypoints. Get {p.iouType}")
 
         self.ious = {
             (imgId, catId): computeIoU(imgId, catId) for (imgId, catId) in itertools.product(p.imgIds, catIds)

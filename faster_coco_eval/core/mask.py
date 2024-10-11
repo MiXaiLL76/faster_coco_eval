@@ -83,7 +83,7 @@ def rleToBoundary(
         return _mask.toBoundary([rle], dilation_ratio)[0]
     else:
         if not opencv_available:
-            raise ImportError("OpenCV is not available. Please install OpenCV to use this" " function.")
+            raise ImportError("OpenCV is not available. Please install OpenCV to use this function.")
         return rleToBoundaryCV(rle, dilation_ratio)
 
 

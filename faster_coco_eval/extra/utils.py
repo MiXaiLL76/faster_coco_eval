@@ -80,7 +80,7 @@ def convert_ann_rle_to_poly(ann: dict):
     """
     if type(ann["segmentation"]) is dict:
         if not opencv_available:
-            raise Exception("Your dataset needs to be converted to polygons. Install" " **opencv-python** for this.")
+            raise Exception("Your dataset needs to be converted to polygons. Install **opencv-python** for this.")
 
         ann["counts"] = ann["segmentation"]
         ann["segmentation"] = convert_rle_to_poly(ann["segmentation"], ann["bbox"])

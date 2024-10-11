@@ -335,13 +335,13 @@ class COCOeval:
         return ious
 
     def evaluateImg(self, imgId, catId, aRng, maxDet):
-        raise DeprecationWarning("COCOeval.evaluateImg deprecated! Use COCOeval_faster.evaluateImg" " instead.")
+        raise DeprecationWarning("COCOeval.evaluateImg deprecated! Use COCOeval_faster.evaluateImg instead.")
 
     def accumulate(self, p=None):
-        raise DeprecationWarning("COCOeval.accumulate deprecated! Use COCOeval_faster.accumulate" " instead.")
+        raise DeprecationWarning("COCOeval.accumulate deprecated! Use COCOeval_faster.accumulate instead.")
 
     def evaluate(self):
-        raise DeprecationWarning("COCOeval.evaluate deprecated! Use COCOeval_faster.evaluate" " instead.")
+        raise DeprecationWarning("COCOeval.evaluate deprecated! Use COCOeval_faster.evaluate instead.")
 
     def _summarize(
         self,
@@ -353,7 +353,7 @@ class COCOeval:
         catIds=None,
     ):
         p = self.params
-        iStr = " {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} {}] =" " {:0.3f}"
+        iStr = " {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} {}] = {:0.3f}"
 
         freq_str = "catIds={:>3s}".format("all") if self.lvis_style else ""
 
@@ -492,7 +492,7 @@ class COCOeval:
         elif iouType == "keypoints":
             summarize = _summarizeKps
         else:
-            ValueError("iouType must be bbox, segm, boundary or keypoints. Get" f" {iouType}")
+            ValueError(f"iouType must be bbox, segm, boundary or keypoints. Get {iouType}")
 
         self.all_stats = summarize()
         self.stats = self.all_stats[:12]
