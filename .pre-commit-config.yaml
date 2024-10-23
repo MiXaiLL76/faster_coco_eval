@@ -59,8 +59,10 @@ repos:
     hooks:
       # try to fix what is possible
       - id: ruff
-        args: ["--fix"]
+        args: ["--fix", "--exclude", "examples"]
       # perform formatting updates
       - id: ruff-format
+        args: ["--exclude", "examples"]
       # validate if all is fine with preview mode
       - id: ruff
+        args: ["--exclude", "examples"]
