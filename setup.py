@@ -2,6 +2,7 @@
 
 import glob
 import os
+from importlib.util import module_from_spec, spec_from_file_location
 
 import setuptools
 from pybind11.setup_helpers import ParallelCompile, Pybind11Extension, build_ext
@@ -20,9 +21,10 @@ version_file = "faster_coco_eval/version.py"
 
 
 def get_version():
-    with open(version_file) as f:
-        exec(compile(f.read(), version_file, "exec"))
-    return locals()["__version__"], locals()["__author__"]
+    spec = spec_from_file_location("version", version_file)
+    py = module_from_spec(spec)
+    spec.loader.exec_module(py)
+    return py.__version__, py.__author__
 
 
 def parse_requirements(fname="requirements/runtime.txt", with_version=True):
@@ -172,6 +174,9 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     python_requires=">=3.7",
