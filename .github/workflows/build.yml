@@ -26,7 +26,7 @@ jobs:
             cibw_skip: "pp* *musllinux*"
           - os: windows-latest
             cibw_archs: AMD64
-            python: ">=3.7"
+            python: ">=3.10"
             cibw_skip: "pp*"
           - os: windows-latest
             cibw_archs: ARM64
@@ -34,11 +34,11 @@ jobs:
             cibw_skip: "pp*"
           - os: macos-13
             cibw_archs: x86_64
-            python: ">=3.8"
+            python: ">=3.10"
             cibw_skip: "pp*"
           - os: macos-14
             cibw_archs: arm64
-            python: ">=3.8"
+            python: ">=3.10"
             cibw_skip: "pp*"
     steps:
       - uses: actions/checkout@v4
