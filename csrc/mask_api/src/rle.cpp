@@ -9,9 +9,10 @@
 
 using namespace pybind11::literals;
 
-template<typename T>
-static bool AreEqual(T f1, T f2) {
-  return (std::fabs(f1 - f2) <= std::numeric_limits<T>::epsilon() * std::fmax(std::fabs(f1), std::fabs(f2)));
+template <typename T>
+static bool AreEqual(T f1, T f2)
+{
+    return (std::fabs(f1 - f2) <= std::numeric_limits<T>::epsilon() * std::fmax(std::fabs(f1), std::fabs(f2)));
 }
 
 template <typename T>
@@ -218,7 +219,8 @@ namespace mask_api
                 {
                     xd = (double)(u[j] < u[j - 1] ? u[j] : u[j] - 1);
                     xd = (xd + .5) / scale - .5;
-                    if ((!AreEqual(std::floor(xd), xd)) || xd < 0 || xd > w - 1){
+                    if ((!AreEqual(std::floor(xd), xd)) || xd < 0 || xd > w - 1)
+                    {
                         continue;
                     }
                     yd = (double)(v[j] < v[j - 1] ? v[j] : v[j - 1]);

@@ -155,14 +155,17 @@ namespace mask_api
                     {
                         for (uint64_t k = 0; k < R[i].cnts[j]; k++)
                         {
-                            mask(y, x, i) = v;
                             c += 1;
                             if (c > s)
                             {
-                                throw std::range_error("Invalid RLE mask representation");
+                                std::stringstream ss;
+                                ss << "Invalid RLE mask representation; out of range HxW=[0;0]->[" << h - 1 << ";" << w - 1 << "] x=" << x << "; y=" << y;
+                                throw std::range_error(ss.str());
                             }
-                            y += 1;
 
+                            mask(y, x, i) = v;
+
+                            y += 1;
                             if (y >= h)
                             {
                                 y = 0;
@@ -597,17 +600,17 @@ namespace mask_api
             py::gil_scoped_release release;
             std::vector<std::tuple<uint64_t, uint64_t, std::string>> result(rles.size());
 
-            // Windows not support async
-            #ifndef _WIN32
-                auto process = [&rles, &result](size_t s, size_t e, double d) mutable
+// Windows not support async
+#ifndef _WIN32
+            auto process = [&rles, &result](size_t s, size_t e, double d) mutable
+            {
+                for (size_t i = s; i < e; ++i)
                 {
-                    for (size_t i = s; i < e; ++i)
-                    {
-                        result[i] = rles[i].toBoundary(d).toTuple();
-                    }
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                };
-            #endif
+                    result[i] = rles[i].toBoundary(d).toTuple();
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            };
+#endif
 
             size_t start = 0;
             size_t step = 1000;
@@ -620,21 +623,21 @@ namespace mask_api
 
             while (start < rles.size())
             {
-                #ifndef _WIN32
-                    std::vector<std::future<void>> rle_futures(cpu_count);
-                #endif
+#ifndef _WIN32
+                std::vector<std::future<void>> rle_futures(cpu_count);
+#endif
 
                 size_t thread = 0;
                 for (thread = 0; thread < cpu_count; thread++)
                 {
-                    #ifdef _WIN32
-                        for (size_t i = start; i < end; ++i)
-                        {
-                            result[i] = rles[i].toBoundary(dilation_ratio).toTuple();
-                        }
-                    #else
-                        rle_futures[thread] = std::async(std::launch::async, process, start, end, dilation_ratio);
-                    #endif
+#ifdef _WIN32
+                    for (size_t i = start; i < end; ++i)
+                    {
+                        result[i] = rles[i].toBoundary(dilation_ratio).toTuple();
+                    }
+#else
+                    rle_futures[thread] = std::async(std::launch::async, process, start, end, dilation_ratio);
+#endif
 
                     start += step;
                     end += step;
@@ -650,14 +653,14 @@ namespace mask_api
                     }
                 }
 
-                #ifndef _WIN32
-                    for (size_t i = 0; i < thread; i++)
-                    {
-                        rle_futures[i].wait();
-                    }
-                    rle_futures.clear();
-                    rle_futures.shrink_to_fit();
-                #endif
+#ifndef _WIN32
+                for (size_t i = 0; i < thread; i++)
+                {
+                    rle_futures[i].wait();
+                }
+                rle_futures.clear();
+                rle_futures.shrink_to_fit();
+#endif
             }
 
             py::gil_scoped_acquire acquire;
