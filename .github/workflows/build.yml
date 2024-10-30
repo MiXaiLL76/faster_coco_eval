@@ -15,26 +15,31 @@ jobs:
     strategy:
       fail-fast: True
       matrix:
-        cibw_skip: ["pp* *musllinux*"]
         include:
           - os: ubuntu-latest # linux x86_64
             cibw_archs: x86_64
             python: ">=3.7"
+            cibw_skip: "pp*"
           - os: ubuntu-latest # linux arm64 gnu
             cibw_archs: aarch64
             python: ">=3.7"
+            cibw_skip: "pp* *musllinux*"
           - os: windows-latest
             cibw_archs: AMD64
             python: ">=3.7"
+            cibw_skip: "pp*"
           - os: windows-latest
             cibw_archs: ARM64
             python: ">=3.7"
+            cibw_skip: "pp*"
           - os: macos-13
             cibw_archs: x86_64
             python: ">=3.8"
+            cibw_skip: "pp*"
           - os: macos-14
             cibw_archs: arm64
             python: ">=3.8"
+            cibw_skip: "pp*"
     steps:
       - uses: actions/checkout@v4
 
