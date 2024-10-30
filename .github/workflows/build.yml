@@ -13,37 +13,37 @@ jobs:
     name: Build wheels on ${{ matrix.os }}-${{ matrix.cibw_archs }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: True
+      fail-fast: False
       matrix:
         include:
-          # - os: ubuntu-latest # linux x86_64
-          #   cibw_archs: x86_64
-          #   cibw_skip: "pp*"
-          #   free_thread: True
+          - os: ubuntu-latest # linux x86_64
+            cibw_archs: x86_64
+            cibw_skip: "pp*"
+            free_thread: True
           - os: ubuntu-latest # linux arm64 gnu
             cibw_archs: aarch64
             cibw_skip: "pp* *musllinux*"
             free_thread: True
-          # - os: ubuntu-latest # linux arm64 musl
-          #   cibw_archs: aarch64
-          #   cibw_skip: "pp* *manylinux*"
-          #   free_thread: True
+          - os: ubuntu-latest # linux arm64 musl
+            cibw_archs: aarch64
+            cibw_skip: "pp* *manylinux*"
+            free_thread: True
           - os: windows-latest
             cibw_archs: AMD64
             cibw_skip: "pp*"
             free_thread: False
-          # - os: windows-latest
-          #   cibw_archs: ARM64
-          #   cibw_skip: "pp*"
-          #   free_thread: False
-          # - os: macos-13
-          #   cibw_archs: x86_64
-          #   cibw_skip: "pp*"
-          #   free_thread: True
-          # - os: macos-14
-          #   cibw_archs: arm64
-          #   cibw_skip: "pp*"
-          #   free_thread: True
+          - os: windows-latest
+            cibw_archs: ARM64
+            cibw_skip: "pp*"
+            free_thread: False
+          - os: macos-13
+            cibw_archs: x86_64
+            cibw_skip: "pp*"
+            free_thread: True
+          - os: macos-14
+            cibw_archs: arm64
+            cibw_skip: "pp*"
+            free_thread: True
     steps:
       - uses: actions/checkout@v4
 
