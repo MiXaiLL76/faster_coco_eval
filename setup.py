@@ -108,29 +108,17 @@ def get_extensions(version_info):
     ]
     print(f"Sources: {sources}")
 
-    if WIN:
-        extra_compile_args = [
-            "/fp:fast",
-        ]
-    else:
-        extra_compile_args = [
+    kwargs = dict(cxx_std=17, define_macros=[("VERSION_INFO", version_info)])
+
+    if not WIN:
+        kwargs["extra_compile_args"] = [
             "-fPIC",
             "-ffinite-math-only",
             "-fno-signed-zeros",
             "-ftree-vectorize",
         ]
 
-    cxx_std = 17
-
-    ext_modules += [
-        Pybind11Extension(
-            name="faster_coco_eval.faster_eval_api_cpp",
-            sources=sources,
-            define_macros=[("VERSION_INFO", version_info)],
-            extra_compile_args=extra_compile_args,
-            cxx_std=cxx_std,
-        )
-    ]
+    ext_modules += [Pybind11Extension(name="faster_coco_eval.faster_eval_api_cpp", sources=sources, **kwargs)]
 
     sources = [
         "csrc/mask_api/src/mask.cpp",
@@ -139,15 +127,7 @@ def get_extensions(version_info):
     ]
     print(f"Sources: {sources}")
 
-    ext_modules += [
-        Pybind11Extension(
-            name="faster_coco_eval.mask_api_new_cpp",
-            sources=sources,
-            define_macros=[("VERSION_INFO", version_info)],
-            extra_compile_args=extra_compile_args,
-            cxx_std=cxx_std,
-        )
-    ]
+    ext_modules += [Pybind11Extension(name="faster_coco_eval.mask_api_new_cpp", sources=sources, **kwargs)]
 
     return ext_modules
 
