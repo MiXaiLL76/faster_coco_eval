@@ -11,18 +11,39 @@ jobs:
   build_wheels:
     needs: test_source
     name: Build wheels
-    runs-on: ubuntu-latest
-
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest # linux x86_64
+            cibw_archs: x86_64
+            cibw_skip: "pp*"
+          - os: ubuntu-latest # linux arm64 gnu
+            cibw_archs: aarch64
+            cibw_skip: "pp* *musllinux*"
+          - os: ubuntu-latest # linux arm64 musl
+            cibw_archs: aarch64
+            cibw_skip: "pp* *manylinux*"
+          - os: windows-latest
+            cibw_archs: AMD64 ARM64
+            cibw_skip: "pp*"
+          - os: macos-13
+            cibw_archs: x86_64
+            cibw_skip: "pp*"
+          - os: macos-14
+            cibw_archs: universal2
+            cibw_skip: "pp*"
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build wheels
+      - name: Build wheels for ${{ matrix.os }}
         uses: pypa/cibuildwheel@v2.20
         env:
           CIBW_BUILD_FRONTEND: build
           CIBW_FREE_THREADED_SUPPORT: true
-          CIBW_SKIP: "pp* *musllinux* *cp36* *cp313*"
-          CIBW_ARCHS: x86_64
+          CIBW_SKIP: ${{ matrix.cibw_skip }}
+          CIBW_ARCHS: ${{ matrix.cibw_archs }}
           CIBW_TEST_REQUIRES: "pytest parameterized"
           CIBW_TEST_COMMAND: "cd {project}/tests && pytest ."
         with:
@@ -48,59 +69,59 @@ jobs:
           name: sdist
           path: ./dist/*.tar.gz
 
-  publish_test:
-    needs: [build_wheels, build_sdist]
-    name: Publish package to TestPyPI
-    runs-on: ubuntu-latest
-    # https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#using-an-environment
-    environment: release
-    # https://github.com/pypa/gh-action-pypi-publish#trusted-publishing
-    permissions:
-      id-token: write
+  # publish_test:
+  #   needs: [build_wheels, build_sdist]
+  #   name: Publish package to TestPyPI
+  #   runs-on: ubuntu-latest
+  #   # https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#using-an-environment
+  #   environment: release
+  #   # https://github.com/pypa/gh-action-pypi-publish#trusted-publishing
+  #   permissions:
+  #     id-token: write
 
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: sdist
-          path: dist
+  #   steps:
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: sdist
+  #         path: dist
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: wheels
-          path: dist
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: wheels
+  #         path: dist
 
-      - name: Display structure of downloaded files
-        run: ls -R dist
+  #     - name: Display structure of downloaded files
+  #       run: ls -R dist
 
-      - name: Publish package distributions to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          repository-url: https://test.pypi.org/legacy/
+  #     - name: Publish package distributions to TestPyPI
+  #       uses: pypa/gh-action-pypi-publish@release/v1
+  #       with:
+  #         password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+  #         repository-url: https://test.pypi.org/legacy/
 
-  publish_prod:
-    needs: [publish_test]
-    name: Publish package to PyPI
-    runs-on: ubuntu-latest
-    environment: release
-    permissions:
-      id-token: write
+  # publish_prod:
+  #   needs: [publish_test]
+  #   name: Publish package to PyPI
+  #   runs-on: ubuntu-latest
+  #   environment: release
+  #   permissions:
+  #     id-token: write
 
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: sdist
-          path: dist
+  #   steps:
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: sdist
+  #         path: dist
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: wheels
-          path: dist
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: wheels
+  #         path: dist
 
-      - name: Display structure of downloaded files
-        run: ls -R dist
+  #     - name: Display structure of downloaded files
+  #       run: ls -R dist
 
-      - name: Publish package distributions to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+  #     - name: Publish package distributions to TestPyPI
+  #       uses: pypa/gh-action-pypi-publish@release/v1
+  #       with:
+  #         password: ${{ secrets.PYPI_API_TOKEN }}
