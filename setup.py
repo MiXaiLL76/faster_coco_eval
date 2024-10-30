@@ -1,11 +1,10 @@
 #!/usr/bin/python3
 
 import glob
-import os
 from importlib.util import module_from_spec, spec_from_file_location
 
 import setuptools
-from pybind11.setup_helpers import ParallelCompile, Pybind11Extension, build_ext
+from pybind11.setup_helpers import WIN, ParallelCompile, Pybind11Extension, build_ext
 from setuptools import setup
 
 ParallelCompile("4").install()
@@ -109,19 +108,19 @@ def get_extensions(version_info):
     ]
     print(f"Sources: {sources}")
 
-    if os.name == "nt":
+    if WIN:
         extra_compile_args = [
-            "/std:c++17",
             "/fp:fast",
         ]
     else:
         extra_compile_args = [
-            "-std=c++17",
             "-fPIC",
             "-ffinite-math-only",
             "-fno-signed-zeros",
             "-ftree-vectorize",
         ]
+
+    cxx_std = 17
 
     ext_modules += [
         Pybind11Extension(
@@ -129,6 +128,7 @@ def get_extensions(version_info):
             sources=sources,
             define_macros=[("VERSION_INFO", version_info)],
             extra_compile_args=extra_compile_args,
+            cxx_std=cxx_std,
         )
     ]
 
@@ -145,6 +145,7 @@ def get_extensions(version_info):
             sources=sources,
             define_macros=[("VERSION_INFO", version_info)],
             extra_compile_args=extra_compile_args,
+            cxx_std=cxx_std,
         )
     ]
 

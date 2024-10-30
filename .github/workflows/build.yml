@@ -32,21 +32,27 @@ jobs:
             cibw_archs: x86_64
             cibw_skip: "pp*"
           - os: macos-14
-            cibw_archs: universal2
+            cibw_archs: arm64
             cibw_skip: "pp*"
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up QEMU
+
+      - name: Setup QEMU
         if: runner.os == 'Linux' && matrix.cibw_archs == 'aarch64'
         uses: docker/setup-qemu-action@v3
         with:
           platforms: arm64
-      
+
+      - name: Setup macOS
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          brew install gcc libomp
+
       - name: Build wheels for ${{ matrix.os }}
         uses: pypa/cibuildwheel@v2.20
         env:
           CIBW_PROJECT_REQUIRES_PYTHON: ">=3.7"
+          CIBW_PRERELEASE_PYTHONS: False
           CIBW_BUILD_FRONTEND: build
           CIBW_FREE_THREADED_SUPPORT: true
           CIBW_SKIP: ${{ matrix.cibw_skip }}
