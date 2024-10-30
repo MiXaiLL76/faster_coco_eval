@@ -13,7 +13,7 @@ jobs:
     name: Build wheels on ${{ matrix.os }}-${{ matrix.cibw_archs }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: False
+      fail-fast: True
       matrix:
         include:
           - os: ubuntu-latest # linux x86_64
@@ -23,11 +23,11 @@ jobs:
           - os: ubuntu-latest # linux arm64 gnu
             cibw_archs: aarch64
             cibw_skip: "pp* *musllinux*"
-            free_thread: True
-          - os: ubuntu-latest # linux arm64 musl
-            cibw_archs: aarch64
-            cibw_skip: "pp* *manylinux*"
-            free_thread: True
+            free_thread: False
+          # - os: ubuntu-latest # linux arm64 musl
+          #   cibw_archs: aarch64
+          #   cibw_skip: "pp* *manylinux*"
+          #   free_thread: True
           - os: windows-latest
             cibw_archs: AMD64
             cibw_skip: "pp*"
@@ -67,7 +67,7 @@ jobs:
       - name: Build wheels for ${{ matrix.os }}
         uses: pypa/cibuildwheel@v2.20
         env:
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.13"
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.7"
           CIBW_PRERELEASE_PYTHONS: False
           CIBW_BUILD_FRONTEND: build
           CIBW_FREE_THREADED_SUPPORT: ${{ matrix.free_thread }}
@@ -84,74 +84,74 @@ jobs:
           name: faster-coco-eval-${{ matrix.os }}-${{ matrix.cibw_archs }}-${{ strategy.job-index }}
           path: ./wheelhouse/*.whl
 
-  # build_sdist:
-  #   needs: test_source
-  #   name: Build source distribution
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
+  build_sdist:
+    needs: test_source
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Build sdist
-  #       run: make sdist
+      - name: Build sdist
+        run: make sdist
 
-  #     - uses: actions/upload-artifact@v4
-  #       with:
-  #         name: sdist
-  #         path: ./dist/*.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: faster-coco-eval-sdist
+          path: ./dist/*.tar.gz
 
-  # publish_test:
-  #   needs: [build_wheels, build_sdist]
-  #   name: Publish package to TestPyPI
-  #   runs-on: ubuntu-latest
-  #   # https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#using-an-environment
-  #   environment: release
-  #   # https://github.com/pypa/gh-action-pypi-publish#trusted-publishing
-  #   permissions:
-  #     id-token: write
+  publish_test:
+    needs: [build_wheels, build_sdist]
+    name: Publish package to TestPyPI
+    runs-on: ubuntu-latest
+    # https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#using-an-environment
+    environment: release
+    # https://github.com/pypa/gh-action-pypi-publish#trusted-publishing
+    permissions:
+      id-token: write
 
-  #   steps:
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         name: sdist
-  #         path: dist
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist
 
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         name: wheels
-  #         path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels
+          path: dist
 
-  #     - name: Display structure of downloaded files
-  #       run: ls -R dist
+      - name: Display structure of downloaded files
+        run: ls -R dist
 
-  #     - name: Publish package distributions to TestPyPI
-  #       uses: pypa/gh-action-pypi-publish@release/v1
-  #       with:
-  #         password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-  #         repository-url: https://test.pypi.org/legacy/
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
 
-  # publish_prod:
-  #   needs: [publish_test]
-  #   name: Publish package to PyPI
-  #   runs-on: ubuntu-latest
-  #   environment: release
-  #   permissions:
-  #     id-token: write
+  publish_prod:
+    needs: [publish_test]
+    name: Publish package to PyPI
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
 
-  #   steps:
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         name: sdist
-  #         path: dist
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist
 
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         name: wheels
-  #         path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels
+          path: dist
 
-  #     - name: Display structure of downloaded files
-  #       run: ls -R dist
+      - name: Display structure of downloaded files
+        run: ls -R dist
 
-  #     - name: Publish package distributions to TestPyPI
-  #       uses: pypa/gh-action-pypi-publish@release/v1
-  #       with:
-  #         password: ${{ secrets.PYPI_API_TOKEN }}
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
