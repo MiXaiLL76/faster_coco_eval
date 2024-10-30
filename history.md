@@ -1,5 +1,11 @@
 # history
 
+## v1.6.4
+
+- [x] fix windows mask api.
+- [x] numpy>=2 support for py39+
+- [x] update CI\\CD for build macos & windows whl
+
 ## v1.6.1 - v1.6.3
 
 - [x] fix windows & macos build for [torchmetrics](https://github.com/Lightning-AI/torchmetrics/pull/2750)

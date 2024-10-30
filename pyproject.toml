@@ -5,8 +5,8 @@ requires = [
     "build",
     # Force numpy higher than 2.0rc1, so that built wheels are compatible
     # with both numpy 1 and 2
-    "numpy>=2.0.0rc1 ; python_version >= \"3.10\"",
-    "oldest-supported-numpy ; python_version < \"3.10\"",
+    "numpy>=2.0.0rc1 ; python_version >= \"3.9\"",
+    "oldest-supported-numpy ; python_version < \"3.9\"",
     "Cython",
     "pybind11>=2.12.0",
 ]
