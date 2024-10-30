@@ -15,35 +15,26 @@ jobs:
     strategy:
       fail-fast: True
       matrix:
+        cibw_skip: ["pp* *musllinux*"]
         include:
           - os: ubuntu-latest # linux x86_64
             cibw_archs: x86_64
-            cibw_skip: "pp*"
-            free_thread: True
+            python: ">=3.7"
           - os: ubuntu-latest # linux arm64 gnu
             cibw_archs: aarch64
-            cibw_skip: "pp* *musllinux*"
-            free_thread: False
-          # - os: ubuntu-latest # linux arm64 musl
-          #   cibw_archs: aarch64
-          #   cibw_skip: "pp* *manylinux*"
-          #   free_thread: True
+            python: ">=3.7"
           - os: windows-latest
             cibw_archs: AMD64
-            cibw_skip: "pp*"
-            free_thread: False
+            python: ">=3.7"
           - os: windows-latest
             cibw_archs: ARM64
-            cibw_skip: "pp*"
-            free_thread: False
+            python: ">=3.7"
           - os: macos-13
             cibw_archs: x86_64
-            cibw_skip: "pp*"
-            free_thread: True
+            python: ">=3.8"
           - os: macos-14
             cibw_archs: arm64
-            cibw_skip: "pp*"
-            free_thread: True
+            python: ">=3.8"
     steps:
       - uses: actions/checkout@v4
 
@@ -67,10 +58,9 @@ jobs:
       - name: Build wheels for ${{ matrix.os }}
         uses: pypa/cibuildwheel@v2.20
         env:
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.7"
+          CIBW_PROJECT_REQUIRES_PYTHON: ${{ matrix.python }}
           CIBW_PRERELEASE_PYTHONS: False
           CIBW_BUILD_FRONTEND: build
-          CIBW_FREE_THREADED_SUPPORT: ${{ matrix.free_thread }}
           CIBW_SKIP: ${{ matrix.cibw_skip }}
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
           CIBW_TEST_REQUIRES: "pytest parameterized"
