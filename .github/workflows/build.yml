@@ -51,7 +51,7 @@ jobs:
       - name: Build wheels for ${{ matrix.os }}
         uses: pypa/cibuildwheel@v2.20
         env:
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.7"
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.13"
           CIBW_PRERELEASE_PYTHONS: False
           CIBW_BUILD_FRONTEND: build
           CIBW_FREE_THREADED_SUPPORT: true
