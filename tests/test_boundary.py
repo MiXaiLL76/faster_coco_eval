@@ -39,12 +39,12 @@ class TestBoundary(unittest.TestCase):
         self.mini_mask_rle = mask_util.encode(mini_mask)
         self.rle_80_70 = mask_util.segmToRle(segm, 80, 70)
 
-        self.gt_file = "dataset/gt_dataset.json"
-        self.dt_file = "dataset/dt_dataset.json"
+        self.gt_file = os.path.join("dataset", "gt_dataset.json")
+        self.dt_file = os.path.join("dataset", "dt_dataset.json")
 
         if not os.path.exists(self.gt_file):
-            self.gt_file = os.path.join("tests", self.gt_file)
-            self.dt_file = os.path.join("tests", self.dt_file)
+            self.gt_file = os.path.join(os.path.dirname(__file__), self.gt_file)
+            self.dt_file = os.path.join(os.path.dirname(__file__), self.dt_file)
 
         prepared_anns = COCO.load_json(self.dt_file)
 
