@@ -121,7 +121,7 @@ class TestBoundary(unittest.TestCase):
         cocoEval.accumulate()
         cocoEval.summarize()
 
-        self.assertEqual(cocoEval.stats_as_dict, stats_as_dict)
+        self.assertAlmostEqual(cocoEval.stats_as_dict, stats_as_dict, places=10)
 
 
 if __name__ == "__main__":

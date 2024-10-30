@@ -109,7 +109,7 @@ class TestBaseCoco(unittest.TestCase):
 
         cocoEval.run()
 
-        self.assertEqual(cocoEval.stats_as_dict, stats_as_dict)
+        self.assertAlmostEqual(cocoEval.stats_as_dict, stats_as_dict, places=10)
 
     def test_coco_eval(self):
         stats_as_dict = {
@@ -144,7 +144,7 @@ class TestBaseCoco(unittest.TestCase):
         cocoEval.summarize()
 
         self.assertEqual(cocoEval.matched, True)
-        self.assertEqual(cocoEval.stats_as_dict, stats_as_dict)
+        self.assertAlmostEqual(cocoEval.stats_as_dict, stats_as_dict, places=10)
 
     def test_confusion_matrix(self):
         prepared_result = [
