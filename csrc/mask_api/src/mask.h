@@ -7,6 +7,7 @@
 #include <pybind11/stl_bind.h>
 #include <pybind11/embed.h>
 #include <vector>
+#include <cmath>
 
 namespace py = pybind11;
 

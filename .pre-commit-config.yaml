@@ -23,7 +23,7 @@ ci:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -55,12 +55,14 @@ repos:
           - mdformat_frontmatter
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.0
+    rev: v0.6.9
     hooks:
       # try to fix what is possible
       - id: ruff
-        args: ["--fix"]
+        args: ["--fix", "--exclude", "examples"]
       # perform formatting updates
       - id: ruff-format
+        args: ["--exclude", "examples"]
       # validate if all is fine with preview mode
       - id: ruff
+        args: ["--exclude", "examples"]

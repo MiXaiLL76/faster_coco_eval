@@ -15,12 +15,12 @@ class TestBaseLvis(unittest.TestCase):
     prepared_anns = None
 
     def setUp(self):
-        self.gt_file = "lvis_dataset/lvis_val_100.json"
-        self.dt_file = "lvis_dataset/lvis_results_100.json"
+        self.gt_file = os.path.join("lvis_dataset", "lvis_val_100.json")
+        self.dt_file = os.path.join("lvis_dataset", "lvis_results_100.json")
 
         if not os.path.exists(self.gt_file):
-            self.gt_file = os.path.join("tests", self.gt_file)
-            self.dt_file = os.path.join("tests", self.dt_file)
+            self.gt_file = os.path.join(os.path.dirname(__file__), self.gt_file)
+            self.dt_file = os.path.join(os.path.dirname(__file__), self.dt_file)
 
         self.prepared_coco_in_dict = COCO.load_json(self.gt_file)
         self.prepared_anns = COCO.load_json(self.dt_file)

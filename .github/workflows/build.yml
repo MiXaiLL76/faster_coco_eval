@@ -10,27 +10,78 @@ jobs:
 
   build_wheels:
     needs: test_source
-    name: Build wheels
-    runs-on: ubuntu-latest
-
+    name: Build wheels on ${{ matrix.os }}-${{ matrix.cibw_archs }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: True
+      matrix:
+        include:
+          - os: ubuntu-latest # linux x86_64
+            cibw_archs: x86_64
+            cibw_skip: "pp*"
+            free_thread: True
+          - os: ubuntu-latest # linux arm64 gnu
+            cibw_archs: aarch64
+            cibw_skip: "pp* *musllinux*"
+            free_thread: False
+          # - os: ubuntu-latest # linux arm64 musl
+          #   cibw_archs: aarch64
+          #   cibw_skip: "pp* *manylinux*"
+          #   free_thread: True
+          - os: windows-latest
+            cibw_archs: AMD64
+            cibw_skip: "pp*"
+            free_thread: False
+          - os: windows-latest
+            cibw_archs: ARM64
+            cibw_skip: "pp*"
+            free_thread: False
+          - os: macos-13
+            cibw_archs: x86_64
+            cibw_skip: "pp*"
+            free_thread: True
+          - os: macos-14
+            cibw_archs: arm64
+            cibw_skip: "pp*"
+            free_thread: True
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build wheels
+      - name: Setup QEMU
+        if: runner.os == 'Linux' && matrix.cibw_archs == 'aarch64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Setup ARM Linux
+        if: runner.os == 'Linux' && matrix.cibw_archs == 'aarch64'
+        run: |
+          sudo apt update --fix-missing
+          sudo apt install -y libtiff5-dev libjpeg8-dev libopenjp2-7-dev zlib1g-dev libfreetype6-dev liblcms2-dev libwebp-dev tcl8.6-dev tk8.6-dev python3-tk libharfbuzz-dev libfribidi-dev libxcb1-dev
+
+      - name: Setup macOS
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          brew install gcc libomp
+
+      - name: Build wheels for ${{ matrix.os }}
         uses: pypa/cibuildwheel@v2.20
         env:
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.7"
+          CIBW_PRERELEASE_PYTHONS: False
           CIBW_BUILD_FRONTEND: build
-          CIBW_FREE_THREADED_SUPPORT: true
-          CIBW_SKIP: "pp* *musllinux* *cp36* *cp313*"
-          CIBW_ARCHS: x86_64
+          CIBW_FREE_THREADED_SUPPORT: ${{ matrix.free_thread }}
+          CIBW_SKIP: ${{ matrix.cibw_skip }}
+          CIBW_ARCHS: ${{ matrix.cibw_archs }}
           CIBW_TEST_REQUIRES: "pytest parameterized"
-          CIBW_TEST_COMMAND: "cd {project}/tests && pytest ."
+          CIBW_TEST_COMMAND: "pytest {project}/tests"
+          CIBW_TEST_SKIP: "*-win_arm64"
         with:
           package-dir: ./
 
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels
+          name: faster-coco-eval-${{ matrix.os }}-${{ matrix.cibw_archs }}-${{ strategy.job-index }}
           path: ./wheelhouse/*.whl
 
   build_sdist:
@@ -45,7 +96,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: sdist
+          name: faster-coco-eval-sdist
           path: ./dist/*.tar.gz
 
   publish_test:

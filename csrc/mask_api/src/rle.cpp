@@ -9,6 +9,23 @@
 
 using namespace pybind11::literals;
 
+template<typename T>
+static bool AreEqual(T f1, T f2) {
+  return (std::fabs(f1 - f2) <= std::numeric_limits<T>::epsilon() * std::fmax(std::fabs(f1), std::fabs(f2)));
+}
+
+template <typename T>
+void prinf_vector(const std::vector<T> vec, const std::string s)
+{
+    std::cout << "name: " << s << std::endl;
+    std::cout << "size: " << vec.size() << std::endl;
+
+    for (const auto &v : vec)
+        std::cout << "\t" << v << std::endl;
+
+    std::cout << std::endl;
+}
+
 namespace mask_api
 {
     namespace Mask
@@ -201,8 +218,9 @@ namespace mask_api
                 {
                     xd = (double)(u[j] < u[j - 1] ? u[j] : u[j] - 1);
                     xd = (xd + .5) / scale - .5;
-                    if (floor(xd) != xd || xd < 0 || xd > w - 1)
+                    if ((!AreEqual(std::floor(xd), xd)) || xd < 0 || xd > w - 1){
                         continue;
+                    }
                     yd = (double)(v[j] < v[j - 1] ? v[j] : v[j - 1]);
                     yd = (yd + .5) / scale - .5;
                     if (yd < 0)
@@ -210,7 +228,7 @@ namespace mask_api
                     else if (yd > h)
                         yd = (double)h;
 
-                    yd = ceil(yd);
+                    yd = std::ceil(yd);
                     x.emplace_back((int)xd);
                     y.emplace_back((int)yd);
                 }
@@ -251,8 +269,8 @@ namespace mask_api
 
         RLE RLE::frBbox(const std::vector<double> &bb, const uint64_t &h, const uint64_t &w)
         {
-            double xs = bb[0], xe = xs + bb[2];
-            double ys = bb[1], ye = ys + bb[3];
+            double xs = bb[0], xe = bb[0] + bb[2];
+            double ys = bb[1], ye = bb[1] + bb[3];
             return RLE::frPoly({xs, ys, xs, ye, xe, ye, xe, ys}, h, w);
         }
 

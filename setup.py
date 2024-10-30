@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 
 import glob
-import os
+from importlib.util import module_from_spec, spec_from_file_location
 
 import setuptools
-from pybind11.setup_helpers import ParallelCompile, Pybind11Extension, build_ext
+from pybind11.setup_helpers import WIN, ParallelCompile, Pybind11Extension, build_ext
 from setuptools import setup
 
 ParallelCompile("4").install()
@@ -20,9 +20,10 @@ version_file = "faster_coco_eval/version.py"
 
 
 def get_version():
-    with open(version_file) as f:
-        exec(compile(f.read(), version_file, "exec"))
-    return locals()["__version__"], locals()["__author__"]
+    spec = spec_from_file_location("version", version_file)
+    py = module_from_spec(spec)
+    spec.loader.exec_module(py)
+    return py.__version__, py.__author__
 
 
 def parse_requirements(fname="requirements/runtime.txt", with_version=True):
@@ -107,28 +108,17 @@ def get_extensions(version_info):
     ]
     print(f"Sources: {sources}")
 
-    if os.name == "nt":
-        extra_compile_args = [
-            "/std:c++17",
-            "/fp:fast",
-        ]
-    else:
-        extra_compile_args = [
-            "-std=c++17",
+    kwargs = dict(cxx_std=17, define_macros=[("VERSION_INFO", version_info)])
+
+    if not WIN:
+        kwargs["extra_compile_args"] = [
             "-fPIC",
             "-ffinite-math-only",
             "-fno-signed-zeros",
             "-ftree-vectorize",
         ]
 
-    ext_modules += [
-        Pybind11Extension(
-            name="faster_coco_eval.faster_eval_api_cpp",
-            sources=sources,
-            define_macros=[("VERSION_INFO", version_info)],
-            extra_compile_args=extra_compile_args,
-        )
-    ]
+    ext_modules += [Pybind11Extension(name="faster_coco_eval.faster_eval_api_cpp", sources=sources, **kwargs)]
 
     sources = [
         "csrc/mask_api/src/mask.cpp",
@@ -137,14 +127,7 @@ def get_extensions(version_info):
     ]
     print(f"Sources: {sources}")
 
-    ext_modules += [
-        Pybind11Extension(
-            name="faster_coco_eval.mask_api_new_cpp",
-            sources=sources,
-            define_macros=[("VERSION_INFO", version_info)],
-            extra_compile_args=extra_compile_args,
-        )
-    ]
+    ext_modules += [Pybind11Extension(name="faster_coco_eval.mask_api_new_cpp", sources=sources, **kwargs)]
 
     return ext_modules
 
@@ -172,6 +155,9 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     python_requires=">=3.7",

@@ -16,11 +16,12 @@ from faster_coco_eval import COCO, COCOeval_faster
 
 class TestKeypointsMetric(TestCase):
     def setUp(self):
-        self.gt_file = "keypoints_dataset/gt_dataset.json"
-        self.dt_file = "keypoints_dataset/dt_dataset.json"
+        self.gt_file = os.path.join("keypoints_dataset", "gt_dataset.json")
+        self.dt_file = os.path.join("keypoints_dataset", "dt_dataset.json")
+
         if not os.path.exists(self.gt_file):
-            self.gt_file = os.path.join("tests", self.gt_file)
-            self.dt_file = os.path.join("tests", self.dt_file)
+            self.gt_file = os.path.join(os.path.dirname(__file__), self.gt_file)
+            self.dt_file = os.path.join(os.path.dirname(__file__), self.dt_file)
 
         self.results = [
             0.5048844884488449,
