@@ -120,7 +120,8 @@ def get_extensions(version_info):
 
     if MACOS:
         kwargs["extra_compile_args"].append("-std=c++" + str(kwargs.pop("cxx_std")))
-    
+        kwargs["extra_compile_args"].append("-mmacosx-version-min=10.13")
+
     ext_modules += [Pybind11Extension(name="faster_coco_eval.faster_eval_api_cpp", sources=sources, **kwargs)]
 
     sources = [
