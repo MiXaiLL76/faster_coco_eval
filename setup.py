@@ -4,7 +4,7 @@ import glob
 from importlib.util import module_from_spec, spec_from_file_location
 
 import setuptools
-from pybind11.setup_helpers import WIN, ParallelCompile, Pybind11Extension, build_ext
+from pybind11.setup_helpers import MACOS, WIN, ParallelCompile, Pybind11Extension, build_ext
 from setuptools import setup
 
 ParallelCompile("4").install()
@@ -118,6 +118,9 @@ def get_extensions(version_info):
             "-ftree-vectorize",
         ]
 
+    if MACOS:
+        kwargs["extra_compile_args"].append("-std=c++" + str(kwargs.pop("cxx_std")))
+    
     ext_modules += [Pybind11Extension(name="faster_coco_eval.faster_eval_api_cpp", sources=sources, **kwargs)]
 
     sources = [

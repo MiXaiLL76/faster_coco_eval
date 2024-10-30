@@ -18,27 +18,21 @@ jobs:
         include:
           - os: ubuntu-latest # linux x86_64
             cibw_archs: x86_64
-            python: ">=3.7"
             cibw_skip: "pp*"
           - os: ubuntu-latest # linux arm64 gnu
             cibw_archs: aarch64
-            python: ">=3.7"
             cibw_skip: "pp* *musllinux*"
           - os: windows-latest
             cibw_archs: AMD64
-            python: ">=3.10"
             cibw_skip: "pp*"
           - os: windows-latest
             cibw_archs: ARM64
-            python: ">=3.7"
             cibw_skip: "pp*"
           - os: macos-13
             cibw_archs: x86_64
-            python: ">=3.10"
             cibw_skip: "pp*"
           - os: macos-14
             cibw_archs: arm64
-            python: ">=3.10"
             cibw_skip: "pp*"
     steps:
       - uses: actions/checkout@v4
@@ -63,7 +57,7 @@ jobs:
       - name: Build wheels for ${{ matrix.os }}
         uses: pypa/cibuildwheel@v2.20
         env:
-          CIBW_PROJECT_REQUIRES_PYTHON: ${{ matrix.python }}
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.7"
           CIBW_PRERELEASE_PYTHONS: False
           CIBW_BUILD_FRONTEND: build
           CIBW_SKIP: ${{ matrix.cibw_skip }}
