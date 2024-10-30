@@ -26,7 +26,10 @@ jobs:
             cibw_archs: aarch64
             cibw_skip: "pp* *manylinux*"
           - os: windows-latest
-            cibw_archs: AMD64 ARM64
+            cibw_archs: AMD64
+            cibw_skip: "pp*"
+          - os: windows-latest
+            cibw_archs: ARM64
             cibw_skip: "pp*"
           - os: macos-13
             cibw_archs: x86_64
@@ -57,9 +60,9 @@ jobs:
           CIBW_FREE_THREADED_SUPPORT: true
           CIBW_SKIP: ${{ matrix.cibw_skip }}
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
-          CIBW_TEST_REQUIRES: "pytest parameterized"
+          CIBW_TEST_REQUIRES: "pytest parameterized opencv-python-headless pycocotools"
           CIBW_TEST_COMMAND: "cd {project}/tests && pytest ."
-          CIBW_TEST_SKIP: "*-win_arm64 *-musllinux_aarch64"
+          # CIBW_TEST_SKIP: "*-win_arm64 *-musllinux_aarch64"
         with:
           package-dir: ./
 
