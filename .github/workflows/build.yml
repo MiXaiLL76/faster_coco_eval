@@ -16,27 +16,27 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest # linux x86_64
-            cibw_archs: x86_64
-            cibw_skip: "pp*"
+          # - os: ubuntu-latest # linux x86_64
+          #   cibw_archs: x86_64
+          #   cibw_skip: "pp*"
           - os: ubuntu-latest # linux arm64 gnu
             cibw_archs: aarch64
             cibw_skip: "pp* *musllinux*"
-          - os: ubuntu-latest # linux arm64 musl
-            cibw_archs: aarch64
-            cibw_skip: "pp* *manylinux*"
+          # - os: ubuntu-latest # linux arm64 musl
+          #   cibw_archs: aarch64
+          #   cibw_skip: "pp* *manylinux*"
           - os: windows-latest
             cibw_archs: AMD64
             cibw_skip: "pp*"
           - os: windows-latest
             cibw_archs: ARM64
             cibw_skip: "pp*"
-          - os: macos-13
-            cibw_archs: x86_64
-            cibw_skip: "pp*"
-          - os: macos-14
-            cibw_archs: arm64
-            cibw_skip: "pp*"
+          # - os: macos-13
+          #   cibw_archs: x86_64
+          #   cibw_skip: "pp*"
+          # - os: macos-14
+          #   cibw_archs: arm64
+          #   cibw_skip: "pp*"
     steps:
       - uses: actions/checkout@v4
 
@@ -45,7 +45,13 @@ jobs:
         uses: docker/setup-qemu-action@v3
         with:
           platforms: arm64
-
+      
+      - name: Setup ARM Linux
+        if: runner.os == 'Linux' && matrix.cibw_archs == 'aarch64'
+        run: |
+          sudo apt update --fix-missing
+          sudo apt install -y libjpeg-dev zlib1g-dev
+      
       - name: Setup macOS
         if: ${{ runner.os == 'macOS' }}
         run: |
