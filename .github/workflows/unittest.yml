@@ -14,7 +14,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      - uses: actions/checkout@v2
       - name: Install from sdist
         shell: bash
         run: |
@@ -30,7 +29,6 @@ jobs:
 
       - uses: actions/checkout@v2
       - name: Run test cases numpy < 2
-        working-directory: ./tests
         run: |
           pip install numpy<2
           pytest --cov=faster_coco_eval .
