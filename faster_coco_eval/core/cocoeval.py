@@ -593,6 +593,11 @@ class Params:
         # f: Frequent: >= 100
         self.imgCountLbl = ["r", "c", "f"]
 
+        # https://github.com/MiXaiLL76/faster_coco_eval/issues/46
+        # mAP is wrong if all scores are equal (=not providing a score)
+        # set equalScore = True
+        self.equalScore = False
+
     @property
     def useSegm(self):
         return int(self.iouType == "segm")
