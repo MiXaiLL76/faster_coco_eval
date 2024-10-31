@@ -14,6 +14,7 @@ jobs:
         with:
           python-version: "3.11"
 
+      - uses: actions/checkout@v2
       - name: Install from sdist
         shell: bash
         run: |
@@ -21,11 +22,13 @@ jobs:
           source_file=$(ls ./dist/*.tar.gz)
           pip install "${source_file}[tests]"
 
+      - uses: actions/checkout@v2
       - name: Run test cases numpy latest
         working-directory: ./tests
         run: |
           pytest --cov=faster_coco_eval .
 
+      - uses: actions/checkout@v2
       - name: Run test cases numpy < 2
         working-directory: ./tests
         run: |
