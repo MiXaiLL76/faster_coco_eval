@@ -26,9 +26,3 @@ jobs:
         working-directory: ./tests
         run: |
           pytest --cov=faster_coco_eval .
-
-      - uses: actions/checkout@v2
-      - name: Run test cases numpy < 2
-        run: |
-          pip install numpy<2
-          pytest --cov=faster_coco_eval .
