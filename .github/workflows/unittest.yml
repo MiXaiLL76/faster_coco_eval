@@ -20,12 +20,14 @@ jobs:
           pipx run build --sdist .
           source_file=$(ls ./dist/*.tar.gz)
           pip install "${source_file}[tests]"
-          cd tests
 
       - name: Run test cases numpy latest
-        run: pytest --cov=faster_coco_eval .
+        working-directory: ./tests
+        run: |
+          pytest --cov=faster_coco_eval .
 
       - name: Run test cases numpy < 2
+        working-directory: ./tests
         run: |
           pip install numpy<2
           pytest --cov=faster_coco_eval .
