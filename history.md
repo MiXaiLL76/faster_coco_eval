@@ -1,5 +1,11 @@
 # history
 
+## v1.6.5 - dev
+
+- [x] Support CrowdPose Dataset
+  - [x] add CrowdPose simple test
+- [x] ImageEvaluation pickleable https://github.com/MiXaiLL76/faster_coco_eval/issues/45
+
 ## v1.6.4
 
 - [x] fix windows mask api.
