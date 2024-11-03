@@ -20,7 +20,7 @@ format:
 	pre-commit run --all-files
 
 linter:
-	pre-commit check --all-files
+	ruff check --force-exclude
 
 clean:
 	rm -rf build
