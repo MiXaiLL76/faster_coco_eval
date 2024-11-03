@@ -629,6 +629,34 @@ namespace coco_eval
     {
       this->data[{img_id, cat_id}].emplace_back(ann);
     }
+
+    void Dataset::clean(){
+      this->data.clear();
+    }
+
+    py::tuple Dataset::make_tuple() const {
+      std::vector<std::pair<int64_t, int64_t>> keys;
+      std::vector<std::vector<py::dict>> values;
+
+      for (const auto& [key, value] : this->data) {
+          keys.push_back(key);
+          values.push_back(value);
+      }
+      return py::make_tuple(keys, values);
+    }
+
+    void Dataset::load_tuple(py::tuple data){
+      if (data.size() != 2)
+        throw std::runtime_error("Invalid state!");
+
+      std::vector<std::pair<int64_t, int64_t>> keys = data[0].cast<std::vector<std::pair<int64_t, int64_t>>>();
+      std::vector<std::vector<py::dict>> values = data[1].cast<std::vector<std::vector<py::dict>>>();
+
+      for (size_t i = 0; i < keys.size(); i++) {
+        this->data[keys[i]] = values[i];
+      }
+    }
+
     std::vector<py::dict> Dataset::get(const int64_t &img_id, const int64_t &cat_id)
     {
       std::pair<int64_t, int64_t> key(img_id, cat_id);

@@ -123,6 +123,10 @@ class COCOeval:
         params."""
         p = self.params
 
+        # cleanup before create new
+        self.gt_dataset.clean()
+        self.dt_dataset.clean()
+
         cat_ids = p.catIds if p.catIds else None
 
         gts = self.cocoGt.loadAnns(self.cocoGt.getAnnIds(imgIds=p.imgIds, catIds=cat_ids))

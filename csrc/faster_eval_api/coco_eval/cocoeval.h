@@ -97,6 +97,12 @@ namespace coco_eval
         // this->data.max_load_factor(0.25); // DECREASING MAX_LOAD_FACTOR
       }
       void append(int64_t img_id, int64_t cat_id, py::dict ann);
+      void clean();
+
+      // pickle
+      py::tuple make_tuple() const ;
+      void load_tuple(py::tuple data);
+
       std::vector<py::dict> get(const int64_t &img_id, const int64_t &cat_id);
       std::vector<InstanceAnnotation> get_cpp_annotations(
           const int64_t &img_id, const int64_t &cat_id);

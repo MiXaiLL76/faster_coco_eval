@@ -88,10 +88,21 @@ namespace coco_eval
 
     pybind11::class_<COCOeval::Dataset>(m, "Dataset").def(pybind11::init<>())
     .def("append", &COCOeval::Dataset::append)
+    .def("clean", &COCOeval::Dataset::clean)
     .def("get", &COCOeval::Dataset::get)
     .def("get_instances", &COCOeval::Dataset::get_instances)
     .def("get_cpp_annotations", &COCOeval::Dataset::get_cpp_annotations)
-    .def("get_cpp_instances", &COCOeval::Dataset::get_cpp_instances);
+    .def("get_cpp_instances", &COCOeval::Dataset::get_cpp_instances)
+    .def(py::pickle(
+        [](const COCOeval::Dataset &p) {
+            return p.make_tuple();
+        },
+        [](py::tuple t) { // __setstate__
+            COCOeval::Dataset p;
+            p.load_tuple(t);
+            return p;
+        }
+    ));
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
