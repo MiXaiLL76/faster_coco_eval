@@ -1,10 +1,11 @@
 # history
 
-## v1.6.5 - dev
+## v1.6.5
 
 - [x] Support CrowdPose Dataset
   - [x] add CrowdPose simple test
 - [x] ImageEvaluation pickleable https://github.com/MiXaiLL76/faster_coco_eval/issues/45
+- [x] Create test for MP eval https://github.com/MiXaiLL76/faster_coco_eval/blob/main/tests/test_world_evalutor.py
 
 ## v1.6.4
 
