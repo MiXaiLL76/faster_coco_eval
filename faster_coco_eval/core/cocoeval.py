@@ -10,7 +10,7 @@ from typing import Callable, List, Optional, Union
 if sys.version_info >= (3, 8):
     from typing import Literal
 
-    iouTypeT = Literal["segm", "bbox", "keypoints", "boundary"]
+    iouTypeT = Literal["segm", "bbox", "keypoints", "keypoints_crowd", "boundary"]
 else:
     iouTypeT = str
 
@@ -30,9 +30,10 @@ class COCOeval:
         cocoGt: Optional[COCO] = None,
         cocoDt: Optional[COCO] = None,
         iouType: iouTypeT = "segm",
-        print_function: Callable = logger.debug,
+        print_function: Callable = logger.info,
         extra_calc: bool = False,
         kpt_oks_sigmas: Optional[List[float]] = None,
+        use_area: Optional[bool] = True,
         lvis_style: bool = False,
         separate_eval: bool = False,
         boundary_dilation_ratio: float = 0.02,
@@ -53,6 +54,8 @@ class COCOeval:
                 whether to perform extra calculations, defaults to False
             kpt_oks_sigmas (None or list):
                 list of sigmas for keypoint evaluation, defaults to None
+            use_area (bool):
+                If gt annotations (eg. CrowdPose) do not have 'area', please set use_area=False.
             lvis_style (bool):
                 whether to use LVIS style evaluation, defaults to False
             separate_eval (bool):
@@ -81,6 +84,7 @@ class COCOeval:
         self.separate_eval = separate_eval
         self.boundary_dilation_ratio = boundary_dilation_ratio
         self.boundary_cpu_count = boundary_cpu_count
+        self.use_area = use_area
 
         if iouType == "keypoints" and self.lvis_style:
             logger.warning("lvis_style not supported for keypoint evaluation")
@@ -128,8 +132,8 @@ class COCOeval:
         for gt in gts:
             gt["ignore"] = gt["ignore"] if "ignore" in gt else 0
             gt["ignore"] = "iscrowd" in gt and gt["iscrowd"]
-            if p.iouType == "keypoints":
-                gt["ignore"] = (gt.get("num_keypoints") == 0) or gt["ignore"]
+            if "keypoints" in p.iouType:
+                gt["ignore"] = (gt.get("num_keypoints", 0) == 0) or gt["ignore"]
 
         img_pl = defaultdict(set)  # per image list of categories present in image
         img_nl = {}  # per image map of categories not present in image
@@ -159,7 +163,6 @@ class COCOeval:
             if img_sizes.get(image_id) is None:
                 t = dataset.imgs[image_id]
                 img_sizes[image_id] = t["height"], t["width"]
-            return img_sizes[image_id]
 
         for gt in gts:
             if p.compute_rle:
@@ -328,7 +331,13 @@ class COCOeval:
                     z = np.zeros(k)
                     dx = np.max((z, x0 - xd), axis=0) + np.max((z, xd - x1), axis=0)
                     dy = np.max((z, y0 - yd), axis=0) + np.max((z, yd - y1), axis=0)
-                e = (dx**2 + dy**2) / vars / (gt["area"] + np.spacing(1)) / 2
+
+                if self.use_area:
+                    e = (dx**2 + dy**2) / vars / (gt["area"] + np.spacing(1)) / 2
+                else:
+                    tmparea = gt["bbox"][3] * gt["bbox"][2] * 0.53
+                    e = (dx**2 + dy**2) / vars / (tmparea + np.spacing(1)) / 2
+
                 if k1 > 0:
                     e = e[vg > 0]
                 ious[i, j] = np.sum(np.exp(-e)) / e.shape[0]
@@ -362,29 +371,11 @@ class COCOeval:
         iouStr = f"{p.iouThrs[0]:0.2f}:{p.iouThrs[-1]:0.2f}" if iouThr is None else f"{iouThr:0.2f}"
 
         if catIds is not None:
-            # catNames = [
-            #     self.cocoGt.cats[p.catIds[used_cat_idx]].get(
-            #         "name", used_cat_idx
-            #     )
-            #     for used_cat_idx in catIds
-            # ]
             freq_str = f"catIds=={str(catIds):>3s}"
 
         if self.lvis_style and (freq_group_idx is not None):
             catIds = self.freq_groups[freq_group_idx]
             freq_str = f"catIds={p.imgCountLbl[freq_group_idx]:>3s}"
-
-        # In my case, C++ too slow...
-        # mean_s = _C._summarize(
-        #     ap,
-        #     (iouThr if iouThr else -1),
-        #     areaRng,
-        #     maxDets,
-        #     catIds,
-        #     p,
-        #     self.eval["counts"],
-        #     self.eval["precision"] if ap == 1 else self.eval["recall"],
-        # )
 
         aind = p.areaRngLbl.index(areaRng)
         mind = p.maxDets.index(maxDets)
@@ -440,6 +431,7 @@ class COCOeval:
         def _summarizeDets():
             _count = 17 if self.lvis_style else 14
             stats = np.zeros((_count,))
+
             stats[0] = self._summarize(1, maxDets=self.params.maxDets[-1])  # AP_all
             stats[1] = self._summarize(1, iouThr=0.5, maxDets=self.params.maxDets[-1])  # AP_50
             stats[2] = self._summarize(1, iouThr=0.75, maxDets=self.params.maxDets[-1])  # AP_75
@@ -452,8 +444,7 @@ class COCOeval:
                 stats[15] = self._summarize(1, maxDets=self.params.maxDets[-1], freq_group_idx=1)  # APc
                 stats[16] = self._summarize(1, maxDets=self.params.maxDets[-1], freq_group_idx=2)  # APf
 
-            # AR_first or AR_all
-            stats[6] = self._summarize(0, maxDets=self.params.maxDets[0])
+            stats[6] = self._summarize(0, maxDets=self.params.maxDets[0])  # AR_first or AR_all
             if len(self.params.maxDets) >= 2:
                 stats[7] = self._summarize(0, maxDets=self.params.maxDets[1])  # AR_second
             if len(self.params.maxDets) >= 3:
@@ -470,16 +461,42 @@ class COCOeval:
 
         def _summarizeKps():
             stats = np.zeros((10,))
-            stats[0] = self._summarize(1, maxDets=self.params.maxDets[-1])
-            stats[1] = self._summarize(1, maxDets=self.params.maxDets[-1], iouThr=0.5)
-            stats[2] = self._summarize(1, maxDets=self.params.maxDets[-1], iouThr=0.75)
-            stats[3] = self._summarize(1, maxDets=self.params.maxDets[-1], areaRng="medium")
-            stats[4] = self._summarize(1, maxDets=self.params.maxDets[-1], areaRng="large")
-            stats[5] = self._summarize(0, maxDets=self.params.maxDets[-1])
-            stats[6] = self._summarize(0, maxDets=self.params.maxDets[-1], iouThr=0.5)
-            stats[7] = self._summarize(0, maxDets=self.params.maxDets[-1], iouThr=0.75)
-            stats[8] = self._summarize(0, maxDets=self.params.maxDets[-1], areaRng="medium")
-            stats[9] = self._summarize(0, maxDets=self.params.maxDets[-1], areaRng="large")
+            stats[0] = self._summarize(1, maxDets=self.params.maxDets[-1])  # AP_all
+            stats[1] = self._summarize(1, maxDets=self.params.maxDets[-1], iouThr=0.5)  # AP_50
+            stats[2] = self._summarize(1, maxDets=self.params.maxDets[-1], iouThr=0.75)  # AP_75
+            stats[3] = self._summarize(1, maxDets=self.params.maxDets[-1], areaRng="medium")  # AP_medium
+            stats[4] = self._summarize(1, maxDets=self.params.maxDets[-1], areaRng="large")  # AP_large
+            stats[5] = self._summarize(0, maxDets=self.params.maxDets[-1])  # AR_all
+            stats[6] = self._summarize(0, maxDets=self.params.maxDets[-1], iouThr=0.5)  # AR_50
+            stats[7] = self._summarize(0, maxDets=self.params.maxDets[-1], iouThr=0.75)  # AR_75
+            stats[8] = self._summarize(0, maxDets=self.params.maxDets[-1], areaRng="medium")  # AR_medium
+            stats[9] = self._summarize(0, maxDets=self.params.maxDets[-1], areaRng="large")  # AR_large
+            return stats
+
+        def _summarizeKps_crowd():
+            stats = np.zeros((9,))
+            stats[0] = self._summarize(1, maxDets=self.params.maxDets[-1])  # AP_all
+            stats[1] = self._summarize(1, maxDets=self.params.maxDets[-1], iouThr=0.5)  # AP_50
+            stats[2] = self._summarize(1, maxDets=self.params.maxDets[-1], iouThr=0.75)  # AP_75
+            stats[3] = self._summarize(0, maxDets=self.params.maxDets[-1])  # AR_all
+            stats[4] = self._summarize(0, maxDets=self.params.maxDets[-1], iouThr=0.5)  # AR_50
+            stats[5] = self._summarize(0, maxDets=self.params.maxDets[-1], iouThr=0.75)  # AR_75
+            type_result = self.get_type_result(first=0.2, second=0.8)
+
+            p = self.params
+            iStr = " {:<18} {} @[ IoU={:<9} | type={:>6s} | maxDets={:>3d} ] = {:0.3f}"
+            titleStr = "Average Precision"
+            typeStr = "(AP)"
+            iouStr = f"{p.iouThrs[0]:0.2f}:{p.iouThrs[-1]:0.2f}"
+            self.print_function(iStr.format(titleStr, typeStr, iouStr, "easy", self.params.maxDets[-1], type_result[0]))
+            self.print_function(
+                iStr.format(titleStr, typeStr, iouStr, "medium", self.params.maxDets[-1], type_result[1])
+            )
+            self.print_function(iStr.format(titleStr, typeStr, iouStr, "hard", self.params.maxDets[-1], type_result[2]))
+            stats[6] = type_result[0]  # AP_easy
+            stats[7] = type_result[1]  # AP_medium
+            stats[8] = type_result[2]  # AP_hard
+
             return stats
 
         if not self.eval:
@@ -491,11 +508,44 @@ class COCOeval:
             summarize = _summarizeDets
         elif iouType == "keypoints":
             summarize = _summarizeKps
+        elif iouType == "keypoints_crowd":
+            summarize = _summarizeKps_crowd
         else:
-            ValueError(f"iouType must be bbox, segm, boundary or keypoints. Get {iouType}")
+            ValueError(f"iouType must be bbox, segm, boundary or keypoints or keypoints_crowd. Get {iouType}")
 
         self.all_stats = summarize()
         self.stats = self.all_stats[:12]
+
+    def get_type_result(self, first=0.01, second=0.85):
+        easy, mid, hard = self.split(self.cocoGt.annotation_file, first, second)
+        res = []
+        prev_print = self.print_function
+        self.print_function = lambda *args, **kwargs: None
+
+        for curr_type in [easy, mid, hard]:
+            curr_list = curr_type
+            self.params.imgIds = curr_list
+            self.evaluate()
+            self.accumulate()
+            score = self.eval["precision"][:, :, :, 0, :]
+            res.append(round(np.mean(score), 4))
+
+        self.print_function = prev_print
+        return res
+
+    def split(self, gt_file, first=0.01, second=0.85):
+        data = COCO.load_json(gt_file, use_deepcopy=True)
+        easy = []
+        mid = []
+        hard = []
+        for item in data["images"]:
+            if item["crowdIndex"] < first:
+                easy.append(item["id"])
+            elif item["crowdIndex"] < second:
+                mid.append(item["id"])
+            else:
+                hard.append(item["id"])
+        return easy, mid, hard
 
     def __str__(self):
         self.summarize()
@@ -574,7 +624,7 @@ class Params:
 
         if iouType in set(["segm", "bbox", "boundary"]):
             self.setDetParams()
-        elif iouType == "keypoints":
+        elif "keypoints" in iouType:
             self.setKpParams()
             if kpt_sigmas is not None:
                 self.kpt_oks_sigmas = np.array(kpt_sigmas)

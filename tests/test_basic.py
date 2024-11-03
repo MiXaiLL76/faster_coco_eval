@@ -68,7 +68,7 @@ class TestBaseCoco(unittest.TestCase):
         self.assertEqual(kp_params.iou_type, "segm")
 
     def test_bad_coco_set(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(TypeError):
             COCO(1)
 
     def test_bad_iou_type(self):
@@ -86,9 +86,9 @@ class TestBaseCoco(unittest.TestCase):
             "AP_small": -1.0,
             "AP_medium": 0.7099009900990099,
             "AP_large": -1.0,
-            "AR_1": 0.0,
-            "AR_10": 0.45384615384615384,
-            "AR_100": 0.7153846153846154,
+            "AR_all": 0.0,
+            "AR_second": 0.45384615384615384,
+            "AR_third": 0.7153846153846154,
             "AR_small": -1.0,
             "AR_medium": 0.7153846153846154,
             "AR_large": -1.0,
@@ -119,9 +119,9 @@ class TestBaseCoco(unittest.TestCase):
             "AP_small": -1.0,
             "AP_medium": 0.7367986798679867,
             "AP_large": 0.0,
-            "AR_1": 0.6666666666666666,
-            "AR_10": 0.75,
-            "AR_100": 0.75,
+            "AR_all": 0.6666666666666666,
+            "AR_second": 0.75,
+            "AR_third": 0.75,
             "AR_small": -1.0,
             "AR_medium": 0.7916666666666666,
             "AR_large": 0.0,

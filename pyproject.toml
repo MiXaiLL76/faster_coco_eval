@@ -33,3 +33,4 @@ lint.select = [
 lint.mccabe.max-complexity = 10
 # Use Google-style docstrings.
 lint.pydocstyle.convention = "google"
+exclude = ["examples"]

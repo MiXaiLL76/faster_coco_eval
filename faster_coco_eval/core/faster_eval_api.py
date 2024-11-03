@@ -48,7 +48,7 @@ class COCOeval_faster(COCOevalBase):
 
         if p.iouType in set(["segm", "bbox", "boundary"]):
             computeIoU = self.computeIoU
-        elif p.iouType == "keypoints":
+        elif "keypoints" in p.iouType:
             computeIoU = self.computeOks
         else:
             raise ValueError(f"p.iouType must be segm, bbox, boundary or keypoints. Get {p.iouType}")
@@ -178,44 +178,60 @@ class COCOeval_faster(COCOevalBase):
 
     @property
     def stats_as_dict(self):
-        labels = [
-            "AP_all",
-            "AP_50",
-            "AP_75",
-            "AP_small",
-            "AP_medium",
-            "AP_large",
-            "AR_all",
-            "AR_second",
-            "AR_third",
-            "AR_small",
-            "AR_medium",
-            "AR_large",
-        ]
-
         if self.params.iouType in set(["segm", "bbox", "boundary"]):
-            labels += ["AR_50", "AR_75"]
-        else:
-            labels = [label for label in labels if "small" not in label]
+            labels = [
+                "AP_all",
+                "AP_50",
+                "AP_75",
+                "AP_small",
+                "AP_medium",
+                "AP_large",
+                "AR_all",
+                "AR_second",
+                "AR_third",
+                "AR_small",
+                "AR_medium",
+                "AR_large",
+                "AR_50",
+                "AR_75",
+            ]
 
-        if self.lvis_style:
-            labels += ["APr", "APc", "APf"]
+            if self.lvis_style:
+                labels += ["APr", "APc", "APf"]
+
+        elif self.params.iouType == "keypoints":
+            labels = [
+                "AP_all",
+                "AP_50",
+                "AP_75",
+                "AP_medium",
+                "AP_large",
+                "AR_all",
+                "AR_50",
+                "AR_75",
+                "AR_medium",
+                "AR_large",
+            ]
+        elif self.params.iouType == "keypoints_crowd":
+            labels = [
+                "AP_all",
+                "AP_50",
+                "AP_75",
+                "AR_all",
+                "AR_50",
+                "AR_75",
+                "AP_easy",
+                "AP_medium",
+                "AP_hard",
+            ]
+        else:
+            ValueError(f"iouType must be bbox, segm, boundary or keypoints. Get {self.params.iouType}")
 
         if self.matched:
             labels += [
                 "mIoU",
                 "mAUC_" + str(int(self.params.iouThrs[0] * 100)),
             ]
-
-        maxDets = self.params.maxDets
-        if len(maxDets) > 1:
-            labels[6] = f"AR_{maxDets[0]}"
-
-        if len(maxDets) >= 2:
-            labels[7] = f"AR_{maxDets[1]}"
-
-        if len(maxDets) >= 3:
-            labels[8] = f"AR_{maxDets[2]}"
 
         return {_label: float(self.all_stats[i]) for i, _label in enumerate(labels)}
 
