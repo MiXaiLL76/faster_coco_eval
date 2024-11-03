@@ -9,7 +9,7 @@ import pathlib
 import time
 import warnings
 from collections import defaultdict
-from typing import List, Optional, Union
+from typing import Callable, List, Optional, Union
 
 import numpy as np
 
@@ -28,6 +28,7 @@ class COCO:
         self,
         annotation_file: Optional[Union[str, dict, os.PathLike, pathlib.PosixPath]] = None,
         use_deepcopy: bool = False,
+        print_function: Callable = logger.debug,
     ):
         """Constructor of Microsoft COCO helper class.
 
@@ -45,21 +46,17 @@ class COCO:
             {},
         )
         self.imgToAnns, self.catToImgs = defaultdict(list), defaultdict(list)
-        self.print_function = logger.debug
+        self.print_function = print_function
         self.use_deepcopy = use_deepcopy
+        self.annotation_file = annotation_file
 
         if annotation_file is not None:
             self._print_function("loading annotations into memory...")
             tic = time.time()
-            if type(annotation_file) in [str, os.PathLike, pathlib.PosixPath]:
-                self.dataset = self.load_json(annotation_file)
-            elif type(annotation_file) is dict:
-                if self.use_deepcopy:
-                    self.dataset = copy.deepcopy(annotation_file)
-                else:
-                    self.dataset = annotation_file.copy()
+            if type(annotation_file) in [str, os.PathLike, pathlib.PosixPath, dict, list]:
+                self.dataset = self.load_json(annotation_file, self.use_deepcopy)
             else:
-                self.dataset = None
+                raise TypeError(f"type {type(annotation_file)} is not supported")
 
             assert type(self.dataset) is dict, f"annotation file format {type(self.dataset)} not supported"
             self.print_function(f"Done (t={time.time() - tic:0.2f}s)")
@@ -290,29 +287,36 @@ class COCO:
             return [self.imgs[ids]]
 
     @staticmethod
-    def load_json(json_file: Optional[Union[str, os.PathLike]]) -> dict:
+    def load_json(
+        json_file: Union[str, os.PathLike, pathlib.PosixPath, dict, list], use_deepcopy: Optional[bool] = False
+    ) -> dict:
         """Load a json file.
 
         Args:
-            json_file (str or os.PathLike): Path to the json file
+            json_file (str or os.PathLike or dict or list): Path to the json file or data dict
 
         Return:
             data (dict): Loaded json data
         """
-
-        with open(json_file) as io:
-            _data = json.load(io)
+        if type(json_file) in [str, os.PathLike]:
+            with open(json_file) as io:
+                _data = json.load(io)
+        else:
+            if use_deepcopy:
+                return copy.deepcopy(json_file)
+            else:
+                return json_file.copy()
         return _data
 
     def loadRes(
         self,
-        resFile: Union[str, os.PathLike, np.ndarray],
+        resFile: Union[str, os.PathLike, pathlib.PosixPath, dict, list, np.ndarray],
         min_score: float = 0.0,
     ) -> "COCO":
         """Load result file and return a result api object.
 
         Args:
-            resFile (str)     : file name of result file
+            resFile (str or os.PathLike or dict or list)     : file name of result file
             min_score (float) : minimum score to consider a result
 
         Return:
@@ -324,15 +328,12 @@ class COCO:
 
         self.print_function("Loading and preparing results...")
         tic = time.time()
-        if type(resFile) in [str, os.PathLike]:
-            anns = self.load_json(resFile)
+        if type(resFile) in [str, os.PathLike, pathlib.PosixPath, dict, list]:
+            anns = self.load_json(resFile, self.use_deepcopy)
         elif type(resFile) is np.ndarray:
             anns = self.loadNumpyAnnotations(resFile)
         else:
-            if self.use_deepcopy:
-                anns = copy.deepcopy(resFile)
-            else:
-                anns = resFile.copy()
+            raise TypeError(f"type {type(resFile)} is not supported")
 
         assert type(anns) is list, "results in not an array of objects"
 
