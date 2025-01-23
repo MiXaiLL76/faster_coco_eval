@@ -38,7 +38,8 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.5
+    # rev: v1.7.5
+    rev: 06907d0
     hooks:
       - id: docformatter
         additional_dependencies: [tomli]
