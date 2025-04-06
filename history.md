@@ -1,5 +1,9 @@
 # history
 
+## v1.6.6
+
+- [x] Support pytorch dist CocoEvaluator
+
 ## v1.6.5
 
 - [x] Support CrowdPose Dataset

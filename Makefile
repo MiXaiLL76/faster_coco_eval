@@ -10,7 +10,7 @@ sdist:
 whl_file = $(shell ls dist/*.whl)
 
 install: clean wheel
-	pip3 install "$(whl_file)[tests]"
+	pip3 install "$(whl_file)[tests]" --user
 
 FORMAT_DIRS = ./faster_coco_eval ./tests setup.py
 LINE_LENGTH = 80

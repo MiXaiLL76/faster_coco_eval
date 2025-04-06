@@ -13,3 +13,4 @@ examples/comparison/ultralytics/runs/*
 examples/comparison/ultralytics/*.pt
 *.whl
 *.pyd
+tests/.coverage

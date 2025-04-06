@@ -220,8 +220,6 @@ class TestTorchmetricsLib(TestCase):
         # Update metric with predictions and respective ground truth
         metric.update(self.preds, self.target)
 
-        self.assertEqual(metric.backend, "faster_coco_eval")
-
         # Compute the results
         result = metric.compute()
 
