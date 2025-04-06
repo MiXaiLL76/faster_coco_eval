@@ -31,22 +31,18 @@ from faster_coco_eval import COCO, COCOeval_faster
 
 
 class CocoEvaluator:
-    def __init__(self, coco_gt : COCO, iou_types : List[str], lvis_style : bool = False):
+    def __init__(self, coco_gt: COCO, iou_types: List[str], lvis_style: bool = False):
         assert isinstance(iou_types, (list, tuple))
         coco_gt = copy.deepcopy(coco_gt)
         self.coco_gt = coco_gt
 
-        self.world_size = None # None = auto
+        self.world_size = None  # None = auto
 
         self.iou_types = iou_types
         self.coco_eval: Dict[str, COCOeval_faster] = {}
         for iou_type in iou_types:
             self.coco_eval[iou_type] = COCOeval_faster(
-                coco_gt,
-                iouType=iou_type,
-                lvis_style=lvis_style,
-                print_function=print,
-                separate_eval=True
+                coco_gt, iouType=iou_type, lvis_style=lvis_style, print_function=print, separate_eval=True
             )
 
         self.img_ids = []
@@ -73,7 +69,6 @@ class CocoEvaluator:
                     len(coco_eval.params.catIds), len(coco_eval.params.areaRng), len(coco_eval.params.imgIds)
                 )
             )
-
 
     def synchronize_between_processes(self):
         for iou_type in self.iou_types:
