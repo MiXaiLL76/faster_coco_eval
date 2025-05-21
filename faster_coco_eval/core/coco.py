@@ -329,7 +329,7 @@ class COCO:
         self.print_function("Loading and preparing results...")
         tic = time.time()
         if type(resFile) in [str, os.PathLike, pathlib.PosixPath, dict, list]:
-            anns = COCO.load_json(resFile, self.use_deepcopy)
+            anns = COCO.load_json(resFile, getattr(self, "use_deepcopy", False))
         elif type(resFile) is np.ndarray:
             anns = self.loadNumpyAnnotations(resFile)
         else:
