@@ -1,4 +1,4 @@
 from .coco_dataset import FasterCocoDetection
-from .coco_eval import CocoEvaluator
+from .coco_eval import FasterCocoEvaluator
 
-__all__ = ["CocoEvaluator", "FasterCocoDetection"]
+__all__ = ["FasterCocoEvaluator", "FasterCocoDetection"]

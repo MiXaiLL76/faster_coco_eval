@@ -11,7 +11,7 @@ try:
 except ImportError:
     raise unittest.SkipTest("Skipping all tests for World COCO Evaluator.")
 
-from faster_coco_eval.utils.pytorch.coco_eval import CocoEvaluator
+from faster_coco_eval.utils.pytorch import FasterCocoEvaluator
 
 
 class TestWorldCoco(unittest.TestCase):
@@ -47,7 +47,7 @@ class TestWorldCoco(unittest.TestCase):
 
     def test_world_lvis(self):
         coco_gt = COCO(self.gt_lvis_file)
-        coco_eval_rank = CocoEvaluator(coco_gt, iou_types=["bbox"], lvis_style=True)
+        coco_eval_rank = FasterCocoEvaluator(coco_gt, iou_types=["bbox"], lvis_style=True)
         coco_eval_rank.coco_eval["bbox"].params.maxDets = [300]
 
         prepared_anns = defaultdict(list)

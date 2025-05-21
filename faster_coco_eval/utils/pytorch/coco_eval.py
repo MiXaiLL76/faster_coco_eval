@@ -30,7 +30,7 @@ import faster_coco_eval.core.mask as mask_util
 from faster_coco_eval import COCO, COCOeval_faster
 
 
-class CocoEvaluator:
+class FasterCocoEvaluator:
     def __init__(self, coco_gt: COCO, iou_types: List[str], lvis_style: bool = False):
         assert isinstance(iou_types, (list, tuple))
         coco_gt = copy.deepcopy(coco_gt)

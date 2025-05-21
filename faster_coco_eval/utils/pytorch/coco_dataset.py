@@ -5,15 +5,18 @@ https://github.com/pytorch/vision/blob/edfd5a7701310589927d2f83bed11cfeb06965a1/
 The difference is that pycocotools is replaced by a faster library faster-coco-eval
 """
 
-import os
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Callable, Optional, Union
 
 import torchvision
-from PIL import Image
+
+import faster_coco_eval
+from faster_coco_eval import COCO
+
+faster_coco_eval.init_as_pycocotools()
 
 
-class FasterCocoDetection(torchvision.datasets.VisionDataset):
+class FasterCocoDetection(torchvision.datasets.CocoDetection):
     """`MS Coco Detection <http://mscoco.org/dataset/#detections-challenge2016>`_ Dataset.
 
     Args:
@@ -36,30 +39,5 @@ class FasterCocoDetection(torchvision.datasets.VisionDataset):
         transforms: Optional[Callable] = None,
     ) -> None:
         super().__init__(root, transforms, transform, target_transform)
-        from pycocotools.coco import COCO
-
         self.coco = COCO(annFile)
         self.ids = list(sorted(self.coco.imgs.keys()))
-
-    def _load_image(self, id: int) -> Image.Image:
-        path = self.coco.loadImgs(id)[0]["file_name"]
-        return Image.open(os.path.join(self.root, path)).convert("RGB")
-
-    def _load_target(self, id: int) -> List[Any]:
-        return self.coco.loadAnns(self.coco.getAnnIds(id))
-
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
-        if not isinstance(index, int):
-            raise ValueError(f"Index must be of type integer, got {type(index)} instead.")
-
-        id = self.ids[index]
-        image = self._load_image(id)
-        target = self._load_target(id)
-
-        if self.transforms is not None:
-            image, target = self.transforms(image, target)
-
-        return image, target
-
-    def __len__(self) -> int:
-        return len(self.ids)
