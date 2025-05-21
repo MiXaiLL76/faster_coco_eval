@@ -37,6 +37,7 @@ class CocoEvaluator:
         self.coco_gt = coco_gt
 
         self.world_size = None  # None = auto
+        self.lvis_style = lvis_style
 
         self.iou_types = iou_types
         self.coco_eval: Dict[str, COCOeval_faster] = {}
@@ -48,6 +49,15 @@ class CocoEvaluator:
         self.img_ids = []
         self.eval_imgs = {k: [] for k in iou_types}
         self.stats_as_dict = {k: [] for k in iou_types}
+
+    def cleanup(self):
+        self.coco_eval = {}
+        for iou_type in self.iou_types:
+            self.coco_eval[iou_type] = COCOeval_faster(
+                self.coco_gt, iouType=iou_type, lvis_style=self.lvis_style, print_function=print, separate_eval=True
+            )
+        self.img_ids = []
+        self.eval_imgs = {k: [] for k in self.iou_types}
 
     def update(self, predictions):
         img_ids = list(np.unique(list(predictions.keys())))
@@ -72,7 +82,6 @@ class CocoEvaluator:
 
     def synchronize_between_processes(self):
         for iou_type in self.iou_types:
-            print(self.img_ids)
             img_ids, eval_imgs = merge(self.img_ids, self.eval_imgs[iou_type], self.world_size)
 
             coco_eval = self.coco_eval[iou_type]
@@ -203,8 +212,8 @@ def all_gather(data, world_size: int = None):
 
     # serialized to a Tensor
     buffer = pickle.dumps(data)
-    storage = torch.ByteStorage.from_buffer(buffer)
-    tensor = torch.ByteTensor(storage).to("cuda")
+    byte_array = bytearray(buffer)
+    tensor = torch.ByteTensor(list(byte_array)).to("cuda")
 
     # obtain Tensor size of each rank
     local_size = torch.tensor([tensor.numel()], device="cuda")
