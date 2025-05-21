@@ -54,7 +54,7 @@ class COCO:
             self._print_function("loading annotations into memory...")
             tic = time.time()
             if type(annotation_file) in [str, os.PathLike, pathlib.PosixPath, dict, list]:
-                self.dataset = self.load_json(annotation_file, self.use_deepcopy)
+                self.dataset = COCO.load_json(annotation_file, self.use_deepcopy)
             else:
                 raise TypeError(f"type {type(annotation_file)} is not supported")
 
@@ -329,7 +329,7 @@ class COCO:
         self.print_function("Loading and preparing results...")
         tic = time.time()
         if type(resFile) in [str, os.PathLike, pathlib.PosixPath, dict, list]:
-            anns = self.load_json(resFile, self.use_deepcopy)
+            anns = COCO.load_json(resFile, self.use_deepcopy)
         elif type(resFile) is np.ndarray:
             anns = self.loadNumpyAnnotations(resFile)
         else:
