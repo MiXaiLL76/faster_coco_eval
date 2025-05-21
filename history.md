@@ -2,7 +2,8 @@
 
 ## v1.6.6
 
-- [x] Support pytorch dist CocoEvaluator
+- [x] Support pytorch dist FasterCocoEvaluator
+- [x] Support torchvision CocoDetection Dataset as FasterCocoDetection
 
 ## v1.6.5
 
