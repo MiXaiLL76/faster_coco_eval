@@ -26,6 +26,7 @@ class FasterCocoDetection(torchvision.datasets.VisionDataset):
         transforms (callable, optional): A function/transform that takes input sample and its target as entry
             and returns a transformed version.
     """
+
     def __init__(
         self,
         root: Union[str, Path],
