@@ -12,10 +12,6 @@ whl_file = $(shell ls dist/*.whl)
 install: clean wheel
 	pip3 install "$(whl_file)[tests]" --user
 
-FORMAT_DIRS = ./faster_coco_eval ./tests setup.py
-LINE_LENGTH = 80
-BLACK_CONFIG = --preview --enable-unstable-feature string_processing
-
 format:
 	pre-commit run --all-files
 
