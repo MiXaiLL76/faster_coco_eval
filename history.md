@@ -1,5 +1,11 @@
 # history
 
+## v1.6.6
+
+- [x] Support pytorch dist FasterCocoEvaluator
+- [x] Support torchvision CocoDetection Dataset as FasterCocoDetection
+- [x] Return COCO.showAnns https://github.com/MiXaiLL76/faster_coco_eval/issues/52
+
 ## v1.6.5
 
 - [x] Support CrowdPose Dataset
