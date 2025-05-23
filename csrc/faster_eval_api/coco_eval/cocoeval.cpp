@@ -350,7 +350,8 @@ namespace coco_eval
         std::vector<double> *recalls,
         std::vector<double> *precisions_out,
         std::vector<double> *scores_out,
-        std::vector<double> *recalls_out)
+        std::vector<double> *recalls_out,
+        bool equal_score)
     {
       assert(recalls_out->size() > recalls_out_index);
 
@@ -391,9 +392,15 @@ namespace coco_eval
         recalls->emplace_back(recall);
         const int64_t num_valid_detections =
             true_positives_sum + false_positives_sum;
-        const double precision = num_valid_detections > 0
-                                     ? static_cast<double>(true_positives_sum) / num_valid_detections
-                                     : 0.0;
+
+        double precision = 0;
+        if(equal_score){
+          precision = num_valid_detections > 0 ? 1 : 0.0;
+        }else{
+          precision = num_valid_detections > 0
+              ? static_cast<double>(true_positives_sum) / num_valid_detections
+              : 0.0;
+        }
         precisions->emplace_back(precision);
       }
 
@@ -445,6 +452,7 @@ namespace coco_eval
       const int num_area_ranges = (const int) py::len(params.attr("areaRng"));
       const int num_max_detections = (const int) py::len(params.attr("maxDets"));
       const int num_images = (const int) py::len(params.attr("imgIds"));
+      bool equal_score = params.attr("equalScore").cast<bool>();
 
       std::vector<double> precisions_out(
           num_iou_thresholds * num_recall_thresholds * num_categories *
@@ -537,7 +545,8 @@ namespace coco_eval
                   &recalls,
                   &precisions_out,
                   &scores_out,
-                  &recalls_out);
+                  &recalls_out,
+                  equal_score);
             }
           }
         }
