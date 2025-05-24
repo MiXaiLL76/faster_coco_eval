@@ -1,4 +1,11 @@
 // Copyright (c) MiXaiLL76
+#if defined(_MSC_VER)
+#include <cstddef>
+typedef std::ptrdiff_t ssize_t;
+#else
+#include <sys/types.h>
+#endif
+
 #include "mask.h"
 #include <time.h>
 #include <algorithm>
@@ -11,12 +18,6 @@
 #include <vector>
 
 using namespace pybind11::literals;
-
-#if defined(_WIN32) || defined(_WIN64)
-constexpr bool is_windows = true;
-#else
-constexpr bool is_windows = false;
-#endif
 
 template <typename T>
 std::vector<T> flatten(const std::vector<std::vector<T>> &input)
