@@ -93,27 +93,44 @@ namespace coco_eval
     public:
       Dataset()
       {
-        this->data.reserve(8192); // RESERVING SPACE BEFOREHAND
-        // this->data.max_load_factor(0.25); // DECREASING MAX_LOAD_FACTOR
+        // Reserve initial space to reduce rehashing, improving memory and performance.
+        data.reserve(8192);
+        // Optionally, you can set max_load_factor to lower value if memory is less critical:
+        // data.max_load_factor(0.25f);
       }
-      void append(int64_t img_id, int64_t cat_id, py::dict ann);
+
+      // Append a new annotation for (img_id, cat_id) key.
+      void append(int64_t img_id, int64_t cat_id, const py::dict &ann);
+
+      // Remove all stored annotations and free memory.
       void clean();
 
-      // pickle
-      py::tuple make_tuple() const ;
-      void load_tuple(py::tuple data);
+      // Pickle support: Serialize dataset contents to a tuple.
+      py::tuple make_tuple() const;
 
+      // Pickle support: Load dataset contents from a tuple.
+      void load_tuple(py::tuple pickle_data);
+
+      // Get all Python dict annotations for a given image/category pair.
       std::vector<py::dict> get(const int64_t &img_id, const int64_t &cat_id);
-      std::vector<InstanceAnnotation> get_cpp_annotations(
-          const int64_t &img_id, const int64_t &cat_id);
 
+      // Get C++ annotation objects for a given image/category pair.
+      std::vector<InstanceAnnotation> get_cpp_annotations(const int64_t &img_id, const int64_t &cat_id);
+
+      // Get all C++ annotation objects for provided img_ids and cat_ids. If useCats is false, cat_ids is ignored.
       std::vector<std::vector<std::vector<InstanceAnnotation>>> get_cpp_instances(
-          const std::vector<int64_t> &img_ids, const std::vector<int64_t> &cat_ids, const bool &useCats);
+          const std::vector<int64_t> &img_ids,
+          const std::vector<int64_t> &cat_ids,
+          const bool &useCats);
 
+      // Get all Python dict annotations for provided img_ids and cat_ids. If useCats is false, cat_ids is ignored.
       std::vector<std::vector<std::vector<py::dict>>> get_instances(
-          const std::vector<int64_t> &img_ids, const std::vector<int64_t> &cat_ids, const bool &useCats);
+          const std::vector<int64_t> &img_ids,
+          const std::vector<int64_t> &cat_ids,
+          const bool &useCats);
 
     private:
+      // Use unordered_map to store annotations for (img_id, cat_id) pairs. Custom hash functor is used.
       std::unordered_map<std::pair<int64_t, int64_t>, std::vector<py::dict>, hash_pair> data;
     };
 
@@ -160,7 +177,7 @@ namespace coco_eval
         const ImageCategoryInstances<InstanceAnnotation> &
             image_category_detection_instances);
 
+
     long double calc_auc(const std::vector<long double> &recall_list, const std::vector<long double> &precision_list);
-    long double _summarize(const int &ap, const double &iouThr, const std::string &areaRng, const int &maxDet, const std::vector<int> &catIds, const py::object &params, const std::vector<size_t> &counts, const py::object &nums_array);
   } // namespace COCOeval
 } // namespace coco_eval

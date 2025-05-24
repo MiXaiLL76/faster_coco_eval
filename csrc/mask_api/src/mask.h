@@ -18,10 +18,6 @@ namespace mask_api
 
     namespace Mask
     {
-        uint umin(uint a, uint b);
-        uint umin(uint8_t a, uint8_t b);
-        uint umax(uint a, uint b);
-        uint umax(uint8_t a, uint8_t b);
 
         class RLE
         {
@@ -32,33 +28,35 @@ namespace mask_api
                 uint64_t h,
                 uint64_t w,
                 uint64_t m,
-                std::vector<uint> cnts) : h{h}, w{w}, m{m}, cnts{cnts} {}
+                std::vector<uint64_t> cnts)
+                : h{h}, w{w}, m{m}, cnts{cnts} {}
 
             RLE(
                 uint64_t h,
                 uint64_t w,
-                std::vector<uint> cnts) : h{h}, w{w}, m{1}, cnts{cnts} {}
+                std::vector<uint64_t> cnts)
+                : h{h}, w{w}, m{1}, cnts{cnts} {}
 
             uint64_t h;
             uint64_t w;
             uint64_t m;
-            std::vector<uint> cnts;
+            std::vector<uint64_t> cnts;
 
             std::string toString() const;
             std::tuple<uint64_t, uint64_t, std::string> toTuple() const;
-            std::vector<uint> toBbox() const;
+            std::vector<double> toBbox() const;
             RLE erode_3x3(int dilation) const;
             RLE toBoundary(double dilation_ratio) const;
             RLE clear_duplicates() const;
-            uint area() const;
+            uint64_t area() const;
             py::dict toDict() const;
 
-            static RLE frString(const std::string &s, const uint64_t &h, const uint64_t &w);
-            static RLE frBbox(const std::vector<double> &bb, const uint64_t &h, const uint64_t &w);
-            static RLE frPoly(const std::vector<double> &xy, const uint64_t &h, const uint64_t &w);
-            static RLE merge(const std::vector<RLE> &R, const int &intersect);
+            static RLE frString(const std::string &s, uint64_t h, uint64_t w);
+            static RLE frBbox(const std::vector<double> &bb, uint64_t h, uint64_t w);
+            static RLE frPoly(const std::vector<double> &xy, uint64_t h, uint64_t w);
+            static RLE merge(const std::vector<RLE> &R, int intersect);
             static RLE frUncompressedRLE(const py::dict &ucRle);
-            static RLE frSegm(const py::object &pyobj, const uint64_t &w, const uint64_t &h);
+            static RLE frSegm(const py::object &pyobj, uint64_t w, uint64_t h);
             static RLE frTuple(const std::tuple<uint64_t, uint64_t, std::string> &w_h_rlestring);
         };
 
@@ -67,12 +65,12 @@ namespace mask_api
         std::vector<py::dict> toBoundary(const std::vector<py::dict> &rleObjs, const double &dilation_ratio);
 
         py::array_t<uint8_t, py::array::f_style> rleDecode(const std::vector<RLE> &R);
-        std::vector<RLE> rleEncode(const py::array_t<uint8_t, py::array::f_style> &M, const uint64_t &h, const uint64_t &w, const uint64_t &n);
+        std::vector<RLE> rleEncode(const py::array_t<uint8_t, py::array::f_style> &M, uint64_t h, uint64_t w, uint64_t n);
 
         py::bytes rleToString(const RLE &R);
         RLE rleFrString(const std::string &s, const uint64_t &h, const uint64_t &w);
 
-        std::vector<RLE> rleFrBbox(const std::vector<double> &bb, const uint64_t &h, const uint64_t &w, const uint64_t &n);
+        std::vector<RLE> rleFrBbox(const std::vector<double> &bb, uint64_t h, uint64_t w, uint64_t n);
         RLE rleFrPoly(const std::vector<double> &xy, const uint64_t &k, const uint64_t &h, const uint64_t &w);
 
         // pyx functions
@@ -82,9 +80,9 @@ namespace mask_api
         py::array_t<double> toBbox(const std::vector<py::dict> &R);
         py::dict merge(const std::vector<py::dict> &rleObjs, const int &intersect);
         py::dict merge(const std::vector<py::dict> &rleObjs);
-        py::array_t<uint> area(const std::vector<py::dict> &rleObjs);
+        py::array_t<uint64_t> area(const std::vector<py::dict> &rleObjs);
         std::variant<py::array_t<double, py::array::f_style>, std::vector<double>> iou(const py::object &dt, const py::object &gt, const std::vector<int> &iscrowd);
-        std::vector<double> bbIou(const std::vector<double> &dt, const std::vector<double> &gt, const uint64_t &m, const uint64_t &n, const std::vector<int> &iscrowd);
+        std::vector<double> bbIou(const std::vector<double> &dt, const std::vector<double> &gt, std::size_t m, std::size_t n, const std::vector<int> &iscrowd);
         std::vector<double> rleIou(const std::vector<RLE> &dt, const std::vector<RLE> &gt, const uint64_t &m, const uint64_t &n, const std::vector<int> &iscrowd);
         std::vector<py::dict> _toString(const std::vector<RLE> &R);
         std::vector<RLE> _frString(const std::vector<py::dict> &R);
@@ -93,7 +91,9 @@ namespace mask_api
         std::vector<py::dict> frUncompressedRLE(const std::vector<py::dict> &ucRles);
         std::vector<py::dict> toUncompressedRLE(const std::vector<py::dict> &Rles);
         std::vector<py::dict> rleToUncompressedRLE(const std::vector<RLE> &R);
-        py::array_t<double> rleToBbox(const std::vector<RLE> R, const uint64_t &n);
+
+        py::array rleToBbox(const std::vector<RLE> &R, std::optional<uint64_t> n = std::nullopt);
+
         std::variant<pybind11::dict, std::vector<pybind11::dict>> frPyObjects(const py::object &pyobj, const uint64_t &h, const uint64_t &w);
         std::variant<pybind11::dict, py::object> segmToRle(const py::object &pyobj, const uint64_t &w, const uint64_t &h);
         std::vector<py::dict> processRleToBoundary(const std::vector<RLE> &rles, const double &dilation_ratio, const size_t &cpu_count);

@@ -95,6 +95,12 @@ class TestMaskApi(unittest.TestCase):
             "counts": b"05500MN3ON3ONe1",
         }
 
+    def test_frString(self):
+        c_rle = _mask._frString(self.poly_rles)
+        py_rle = _mask._toString(c_rle)
+        for i in range(len(py_rle)):
+            self.assertDictEqual(py_rle[i], self.poly_rles[i])
+
     @parameterized.expand([_mask, mask_util])
     def test_area(self, module):
         areas = module.area(self.rleObjs)
