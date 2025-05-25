@@ -1,6 +1,6 @@
-// Copyright (c) Facebook, Inc. and its affiliates.
-
 #include "coco_eval/cocoeval.h"
+#include "coco_eval/dataset.h"
+
 #include <iostream>
 #include <sstream>
 #include <pybind11/pybind11.h>

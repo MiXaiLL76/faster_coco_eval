@@ -104,6 +104,7 @@ def get_extensions(version_info):
 
     sources = [
         "csrc/faster_eval_api/coco_eval/cocoeval.cpp",
+        "csrc/faster_eval_api/coco_eval/dataset.cpp",
         "csrc/faster_eval_api/faster_eval_api.cpp",
     ]
     print(f"Sources: {sources}")

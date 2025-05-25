@@ -1,125 +1,83 @@
-// Copyright (c) Facebook, Inc. and its affiliates.
 #include "cocoeval.h"
+#include "dataset.h"
 #include <time.h>
 #include <algorithm>
 #include <cstdint>
 #include <numeric>
-#include <future>
 using namespace pybind11::literals;
 
 namespace coco_eval
 {
 
-  template <typename T>
-  std::vector<T> list_to_vec(const py::list &l)
-  {
-    const size_t n = py::len(l);
-    std::vector<T> v(n);
-    for (size_t i = 0; i < n; ++i)
-    {
-      v[i] = l[i].cast<T>();
-    }
-    return v;
-  }
-
   namespace COCOeval
   {
-
-    // Returns the current local time as a string in the format "YYYY-MM-DD HH:MM:SS"
-    std::string get_current_local_time_string()
+    template <typename T>
+    int64_t v_index(const std::vector<T> &v, const T &key)
     {
-      time_t rawtime;
-      struct tm local_time;
-      char buffer[200];
-      time(&rawtime);
+      auto itr = std::find(v.begin(), v.end(), key);
 
-#ifdef _WIN32
-      localtime_s(&local_time, &rawtime);
-#else
-      localtime_r(&rawtime, &local_time);
-#endif
-      // Corrected format: "%Y-%m-%d %H:%M:%S" (minutes were missing in original)
-      strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &local_time);
-      return std::string(buffer);
+      if (itr != v.cend())
+      {
+        return std::distance(v.begin(), itr);
+      }
+      else
+      {
+        return -1;
+      }
     }
 
-    // Sorts detections from highest to lowest score using stable_sort to match the original COCO API behavior.
-    // Arguments:
-    //   detection_instances: Vector of detection instances to be sorted.
-    //   detection_sorted_indices: Output vector of indices sorted by detection score in descending order.
+    // Sort detections from highest score to lowest, such that
+    // detection_instances[detection_sorted_indices[t]] >=
+    // detection_instances[detection_sorted_indices[t+1]].  Use stable_sort to match
+    // original COCO API
     void SortInstancesByDetectionScore(
         const std::vector<InstanceAnnotation> &detection_instances,
         std::vector<uint64_t> *detection_sorted_indices)
     {
-      // Resize output vector to match input size
       detection_sorted_indices->resize(detection_instances.size());
-      // Fill indices [0, 1, ..., n-1]
-      std::iota(detection_sorted_indices->begin(), detection_sorted_indices->end(), 0);
-
-      // Sort indices by score in descending order, using stable_sort for stable ordering of equal scores
+      std::iota(
+          detection_sorted_indices->begin(), detection_sorted_indices->end(), 0);
       std::stable_sort(
           detection_sorted_indices->begin(),
           detection_sorted_indices->end(),
-          [&detection_instances](uint64_t j1, uint64_t j2)
+          [&detection_instances](size_t j1, size_t j2)
           {
             return detection_instances[j1].score > detection_instances[j2].score;
           });
     }
 
-    // Partitions ground truth objects based on whether they should be ignored according to area constraints.
-    // Sorts indices so that non-ignored instances come before ignored ones, preserving the original order within each group.
-    // Arguments:
-    //   area_range: Minimum and maximum area thresholds [min_area, max_area].
-    //   ground_truth_instances: Vector of ground truth objects.
-    //   ground_truth_sorted_indices: Output vector of indices, sorted so that non-ignored objects appear first.
-    //   ignores: Output vector of bools indicating whether each instance should be ignored.
+    // Partition the ground truth objects based on whether or not to ignore them
+    // based on area
     void SortInstancesByIgnore(
         const std::array<double, 2> &area_range,
         const std::vector<InstanceAnnotation> &ground_truth_instances,
         std::vector<uint64_t> *ground_truth_sorted_indices,
         std::vector<bool> *ignores)
     {
-      // Clear and reserve space for ignores vector for efficiency
       ignores->clear();
       ignores->reserve(ground_truth_instances.size());
-
-      // Mark objects to ignore if the 'ignore' flag is set, or area is out of range
-      for (const auto &o : ground_truth_instances)
+      for (auto o : ground_truth_instances)
       {
         ignores->emplace_back(
             o.ignore || o.area < area_range[0] || o.area > area_range[1]);
       }
 
-      // Initialize sorted indices [0, 1, ..., n-1]
       ground_truth_sorted_indices->resize(ground_truth_instances.size());
       std::iota(
           ground_truth_sorted_indices->begin(),
           ground_truth_sorted_indices->end(),
           0);
-
-      // Sort indices so that non-ignored objects come before ignored ones
       std::stable_sort(
           ground_truth_sorted_indices->begin(),
           ground_truth_sorted_indices->end(),
-          [ignores](uint64_t j1, uint64_t j2)
+          [&ignores](size_t j1, size_t j2)
           {
-            // Non-ignored (false) comes before ignored (true)
-            return static_cast<int>((*ignores)[j1]) < static_cast<int>((*ignores)[j2]);
+            return (int)(*ignores)[j1] < (int)(*ignores)[j2];
           });
     }
 
-    // For each IOU threshold, greedily match each detected instance to a ground truth instance (if possible)
-    // and store the results in the provided ImageEvaluation struct.
-    // Arguments:
-    //   detection_instances: Vector of detected object annotations.
-    //   detection_sorted_indices: Indices of detections sorted by score (descending).
-    //   ground_truth_instances: Vector of ground truth object annotations.
-    //   ground_truth_sorted_indices: Indices of ground truths sorted by ignore status.
-    //   ignores: Vector<bool> indicating which ground truth objects should be ignored.
-    //   ious: Matrix of IOU values between each detection and ground truth.
-    //   iou_thresholds: List of IOU thresholds for evaluation.
-    //   area_range: Area range [min, max] for valid detections.
-    //   results: Output struct to store results, including matches, ignores, and scores.
+    // For each IOU threshold, greedily match each detected instance to a ground
+    // truth instance (if possible) and store the results
     void MatchDetectionsToGroundTruth(
         const std::vector<InstanceAnnotation> &detection_instances,
         const std::vector<uint64_t> &detection_sorted_indices,
@@ -131,66 +89,62 @@ namespace coco_eval
         const std::array<double, 2> &area_range,
         ImageEvaluation *results)
     {
-      // Clear any previously stored matched annotations to avoid duplications
-      results->matched_annotations.clear();
-
-      const int num_iou_thresholds = static_cast<int>(iou_thresholds.size());
-      const int num_ground_truth = static_cast<int>(ground_truth_sorted_indices.size());
-      const int num_detections = static_cast<int>(detection_sorted_indices.size());
-
-      // Prepare output buffers
+      // Initialize memory to store return data matches and ignore
+      const int num_iou_thresholds = (const int) iou_thresholds.size();
+      const int num_ground_truth = (const int) ground_truth_sorted_indices.size();
+      const int num_detections = (const int) detection_sorted_indices.size();
+      // std::vector<uint64_t> ground_truth_matches(
+      // num_iou_thresholds * num_ground_truth, 0);
       std::vector<int64_t> &ground_truth_matches = results->ground_truth_matches;
-      ground_truth_matches.assign(num_iou_thresholds * num_ground_truth, 0);
+      ground_truth_matches.resize(num_iou_thresholds * num_ground_truth, 0);
 
       std::vector<int64_t> &detection_matches = results->detection_matches;
-      detection_matches.assign(num_iou_thresholds * num_detections, 0);
 
       std::vector<bool> &detection_ignores = results->detection_ignores;
-      detection_ignores.assign(num_iou_thresholds * num_detections, false);
-
       std::vector<bool> &ground_truth_ignores = results->ground_truth_ignores;
+      detection_matches.resize(num_iou_thresholds * num_detections, 0);
+      detection_ignores.resize(num_iou_thresholds * num_detections, false);
       ground_truth_ignores.resize(num_ground_truth);
-      for (int g = 0; g < num_ground_truth; ++g)
+      for (auto g = 0; g < num_ground_truth; ++g)
       {
         ground_truth_ignores[g] = ignores[ground_truth_sorted_indices[g]];
       }
 
-      // Main matching loop: for each IOU threshold, process all detections
-      for (int t = 0; t < num_iou_thresholds; ++t)
+      for (auto t = 0; t < num_iou_thresholds; ++t)
       {
-        double threshold = std::min(iou_thresholds[t], 1.0 - 1e-10);
-
-        for (int d = 0; d < num_detections; ++d)
+        for (auto d = 0; d < num_detections; ++d)
         {
-          double best_iou = threshold;
+          // information about best match so far (match=-1 -> unmatched)
+          double best_iou = std::min(iou_thresholds[t], 1 - 1e-10);
           int match = -1;
-
-          // Greedily find best ground truth match for this detection
-          for (int g = 0; g < num_ground_truth; ++g)
+          for (auto g = 0; g < num_ground_truth; ++g)
           {
-            // If this ground truth is matched and not a crowd, skip it
+            // if this ground truth instance is already matched and not a
+            // crowd, it cannot be matched to another detection
             if (ground_truth_matches[t * num_ground_truth + g] > 0 &&
                 !ground_truth_instances[ground_truth_sorted_indices[g]].is_crowd)
             {
               continue;
             }
 
-            // Optimization: can break early if we hit the first ignored GT after a non-ignored match
-            if (match >= 0 && !ground_truth_ignores[match] && ground_truth_ignores[g])
+            // if detected instance matched to a regular ground truth
+            // instance, we can break on the first ground truth instance
+            // tagged as ignore (because they are sorted by the ignore tag)
+            if (match >= 0 && !ground_truth_ignores[match] &&
+                ground_truth_ignores[g])
             {
               break;
             }
 
-            // Update best match if IOU is above threshold and is the best so far
-            double iou = ious[d][ground_truth_sorted_indices[g]];
-            if (iou >= best_iou)
+            // if IOU overlap is the best so far, store the match appropriately
+            if (ious[d][ground_truth_sorted_indices[g]] >= best_iou)
             {
-              best_iou = iou;
+              best_iou = ious[d][ground_truth_sorted_indices[g]];
               match = g;
             }
           }
-
-          // Store match results if there was a match
+          // if match was made, store id of match for both detection and
+          // ground truth
           if (match >= 0)
           {
             detection_ignores[t * num_detections + d] = ground_truth_ignores[match];
@@ -199,24 +153,24 @@ namespace coco_eval
             ground_truth_matches[t * num_ground_truth + match] =
                 detection_instances[detection_sorted_indices[d]].id;
 
-            results->matched_annotations.emplace_back(
-                ground_truth_matches[t * num_ground_truth + match], // DT_ID
-                detection_matches[t * num_detections + d],          // GT_ID
-                best_iou);
+            results->matched_annotations.push_back(
+                MatchedAnnotation(
+                    ground_truth_matches[t * num_ground_truth + match], // DT_ID
+                    detection_matches[t * num_detections + d],          // GT_ID
+                    best_iou));
           }
 
-          // Set unmatched detections outside area range (or marked as lvis) to ignore
+          // set unmatched detections outside of area range to ignore
           const InstanceAnnotation &detection =
               detection_instances[detection_sorted_indices[d]];
-          if (detection_matches[t * num_detections + d] == 0 &&
-              (detection.area < area_range[0] || detection.area > area_range[1] || detection.lvis_mark))
-          {
-            detection_ignores[t * num_detections + d] = true;
-          }
+          detection_ignores[t * num_detections + d] =
+              detection_ignores[t * num_detections + d] ||
+              (detection_matches[t * num_detections + d] == 0 &&
+               (detection.area < area_range[0] || detection.area > area_range[1] || detection.lvis_mark));
         }
       }
 
-      // Store detection scores in sorted order
+      // store detection score results
       results->detection_scores.resize(detection_sorted_indices.size());
       for (size_t d = 0; d < detection_sorted_indices.size(); ++d)
       {
@@ -225,63 +179,51 @@ namespace coco_eval
       }
     }
 
-    // Evaluates detection results for multiple images, categories, and area ranges.
-    // For each combination of image, category, and area range, matches detections to ground truths
-    // using IOU thresholds and stores evaluation results.
-    //
-    // Arguments:
-    //   area_ranges:        Vector of [min, max] area thresholds.
-    //   max_detections:     Maximum number of detections to evaluate per image/category (for top-scoring).
-    //   iou_thresholds:     List of IOU thresholds.
-    //   image_category_ious: 3D structure: [image][category][iou matrix].
-    //   image_category_ground_truth_instances: 3D structure: [image][category][ground truth instances].
-    //   image_category_detection_instances:    3D structure: [image][category][detection instances].
-    //
-    // Returns:
-    //   results_all: Vector of ImageEvaluation objects for each image/category/area_range combination.
     std::vector<ImageEvaluation> EvaluateImages(
         const std::vector<std::array<double, 2>> &area_ranges,
         int max_detections,
         const std::vector<double> &iou_thresholds,
         const ImageCategoryInstances<std::vector<double>> &image_category_ious,
-        const ImageCategoryInstances<InstanceAnnotation> &image_category_ground_truth_instances,
-        const ImageCategoryInstances<InstanceAnnotation> &image_category_detection_instances)
+        const ImageCategoryInstances<InstanceAnnotation> &
+            image_category_ground_truth_instances,
+        const ImageCategoryInstances<InstanceAnnotation> &
+            image_category_detection_instances)
     {
-      const size_t num_area_ranges = area_ranges.size();
-      const size_t num_images = image_category_ground_truth_instances.size();
-      const size_t num_categories =
-          (image_category_ious.size() > 0) ? image_category_ious[0].size() : 0;
-
+      const int num_area_ranges = (const int) area_ranges.size();
+      const int num_images = (const int) image_category_ground_truth_instances.size();
+      const int num_categories = (const int) (image_category_ious.size() > 0 ? image_category_ious[0].size() : 0);
       std::vector<uint64_t> detection_sorted_indices;
       std::vector<uint64_t> ground_truth_sorted_indices;
       std::vector<bool> ignores;
+      std::vector<ImageEvaluation> results_all(
+          num_images * num_area_ranges * num_categories);
 
-      // Preallocate result vector.
-      // Index mapping: [category * num_area_ranges * num_images + area * num_images + image]
-      std::vector<ImageEvaluation> results_all(num_images * num_area_ranges * num_categories);
-
-      for (size_t i = 0; i < num_images; ++i)
+      // Store results for each image, category, and area range combination. Results
+      // for each IOU threshold are packed into the same ImageEvaluation object
+      for (auto i = 0; i < num_images; ++i)
       {
-        for (size_t c = 0; c < num_categories; ++c)
+        for (auto c = 0; c < num_categories; ++c)
         {
-          const auto &ground_truth_instances = image_category_ground_truth_instances[i][c];
-          const auto &detection_instances = image_category_detection_instances[i][c];
+          const std::vector<InstanceAnnotation> &ground_truth_instances =
+              image_category_ground_truth_instances[i][c];
+          const std::vector<InstanceAnnotation> &detection_instances =
+              image_category_detection_instances[i][c];
 
-          // Sort detections by score (descending).
-          SortInstancesByDetectionScore(detection_instances, &detection_sorted_indices);
-          if (detection_sorted_indices.size() > static_cast<size_t>(max_detections))
+          SortInstancesByDetectionScore(
+              detection_instances, &detection_sorted_indices);
+          if ((int)detection_sorted_indices.size() > max_detections)
           {
             detection_sorted_indices.resize(max_detections);
           }
 
-          for (size_t a = 0; a < num_area_ranges; ++a)
+          for (size_t a = 0; a < area_ranges.size(); ++a)
           {
-            // Partition ground truth objects by ignore criteria.
             SortInstancesByIgnore(
-                area_ranges[a], ground_truth_instances,
-                &ground_truth_sorted_indices, &ignores);
+                area_ranges[a],
+                ground_truth_instances,
+                &ground_truth_sorted_indices,
+                &ignores);
 
-            // Greedily match detections to ground truth per IOU threshold.
             MatchDetectionsToGroundTruth(
                 detection_instances,
                 detection_sorted_indices,
@@ -291,25 +233,39 @@ namespace coco_eval
                 image_category_ious[i][c],
                 iou_thresholds,
                 area_ranges[a],
-                &results_all[c * num_area_ranges * num_images + a * num_images + i]);
+                &results_all
+                    [c * num_area_ranges * num_images + a * num_images + i]);
           }
         }
       }
+
       return results_all;
     }
 
-    // Helper function to accumulate detection results across images for a specific category, area range, and max_detections setting.
-    // Extracts and sorts all applicable detections, returning the number of valid (non-ignored) ground truth objects.
-    // Arguments:
-    //   evaluations:                Vector of ImageEvaluation objects.
-    //   evaluation_index:           Starting index for the relevant group in evaluations (for the given category/area/max_det).
-    //   num_images:                 Number of images in the group.
-    //   max_detections:             Maximum detections per image to consider.
-    //   evaluation_indices:         Output: indices into evaluations[] for each detection instance.
-    //   detection_scores:           Output: detection score for each instance.
-    //   detection_sorted_indices:   Output: sorted indices (by score, descending) for the detections.
-    //   image_detection_indices:    Output: index of the detection within its image.
-    // Returns: number of valid (non-ignored) ground truth objects.
+    // Convert a python list to a vector
+    template <typename T>
+    std::vector<T> list_to_vec(const py::list &l)
+    {
+      std::vector<T> v(py::len(l));
+      for (int i = 0; i < (int)py::len(l); ++i)
+      {
+        v[i] = l[i].cast<T>();
+      }
+      return v;
+    }
+
+    // Helper function to Accumulate()
+    // Considers the evaluation results applicable to a particular category, area
+    // range, and max_detections parameter setting, which begin at
+    // evaluations[evaluation_index].  Extracts a sorted list of length n of all
+    // applicable detection instances concatenated across all images in the dataset,
+    // which are represented by the outputs evaluation_indices, detection_scores,
+    // image_detection_indices, and detection_sorted_indices--all of which are
+    // length n. evaluation_indices[i] stores the applicable index into
+    // evaluations[] for instance i, which has detection score detection_score[i],
+    // and is the image_detection_indices[i]'th of the list of detections
+    // for the image containing i.  detection_sorted_indices[] defines a sorted
+    // permutation of the 3 other outputs
     int BuildSortedDetectionList(
         const std::vector<ImageEvaluation> &evaluations,
         const int64_t evaluation_index,
@@ -320,34 +276,30 @@ namespace coco_eval
         std::vector<uint64_t> *detection_sorted_indices,
         std::vector<uint64_t> *image_detection_indices)
     {
-      assert(evaluations.size() >= static_cast<size_t>(evaluation_index + num_images));
+      assert(evaluations.size() >= evaluation_index + num_images);
 
-      // Prepare output containers
+      // Extract a list of object instances of the applicable category, area
+      // range, and max detections requirements such that they can be sorted
       image_detection_indices->clear();
       evaluation_indices->clear();
       detection_scores->clear();
       image_detection_indices->reserve(num_images * max_detections);
       evaluation_indices->reserve(num_images * max_detections);
       detection_scores->reserve(num_images * max_detections);
-
       int num_valid_ground_truth = 0;
-
-      for (int64_t i = 0; i < num_images; ++i)
+      for (auto i = 0; i < num_images; ++i)
       {
         const ImageEvaluation &evaluation = evaluations[evaluation_index + i];
 
-        // Collect up to max_detections detection scores per image
         for (int d = 0;
-             d < static_cast<int>(evaluation.detection_scores.size()) && d < max_detections;
+             d < (int)evaluation.detection_scores.size() && d < max_detections;
              ++d)
-        {
+        { // detected instances
           evaluation_indices->emplace_back(evaluation_index + i);
           image_detection_indices->emplace_back(d);
           detection_scores->emplace_back(evaluation.detection_scores[d]);
         }
-
-        // Count valid (non-ignored) ground truth instances
-        for (bool ground_truth_ignore : evaluation.ground_truth_ignores)
+        for (auto ground_truth_ignore : evaluation.ground_truth_ignores)
         {
           if (!ground_truth_ignore)
           {
@@ -356,9 +308,11 @@ namespace coco_eval
         }
       }
 
-      // Sort detections by decreasing score (stable sort for reproducibility)
+      // Sort detections by decreasing score, using stable sort to match
+      // python implementation
       detection_sorted_indices->resize(detection_scores->size());
-      std::iota(detection_sorted_indices->begin(), detection_sorted_indices->end(), 0);
+      std::iota(
+          detection_sorted_indices->begin(), detection_sorted_indices->end(), 0);
       std::stable_sort(
           detection_sorted_indices->begin(),
           detection_sorted_indices->end(),
@@ -370,24 +324,15 @@ namespace coco_eval
       return num_valid_ground_truth;
     }
 
-    // Helper function for Accumulate()
-    // Computes a precision-recall curve given a sorted list of detected instances.
-    // See BuildSortedDetectionList() for inputs.
-    // Arguments:
-    //   precisions_out_index:    Index for output precision vector
-    //   precisions_out_stride:   Stride for output precision/scores vector
-    //   recalls_out_index:       Index for output recall vector
-    //   recall_thresholds:       List of recall thresholds to sample at
-    //   iou_threshold_index:     Index of the IOU threshold being evaluated
-    //   num_iou_thresholds:      Total number of IOU thresholds
-    //   num_valid_ground_truth:  Number of valid (non-ignored) ground truth instances
-    //   evaluations:             List of ImageEvaluation (per-image detection/gt info)
-    //   evaluation_indices:      Indices into evaluations for each detection
-    //   detection_scores:        Scores for each detection
-    //   detection_sorted_indices:Sorted permutation of detection indices (by score)
-    //   image_detection_indices: Index of detection within its image
-    //   precisions, recalls:     Temporary storage for per-instance precision/recall
-    //   precisions_out, scores_out, recalls_out: Output buffers for full curves
+    // Helper function to Accumulate()
+    // Compute a precision recall curve given a sorted list of detected instances
+    // encoded in evaluations, evaluation_indices, detection_scores,
+    // detection_sorted_indices, image_detection_indices (see
+    // BuildSortedDetectionList()). Using vectors precisions and recalls
+    // and temporary storage, output the results into precisions_out, recalls_out,
+    // and scores_out, which are large buffers containing many precion/recall curves
+    // for all possible parameter settings, with precisions_out_index and
+    // recalls_out_index defining the applicable indices to store results.
     void ComputePrecisionRecallCurve(
         const int64_t precisions_out_index,
         const int64_t precisions_out_stride,
@@ -407,17 +352,15 @@ namespace coco_eval
         std::vector<double> *scores_out,
         std::vector<double> *recalls_out)
     {
-      assert(recalls_out->size() > static_cast<size_t>(recalls_out_index));
+      assert(recalls_out->size() > recalls_out_index);
 
-      // Clear and reserve temporary output vectors
+      // Compute precision/recall for each instance in the sorted list of detections
       int64_t true_positives_sum = 0, false_positives_sum = 0;
       precisions->clear();
       recalls->clear();
       precisions->reserve(detection_sorted_indices.size());
       recalls->reserve(detection_sorted_indices.size());
       assert(!evaluations.empty() || detection_sorted_indices.empty());
-
-      // Compute precision/recall for each detection in sorted order
       for (auto detection_sorted_index : detection_sorted_indices)
       {
         const ImageEvaluation &evaluation =
@@ -444,9 +387,10 @@ namespace coco_eval
         }
 
         const double recall =
-            num_valid_ground_truth > 0 ? static_cast<double>(true_positives_sum) / num_valid_ground_truth : 0.0;
+            static_cast<double>(true_positives_sum) / num_valid_ground_truth;
         recalls->emplace_back(recall);
-        const int64_t num_valid_detections = true_positives_sum + false_positives_sum;
+        const int64_t num_valid_detections =
+            true_positives_sum + false_positives_sum;
         const double precision = num_valid_detections > 0
                                      ? static_cast<double>(true_positives_sum) / num_valid_detections
                                      : 0.0;
@@ -455,7 +399,6 @@ namespace coco_eval
 
       (*recalls_out)[recalls_out_index] = !recalls->empty() ? recalls->back() : 0;
 
-      // Make precision non-increasing (interpolated)
       for (int64_t i = static_cast<int64_t>(precisions->size()) - 1; i > 0; --i)
       {
         if ((*precisions)[i] > (*precisions)[i - 1])
@@ -464,12 +407,13 @@ namespace coco_eval
         }
       }
 
-      // Sample the precision/recall lists at each recall threshold
+      // Sample the per instance precision/recall list at each recall threshold
       for (size_t r = 0; r < recall_thresholds.size(); ++r)
       {
-        // First index in recalls >= recall_thresholds[r]
-        auto low = std::lower_bound(recalls->begin(), recalls->end(), recall_thresholds[r]);
-        size_t precisions_index = static_cast<size_t>(low - recalls->begin());
+        // first index in recalls >= recall_thresholds[r]
+        std::vector<double>::iterator low = std::lower_bound(
+            recalls->begin(), recalls->end(), recall_thresholds[r]);
+        size_t precisions_index = low - recalls->begin();
 
         const auto results_ind = precisions_out_index + r * precisions_out_stride;
         assert(results_ind < precisions_out->size());
@@ -487,68 +431,60 @@ namespace coco_eval
         }
       }
     }
-
     py::dict Accumulate(
         const py::object &params,
         const std::vector<ImageEvaluation> &evaluations)
     {
-      // Convert Python lists to C++ vectors for efficiency
-      const auto recall_thresholds = list_to_vec<double>(params.attr("recThrs"));
-      const auto max_detections = list_to_vec<int>(params.attr("maxDets"));
+      const std::vector<double> recall_thresholds =
+          list_to_vec<double>(params.attr("recThrs"));
+      const std::vector<int> max_detections =
+          list_to_vec<int>(params.attr("maxDets"));
+      const int num_iou_thresholds = (const int) py::len(params.attr("iouThrs"));
+      const int num_recall_thresholds = (const int) py::len(params.attr("recThrs"));
+      const int num_categories = (const int)(params.attr("useCats").cast<int>() == 1 ? py::len(params.attr("catIds")) : 1);
+      const int num_area_ranges = (const int) py::len(params.attr("areaRng"));
+      const int num_max_detections = (const int) py::len(params.attr("maxDets"));
+      const int num_images = (const int) py::len(params.attr("imgIds"));
 
-      // Cache Python attribute accesses and casts
-      const auto iouThrs = params.attr("iouThrs");
-      const auto recThrs = params.attr("recThrs");
-      const auto useCats = params.attr("useCats").cast<int>();
-      const auto catIds = params.attr("catIds");
-      const auto areaRng = params.attr("areaRng");
-      const auto imgIds = params.attr("imgIds");
-
-      const int num_iou_thresholds = static_cast<int>(py::len(iouThrs));
-      const int num_recall_thresholds = static_cast<int>(py::len(recThrs));
-      const int num_categories = useCats == 1 ? static_cast<int>(py::len(catIds)) : 1;
-      const int num_area_ranges = static_cast<int>(py::len(areaRng));
-      const int num_max_detections = static_cast<int>(max_detections.size());
-      const int num_images = static_cast<int>(py::len(imgIds));
-
-      // Pre-allocate output arrays with -1 as default value
       std::vector<double> precisions_out(
-          static_cast<size_t>(num_iou_thresholds) * num_recall_thresholds * num_categories *
+          num_iou_thresholds * num_recall_thresholds * num_categories *
               num_area_ranges * num_max_detections,
-          -1.0);
+          -1);
       std::vector<double> recalls_out(
-          static_cast<size_t>(num_iou_thresholds) * num_categories * num_area_ranges *
+          num_iou_thresholds * num_categories * num_area_ranges *
               num_max_detections,
-          -1.0);
+          -1);
       std::vector<double> scores_out(
-          static_cast<size_t>(num_iou_thresholds) * num_recall_thresholds * num_categories *
+          num_iou_thresholds * num_recall_thresholds * num_categories *
               num_area_ranges * num_max_detections,
-          -1.0);
+          -1);
 
-      // Reserve memory for large vectors to avoid reallocations
-      std::vector<uint64_t> evaluation_indices;
-      std::vector<double> detection_scores;
-      std::vector<uint64_t> detection_sorted_indices;
-      std::vector<uint64_t> image_detection_indices;
+      // Consider the list of all detected instances in the entire dataset in one
+      // large list.  evaluation_indices, detection_scores,
+      // image_detection_indices, and detection_sorted_indices all have the same
+      // length as this list, such that each entry corresponds to one detected
+      // instance
+      std::vector<uint64_t> evaluation_indices;       // indices into evaluations[]
+      std::vector<double> detection_scores;           // detection scores of each instance
+      std::vector<uint64_t> detection_sorted_indices; // sorted indices of all
+                                                      // instances in the dataset
+      std::vector<uint64_t>
+          image_detection_indices; // indices into the list of detected instances in
+                                   // the same image as each instance
       std::vector<double> precisions, recalls;
 
-      // Main nested loops: optimize loop ordering for cache locality if possible
-      for (int c = 0; c < num_categories; ++c)
+      for (auto c = 0; c < num_categories; ++c)
       {
-        for (int a = 0; a < num_area_ranges; ++a)
+        for (auto a = 0; a < num_area_ranges; ++a)
         {
-          for (int m = 0; m < num_max_detections; ++m)
+          for (auto m = 0; m < num_max_detections; ++m)
           {
-            // Index for the flattened evaluations[] list
+            // The COCO PythonAPI assumes evaluations[] (the return value of
+            // COCOeval::EvaluateImages() is one long list storing results for each
+            // combination of category, area range, and image id, with categories in
+            // the outermost loop and images in the innermost loop.
             const int64_t evaluations_index =
-                static_cast<int64_t>(c) * num_area_ranges * num_images + a * num_images;
-
-            // Reset vectors in-place to avoid reallocations, keep capacity
-            evaluation_indices.clear();
-            detection_scores.clear();
-            detection_sorted_indices.clear();
-            image_detection_indices.clear();
-
+                c * num_area_ranges * num_images + a * num_images;
             int num_valid_ground_truth = BuildSortedDetectionList(
                 evaluations,
                 evaluations_index,
@@ -564,22 +500,25 @@ namespace coco_eval
               continue;
             }
 
-            for (int t = 0; t < num_iou_thresholds; ++t)
+            for (auto t = 0; t < num_iou_thresholds; ++t)
             {
-              // Calculate recall output index (flattened multi-dimensional array)
+              // recalls_out is a flattened vectors representing a
+              // num_iou_thresholds X num_categories X num_area_ranges X
+              // num_max_detections matrix
               const int64_t recalls_out_index =
-                  static_cast<int64_t>(t) * num_categories * num_area_ranges * num_max_detections +
+                  t * num_categories * num_area_ranges * num_max_detections +
                   c * num_area_ranges * num_max_detections +
                   a * num_max_detections + m;
 
-              // Calculate precisions/scores output index and stride
+              // precisions_out and scores_out are flattened vectors
+              // representing a num_iou_thresholds X num_recall_thresholds X
+              // num_categories X num_area_ranges X num_max_detections matrix
               const int64_t precisions_out_stride =
-                  static_cast<int64_t>(num_categories) * num_area_ranges * num_max_detections;
-              const int64_t precisions_out_index =
-                  static_cast<int64_t>(t) * num_recall_thresholds *
-                      num_categories * num_area_ranges * num_max_detections +
-                  c * num_area_ranges * num_max_detections +
-                  a * num_max_detections + m;
+                  num_categories * num_area_ranges * num_max_detections;
+              const int64_t precisions_out_index = t * num_recall_thresholds *
+                                                       num_categories * num_area_ranges * num_max_detections +
+                                                   c * num_area_ranges * num_max_detections +
+                                                   a * num_max_detections + m;
 
               ComputePrecisionRecallCurve(
                   precisions_out_index,
@@ -604,35 +543,42 @@ namespace coco_eval
         }
       }
 
-      const int evaluations_size = static_cast<int>(evaluations.size());
+      time_t rawtime;
+      struct tm local_time;
+      char buffer[200];
+      time(&rawtime);
 
-      // Use unordered_map for fast lookups of matched annotations
+#ifdef _WIN32
+      localtime_s(&local_time, &rawtime);
+#else
+      localtime_r(&rawtime, &local_time);
+#endif
+      strftime(buffer, 200, "%Y-%m-%d %H:%S", &local_time);
+
+      int evaluations_size = static_cast<int>(evaluations.size());
+
       std::unordered_map<std::string, double> matched;
-      matched.reserve(evaluations.size() * 2); // Reserve assuming 2 matches per evaluation on average
 
-      // Fill matched map with maximum IoU for each (dt_id, gt_id) pair
-      for (const auto &eval : evaluations)
+      for (auto eval : evaluations)
       {
-        for (const auto &matched_annotation : eval.matched_annotations)
+        for (auto matched_annotation : eval.matched_annotations)
         {
           std::string key = std::to_string(matched_annotation.dt_id) + "_" + std::to_string(matched_annotation.gt_id);
 
-          auto it = matched.find(key);
-          if (it != matched.end())
+          if (matched.find(key) != matched.end())
           {
-            if (it->second < matched_annotation.iou)
+            if (matched[key] < matched_annotation.iou)
             {
-              it->second = matched_annotation.iou;
+              matched[key] = matched_annotation.iou;
             }
           }
           else
           {
-            matched.emplace(std::move(key), matched_annotation.iou);
+            matched[key] = matched_annotation.iou;
           }
         }
       }
 
-      // Prepare output array shapes
       std::vector<int64_t> counts = {
           num_iou_thresholds,
           num_recall_thresholds,
@@ -645,293 +591,38 @@ namespace coco_eval
           num_categories,
           num_area_ranges,
           num_max_detections};
+      std::vector<int64_t> matches_shape = {num_iou_thresholds * num_area_ranges, -1};
 
-      // Return results in a Python dictionary
       return py::dict(
           "params"_a = params,
           "counts"_a = counts,
-          "date"_a = py::str(get_current_local_time_string()),
+          "date"_a = py::str(buffer),
 
           "matched"_a = matched,
 
-          // Precision and scores: shape [T, R, K, A, M]
+          // precision and scores are num_iou_thresholds X num_recall_thresholds X num_categories X num_area_ranges X num_max_detections
           "precision"_a = py::array(precisions_out.size(), precisions_out.data()).reshape(counts),
           "scores"_a = py::array(scores_out.size(), scores_out.data()).reshape(counts),
 
-          // Recall: shape [T, K, A, M]
+          // recall is num_iou_thresholds X num_categories X num_area_ranges X num_max_detections
           "recall"_a = py::array(recalls_out.size(), recalls_out.data()).reshape(recall_counts),
           "evaluations_size"_a = evaluations_size);
     }
 
-    // EvaluateAccumulate computes evaluation results for all images, categories, and area ranges,
-    // and then accumulates the statistics using Accumulate.
-    // Arguments:
-    //   params - Python object with evaluation parameters
-    //   image_category_ious - IoU values for each image/category pair
-    //   image_category_ground_truth_instances - ground truth instances for each image/category pair
-    //   image_category_detection_instances - detection instances for each image/category pair
     py::dict EvaluateAccumulate(
         const py::object &params,
         const ImageCategoryInstances<std::vector<double>> &image_category_ious,
-        const ImageCategoryInstances<InstanceAnnotation> &image_category_ground_truth_instances,
-        const ImageCategoryInstances<InstanceAnnotation> &image_category_detection_instances)
+        const ImageCategoryInstances<InstanceAnnotation> &
+            image_category_ground_truth_instances,
+        const ImageCategoryInstances<InstanceAnnotation> &
+            image_category_detection_instances)
     {
-      // Convert Python objects to C++ vectors for efficiency and type safety
       const std::vector<int> max_detections = list_to_vec<int>(params.attr("maxDets"));
       const std::vector<std::array<double, 2>> area_ranges = list_to_vec<std::array<double, 2>>(params.attr("areaRng"));
       const std::vector<double> iou_thresholds = list_to_vec<double>(params.attr("iouThrs"));
 
-      // Evaluate all images/categories/ranges with the largest maxDet value
-      std::vector<ImageEvaluation> result = EvaluateImages(
-          area_ranges,
-          max_detections.back(), // Use the largest maxDet for thorough evaluation
-          iou_thresholds,
-          image_category_ious,
-          image_category_ground_truth_instances,
-          image_category_detection_instances);
-
-      // Accumulate the precision/recall and other stats for reporting
+      std::vector<ImageEvaluation> result = EvaluateImages(area_ranges, max_detections.back(), iou_thresholds, image_category_ious, image_category_ground_truth_instances, image_category_detection_instances);
       return Accumulate(params, result);
-    }
-
-    // Appends an annotation to the dataset for a specific (img_id, cat_id) pair.
-    // Uses emplace_back for efficient insertion. Accepts ann as const reference to avoid unnecessary copying.
-    void Dataset::append(int64_t img_id, int64_t cat_id, const py::dict &ann)
-    {
-      // Use emplace_back to construct py::dict in-place for efficiency.
-      data[{img_id, cat_id}].emplace_back(ann);
-    }
-
-    // Removes all stored annotations and frees internal memory used by the data container.
-    void Dataset::clean()
-    {
-      data.clear();
-      // Optionally reclaim memory by swapping with an empty map (C++17 idiom)
-      std::unordered_map<std::pair<int64_t, int64_t>, std::vector<py::dict>, hash_pair>().swap(data);
-    }
-
-    // Serializes the Dataset into a Python tuple for pickling support.
-    // Stores the keys and values as two separate vectors for efficient transfer to Python.
-    py::tuple Dataset::make_tuple() const
-    {
-      // Preallocate storage for better memory efficiency.
-      std::vector<std::pair<int64_t, int64_t>> keys;
-      std::vector<std::vector<py::dict>> values;
-      keys.reserve(data.size());
-      values.reserve(data.size());
-
-      // Iterate over all key-value pairs and collect them.
-      for (const auto &kv : data)
-      {
-        keys.push_back(kv.first);
-        values.push_back(kv.second);
-      }
-      // Return as Python tuple (keys, values).
-      return py::make_tuple(keys, values);
-    }
-
-    // Loads the Dataset state from a Python tuple (typically for unpickling).
-    // The tuple must contain two elements: a vector of keys and a vector of value vectors.
-    // Throws a runtime error if the state is invalid.
-    void Dataset::load_tuple(py::tuple pickle_data)
-    {
-      if (pickle_data.size() != 2)
-        throw std::runtime_error("Invalid state! Tuple must have 2 elements.");
-
-      // Cast Python objects to C++ vectors.
-      std::vector<std::pair<int64_t, int64_t>> keys = pickle_data[0].cast<std::vector<std::pair<int64_t, int64_t>>>();
-      std::vector<std::vector<py::dict>> values = pickle_data[1].cast<std::vector<std::vector<py::dict>>>();
-
-      if (keys.size() != values.size())
-        throw std::runtime_error("Invalid state! Keys and values vectors must have the same size.");
-
-      // Clear existing data and reserve memory for efficiency.
-      data.clear();
-      data.reserve(keys.size());
-
-      // Insert each key-value pair using move semantics for optimal performance.
-      for (size_t i = 0; i < keys.size(); ++i)
-      {
-        data.emplace(std::move(keys[i]), std::move(values[i]));
-      }
-    }
-
-    // Returns a vector of Python dictionaries for a given (img_id, cat_id) pair.
-    // If the pair is not found, returns an empty vector.
-    // Uses find() to avoid unnecessary construction or lookup.
-    std::vector<py::dict> Dataset::get(const int64_t &img_id, const int64_t &cat_id)
-    {
-      const std::pair<int64_t, int64_t> key(img_id, cat_id);
-
-      auto it = data.find(key);
-      if (it != data.end())
-      {
-        return it->second;
-      }
-      else
-      {
-        // Return empty vector if key is not found.
-        return {};
-      }
-    }
-
-    // Parses a py::dict annotation into an InstanceAnnotation object.
-    // Extracts fields by name and casts to appropriate type.
-    // Optimized for C++17: uses const references, avoids unnecessary string copies.
-    InstanceAnnotation parseInstanceAnnotation(const py::dict &ann)
-    {
-      uint64_t id = 0;
-      double score = 0.0;
-      double area = 0.0;
-      bool is_crowd = false;
-      bool ignore = false;
-      bool lvis_mark = false;
-
-      // Iterate using const reference for efficiency.
-      for (const auto &item : ann)
-      {
-        const auto &key_obj = item.first;
-        const auto &val_obj = item.second;
-
-        // Use string_view for faster string comparison in C++17
-        std::string_view key = key_obj.cast<std::string>();
-
-        if (key == "id")
-        {
-          id = val_obj.cast<uint64_t>();
-        }
-        else if (key == "score")
-        {
-          score = val_obj.cast<double>();
-        }
-        else if (key == "area")
-        {
-          area = val_obj.cast<double>();
-        }
-        else if (key == "is_crowd" || key == "iscrowd")
-        {
-          is_crowd = val_obj.cast<bool>();
-        }
-        else if (key == "ignore")
-        {
-          ignore = val_obj.cast<bool>();
-        }
-        else if (key == "lvis_mark")
-        {
-          lvis_mark = val_obj.cast<bool>();
-        }
-      }
-      // Construct and return the annotation.
-      return InstanceAnnotation(id, score, area, is_crowd, ignore, lvis_mark);
-    }
-
-    // Returns a vector of InstanceAnnotation objects for a given (img_id, cat_id) pair.
-    // Uses reserve() for performance and emplace_back for efficient insertion.
-    std::vector<InstanceAnnotation> Dataset::get_cpp_annotations(
-        const int64_t &img_id, const int64_t &cat_id)
-    {
-      std::vector<py::dict> anns = get(img_id, cat_id);
-      std::vector<InstanceAnnotation> result;
-      result.reserve(anns.size()); // Reserve space to avoid reallocations.
-
-      // Convert each py::dict annotation to InstanceAnnotation.
-      for (const auto &ann : anns)
-      {
-        result.emplace_back(parseInstanceAnnotation(ann));
-      }
-      return result;
-    }
-
-    // Returns all InstanceAnnotations for each combination of img_ids and cat_ids.
-    // If useCats is false, all category results for an image are merged into a single vector.
-    // Optimized for better memory management and clarity.
-    std::vector<std::vector<std::vector<InstanceAnnotation>>> Dataset::get_cpp_instances(
-        const std::vector<int64_t> &img_ids,
-        const std::vector<int64_t> &cat_ids,
-        const bool &useCats)
-    {
-      std::vector<std::vector<std::vector<InstanceAnnotation>>> result;
-      result.reserve(img_ids.size()); // Reserve space for image indices
-
-      for (size_t i = 0; i < img_ids.size(); ++i)
-      {
-        int64_t img_id = img_ids[i];
-
-        if (useCats)
-        {
-          std::vector<std::vector<InstanceAnnotation>> cat_results;
-          cat_results.reserve(cat_ids.size()); // Reserve space for categories
-
-          for (size_t j = 0; j < cat_ids.size(); ++j)
-          {
-            int64_t cat_id = cat_ids[j];
-            cat_results.emplace_back(get_cpp_annotations(img_id, cat_id));
-          }
-          result.emplace_back(std::move(cat_results));
-        }
-        else
-        {
-          // Single vector to merge all categories for this image
-          std::vector<InstanceAnnotation> merged;
-          for (size_t j = 0; j < cat_ids.size(); ++j)
-          {
-            int64_t cat_id = cat_ids[j];
-            std::vector<InstanceAnnotation> anns = get_cpp_annotations(img_id, cat_id);
-            merged.insert(merged.end(),
-                          std::make_move_iterator(anns.begin()),
-                          std::make_move_iterator(anns.end()));
-          }
-          // Wrap merged vector in an outer vector for consistency
-          result.emplace_back(1, std::move(merged));
-        }
-      }
-      return result;
-    }
-
-    // Returns all py::dict annotations for each combination of img_ids and cat_ids.
-    // If useCats is false, all category results for an image are merged into a single vector.
-    // Optimized for better memory management and clarity.
-    std::vector<std::vector<std::vector<py::dict>>> Dataset::get_instances(
-        const std::vector<int64_t> &img_ids,
-        const std::vector<int64_t> &cat_ids,
-        const bool &useCats)
-    {
-      std::vector<std::vector<std::vector<py::dict>>> result;
-      result.reserve(img_ids.size()); // Reserve space for images
-
-      for (size_t i = 0; i < img_ids.size(); ++i)
-      {
-        int64_t img_id = img_ids[i];
-
-        if (useCats)
-        {
-          std::vector<std::vector<py::dict>> cat_results;
-          cat_results.reserve(cat_ids.size()); // Reserve space for categories
-
-          for (size_t j = 0; j < cat_ids.size(); ++j)
-          {
-            int64_t cat_id = cat_ids[j];
-            cat_results.emplace_back(get(img_id, cat_id));
-          }
-          result.emplace_back(std::move(cat_results));
-        }
-        else
-        {
-          // Single vector to merge all categories for this image
-          std::vector<py::dict> merged;
-          for (size_t j = 0; j < cat_ids.size(); ++j)
-          {
-            int64_t cat_id = cat_ids[j];
-            std::vector<py::dict> anns = get(img_id, cat_id);
-            merged.insert(merged.end(),
-                          std::make_move_iterator(anns.begin()),
-                          std::make_move_iterator(anns.end()));
-          }
-          // Wrap merged vector in an outer vector for consistency
-          result.emplace_back(1, std::move(merged));
-        }
-      }
-      return result;
     }
 
     // Computes the Area Under Curve (AUC) for precision-recall.
