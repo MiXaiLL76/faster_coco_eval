@@ -325,7 +325,7 @@ namespace mask_api
             std::vector<bool> mask(max_len, false);
 
             bool v = false;
-            long idx = 0;
+            uint64_t idx = 0;
             for (uint64_t cnt : this->cnts)
             {
                 if (v)
@@ -360,7 +360,7 @@ namespace mask_api
             // Erosion logic
             std::vector<uint64_t> cnts;
             long c = 0;
-            long ic = 0;
+            size_t ic = 0;
             long rle_h = static_cast<long>(this->h);
             v = true; // background is always first in RLE
             bool _min = false, _prev_min = false;
@@ -424,7 +424,7 @@ namespace mask_api
                 else
                 {
                     cnts[ic] += j;
-                    c += j;
+                    c += static_cast<long>(j);
                 }
                 ++ic;
             }
@@ -497,7 +497,7 @@ namespace mask_api
             std::vector<bool> mask(max_len, false);
             bool v = false;
             size_t idx = 0;
-            for (uint cnt : R[0].cnts)
+            for (uint64_t cnt : R[0].cnts)
             {
                 if (v)
                 {
@@ -512,7 +512,7 @@ namespace mask_api
             {
                 v = false;
                 size_t cc = 0;
-                for (uint cnt : R[i].cnts)
+                for (uint64_t cnt : R[i].cnts)
                 {
                     for (size_t j = cc; j < cc + cnt; ++j)
                     {
