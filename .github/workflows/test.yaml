@@ -4,7 +4,7 @@ on:
   - pull_request
 
 jobs:
-  test:
+  test-python-latest:
     name: Test on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -17,6 +17,30 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+
+      - name: Install from sdist
+        shell: bash
+        run: |
+          pipx run build --sdist .
+          source_file=$(ls ./dist/*.tar.gz)
+          pip install "${source_file}[tests]"
+
+      - name: Run test cases
+        run: cd tests && pytest --cov=faster_coco_eval .
+
+  test-python-3.7:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: False
+      matrix:
+        os: [ubuntu-latest, macos-14, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.7"
 
       - name: Install from sdist
         shell: bash
