@@ -14,3 +14,4 @@ examples/comparison/ultralytics/*.pt
 *.whl
 *.pyd
 tests/.coverage
+.coverage
