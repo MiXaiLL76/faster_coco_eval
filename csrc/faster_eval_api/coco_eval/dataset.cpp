@@ -1,12 +1,14 @@
-#include "dataset.h"
-
 #include <time.h>
 
 #include <algorithm>
 #include <cstdint>
 #include <numeric>
 
+// clang-format off
 #include "cocoeval.h"
+#include "dataset.h"
+// clang-format on
+
 using namespace pybind11::literals;
 
 namespace coco_eval {
