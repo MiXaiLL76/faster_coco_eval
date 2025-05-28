@@ -42,6 +42,9 @@ class Dataset {
         // Remove all stored annotations and free memory.
         void clean();
 
+        // Get dataset size (number of (img_id, cat_id) pairs with annotations).
+        size_t size() const;
+
         // Pickle support: Serialize dataset contents to a tuple.
         py::tuple make_tuple() const;
 

@@ -107,6 +107,7 @@ PYBIND11_MODULE(faster_eval_api_cpp, m) {
             .def("get_instances", &COCOeval::Dataset::get_instances)
             .def("get_cpp_annotations", &COCOeval::Dataset::get_cpp_annotations)
             .def("get_cpp_instances", &COCOeval::Dataset::get_cpp_instances)
+            .def("__len__", [](const COCOeval::Dataset &p) { return p.size(); })
             .def(pybind11::pickle(
                 [](const COCOeval::Dataset &p) {
                         // Recommend: Ensure make_tuple() is efficient and

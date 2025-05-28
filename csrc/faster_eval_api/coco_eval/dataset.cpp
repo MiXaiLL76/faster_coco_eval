@@ -32,6 +32,9 @@ void Dataset::clean() {
             .swap(data);
 }
 
+// Get dataset size (number of (img_id, cat_id) pairs with annotations).
+size_t Dataset::size() const { return data.size(); }
+
 // Serializes the Dataset into a Python tuple for pickling support.
 // Stores the keys and values as two separate vectors for efficient transfer to
 // Python.
