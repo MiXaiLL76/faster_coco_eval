@@ -37,7 +37,7 @@ class Dataset {
         }
 
         // Append a new annotation for (img_id, cat_id) key.
-        void append(int64_t img_id, int64_t cat_id, const py::dict &ann);
+        void append(double img_id, double cat_id, const py::dict &ann);
 
         // Remove all stored annotations and free memory.
         void clean();
@@ -52,24 +52,24 @@ class Dataset {
         void load_tuple(py::tuple pickle_data);
 
         // Get all Python dict annotations for a given image/category pair.
-        std::vector<py::dict> get(const int64_t &img_id, const int64_t &cat_id);
+        std::vector<py::dict> get(double img_id, double cat_id);
 
         // Get C++ annotation objects for a given image/category pair.
-        std::vector<InstanceAnnotation> get_cpp_annotations(
-            const int64_t &img_id, const int64_t &cat_id);
+        std::vector<InstanceAnnotation> get_cpp_annotations(double img_id,
+                                                            double cat_id);
 
         // Get all C++ annotation objects for provided img_ids and cat_ids. If
         // useCats is false, cat_ids is ignored.
         std::vector<std::vector<std::vector<InstanceAnnotation>>>
-        get_cpp_instances(const std::vector<int64_t> &img_ids,
-                          const std::vector<int64_t> &cat_ids,
+        get_cpp_instances(const std::vector<double> &img_ids,
+                          const std::vector<double> &cat_ids,
                           const bool &useCats);
 
         // Get all Python dict annotations for provided img_ids and cat_ids. If
         // useCats is false, cat_ids is ignored.
         std::vector<std::vector<std::vector<py::dict>>> get_instances(
-            const std::vector<int64_t> &img_ids,
-            const std::vector<int64_t> &cat_ids, const bool &useCats);
+            const std::vector<double> &img_ids,
+            const std::vector<double> &cat_ids, const bool &useCats);
 
        private:
         // Use unordered_map to store annotations for (img_id, cat_id) pairs.

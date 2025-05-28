@@ -17,9 +17,10 @@ namespace COCOeval {
 // Appends an annotation to the dataset for a specific (img_id, cat_id) pair.
 // Uses emplace_back for efficient insertion. Accepts ann as const reference to
 // avoid unnecessary copying.
-void Dataset::append(int64_t img_id, int64_t cat_id, const py::dict &ann) {
+void Dataset::append(double img_id, double cat_id, const py::dict &ann) {
         // Use emplace_back to construct py::dict in-place for efficiency.
-        data[{img_id, cat_id}].emplace_back(ann);
+        data[{static_cast<int64_t>(img_id), static_cast<int64_t>(cat_id)}]
+            .emplace_back(ann);
 }
 
 // Removes all stored annotations and frees internal memory used by the data
@@ -87,10 +88,9 @@ void Dataset::load_tuple(py::tuple pickle_data) {
 // Returns a vector of Python dictionaries for a given (img_id, cat_id) pair.
 // If the pair is not found, returns an empty vector.
 // Uses find() to avoid unnecessary construction or lookup.
-std::vector<py::dict> Dataset::get(const int64_t &img_id,
-                                   const int64_t &cat_id) {
-        const std::pair<int64_t, int64_t> key(img_id, cat_id);
-
+std::vector<py::dict> Dataset::get(double img_id, double cat_id) {
+        const std::pair<int64_t, int64_t> key(static_cast<int64_t>(img_id),
+                                              static_cast<int64_t>(cat_id));
         auto it = data.find(key);
         if (it != data.end()) {
                 return it->second;
@@ -139,8 +139,8 @@ InstanceAnnotation parseInstanceAnnotation(const py::dict &ann) {
 // Returns a vector of InstanceAnnotation objects for a given (img_id, cat_id)
 // pair. Uses reserve() for performance and emplace_back for efficient
 // insertion.
-std::vector<InstanceAnnotation> Dataset::get_cpp_annotations(
-    const int64_t &img_id, const int64_t &cat_id) {
+std::vector<InstanceAnnotation> Dataset::get_cpp_annotations(double img_id,
+                                                             double cat_id) {
         std::vector<py::dict> anns = get(img_id, cat_id);
         std::vector<InstanceAnnotation> result;
         result.reserve(anns.size());  // Reserve space to avoid reallocations.
@@ -156,15 +156,14 @@ std::vector<InstanceAnnotation> Dataset::get_cpp_annotations(
 // If useCats is false, all category results for an image are merged into a
 // single vector. Optimized for better memory management and clarity.
 std::vector<std::vector<std::vector<InstanceAnnotation>>>
-Dataset::get_cpp_instances(const std::vector<int64_t> &img_ids,
-                           const std::vector<int64_t> &cat_ids,
+Dataset::get_cpp_instances(const std::vector<double> &img_ids,
+                           const std::vector<double> &cat_ids,
                            const bool &useCats) {
         std::vector<std::vector<std::vector<InstanceAnnotation>>> result;
         result.reserve(img_ids.size());  // Reserve space for image indices
 
         for (size_t i = 0; i < img_ids.size(); ++i) {
-                int64_t img_id = img_ids[i];
-
+                int64_t img_id = static_cast<int64_t>(img_ids[i]);
                 if (useCats) {
                         std::vector<std::vector<InstanceAnnotation>>
                             cat_results;
@@ -172,7 +171,8 @@ Dataset::get_cpp_instances(const std::vector<int64_t> &img_ids,
                             cat_ids.size());  // Reserve space for categories
 
                         for (size_t j = 0; j < cat_ids.size(); ++j) {
-                                int64_t cat_id = cat_ids[j];
+                                int64_t cat_id =
+                                    static_cast<int64_t>(cat_ids[j]);
                                 cat_results.emplace_back(
                                     get_cpp_annotations(img_id, cat_id));
                         }
@@ -181,7 +181,8 @@ Dataset::get_cpp_instances(const std::vector<int64_t> &img_ids,
                         // Single vector to merge all categories for this image
                         std::vector<InstanceAnnotation> merged;
                         for (size_t j = 0; j < cat_ids.size(); ++j) {
-                                int64_t cat_id = cat_ids[j];
+                                int64_t cat_id =
+                                    static_cast<int64_t>(cat_ids[j]);
                                 std::vector<InstanceAnnotation> anns =
                                     get_cpp_annotations(img_id, cat_id);
                                 merged.insert(
@@ -200,13 +201,13 @@ Dataset::get_cpp_instances(const std::vector<int64_t> &img_ids,
 // If useCats is false, all category results for an image are merged into a
 // single vector. Optimized for better memory management and clarity.
 std::vector<std::vector<std::vector<py::dict>>> Dataset::get_instances(
-    const std::vector<int64_t> &img_ids, const std::vector<int64_t> &cat_ids,
+    const std::vector<double> &img_ids, const std::vector<double> &cat_ids,
     const bool &useCats) {
         std::vector<std::vector<std::vector<py::dict>>> result;
         result.reserve(img_ids.size());  // Reserve space for images
 
         for (size_t i = 0; i < img_ids.size(); ++i) {
-                int64_t img_id = img_ids[i];
+                int64_t img_id = static_cast<int64_t>(img_ids[i]);
 
                 if (useCats) {
                         std::vector<std::vector<py::dict>> cat_results;
@@ -214,7 +215,8 @@ std::vector<std::vector<std::vector<py::dict>>> Dataset::get_instances(
                             cat_ids.size());  // Reserve space for categories
 
                         for (size_t j = 0; j < cat_ids.size(); ++j) {
-                                int64_t cat_id = cat_ids[j];
+                                int64_t cat_id =
+                                    static_cast<int64_t>(cat_ids[j]);
                                 cat_results.emplace_back(get(img_id, cat_id));
                         }
                         result.emplace_back(std::move(cat_results));
@@ -222,7 +224,9 @@ std::vector<std::vector<std::vector<py::dict>>> Dataset::get_instances(
                         // Single vector to merge all categories for this image
                         std::vector<py::dict> merged;
                         for (size_t j = 0; j < cat_ids.size(); ++j) {
-                                int64_t cat_id = cat_ids[j];
+                                int64_t cat_id =
+                                    static_cast<int64_t>(cat_ids[j]);
+
                                 std::vector<py::dict> anns =
                                     get(img_id, cat_id);
                                 merged.insert(

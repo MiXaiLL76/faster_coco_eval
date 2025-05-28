@@ -42,14 +42,15 @@ class TestBaseCoco(unittest.TestCase):
 
         for i in range_func(10):
             dataset.append(i, i, {"bbox": [i, i, i, i]})
-            dataset.append(np.int64(i), np.int64(i + 1), {"bbox": [-1, i, i, i]})
+            dataset.append(np.int64(i), np.float64(i + 1), {"bbox": [-1, i, i, i]})
 
         self.assertEqual(len(dataset), 20)
 
         for i in range_func(10):
             self.assertEqual(dataset.get_instances([i], [i], True), [[[{"bbox": [i, i, i, i]}]]])
             self.assertEqual(
-                dataset.get_instances([i], [i, i + 1], False), [[[{"bbox": [i, i, i, i]}, {"bbox": [-1, i, i, i]}]]]
+                dataset.get_instances([i], [i, np.float64(i + 1)], False),
+                [[[{"bbox": [i, i, i, i]}, {"bbox": [-1, i, i, i]}]]],
             )
             self.assertEqual(
                 dataset.get_instances([i], [i, i + 1], True), [[[{"bbox": [i, i, i, i]}], [{"bbox": [-1, i, i, i]}]]]
