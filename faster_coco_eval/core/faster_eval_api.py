@@ -116,6 +116,13 @@ class COCOeval_faster(COCOevalBase):
         self.print_function(f"DONE (t={toc - tic:0.2f}s).")
 
     def math_matches(self):
+        """Analyze matched detections and ground truths to assign true
+        positive, false positive, and false negative flags, and update
+        detection and ground truth annotations in-place.
+
+        Returns:
+            None
+        """
         for dt_gt, iou in self.eval["matched"].items():
             dt_id, gt_id = dt_gt.split("_")
 
@@ -139,11 +146,19 @@ class COCOeval_faster(COCOevalBase):
                 self.cocoGt.anns[gt_id]["fn"] = True
 
     def compute_mIoU(self) -> float:
-        """Compute the mIoU metric."""
+        """Compute the mean Intersection over Union (mIoU) metric.
+
+        Returns:
+            float: Mean IoU across all matched detections and ground truths.
+        """
         return sum(self.eval["matched"].values()) / len(self.eval["matched"])
 
     def compute_mAUC(self) -> float:
-        """Compute the mAUC metric."""
+        """Compute the mean Area Under Curve (mAUC) metric.
+
+        Returns:
+            float: Mean AUC across all categories and area ranges.
+        """
         aucs = []
 
         # K - category
@@ -164,6 +179,11 @@ class COCOeval_faster(COCOevalBase):
             return 0
 
     def summarize(self):
+        """Summarize and finalize the statistics of the evaluation.
+
+        Returns:
+            None
+        """
         super().summarize()
 
         if self.matched:
@@ -171,13 +191,25 @@ class COCOeval_faster(COCOevalBase):
             self.all_stats = np.append(self.all_stats, self.compute_mAUC())
 
     def run(self):
-        """Wrapper function which runs the evaluation."""
+        """Wrapper function which runs the evaluation.
+
+        Calls evaluate(), accumulate(), and summarize() in sequence.
+
+        Returns:
+            None
+        """
         self.evaluate()
         self.accumulate()
         self.summarize()
 
     @property
     def stats_as_dict(self):
+        """Return the evaluation statistics as a dictionary with descriptive
+        labels.
+
+        Returns:
+            dict[str, float]: Dictionary mapping metric names to their values.
+        """
         if self.params.iouType in set(["segm", "bbox", "boundary"]):
             labels = [
                 "AP_all",
@@ -244,14 +276,12 @@ class COCOeval_faster(COCOevalBase):
         """Calculate area under precision recall curve.
 
         Args:
-            recall_list (Union[List[float], np.ndarray]):
-                list of recall values
-            precision_list (Union[List[float], np.ndarray]):
-                list of precision values
-            method (str, optional): method to calculate auc. Defaults to "c++".
+            recall_list (Union[List[float], np.ndarray]): List or array of recall values.
+            precision_list (Union[List[float], np.ndarray]): List or array of precision values.
+            method (str, optional): Method to calculate auc. Defaults to "c++".
 
         Returns:
-            float: area under precision recall curve
+            float: Area under precision recall curve.
         """
         # https://towardsdatascience.com/how-to-efficiently-implement-area-under-precision-recall-curve-pr-auc-a85872fd7f14
         if method == "c++":
@@ -271,4 +301,9 @@ class COCOeval_faster(COCOevalBase):
 class COCOeval(COCOeval_faster):
     @property
     def print_function(self):
+        """Return the print function.
+
+        Returns:
+            Callable: The built-in print function.
+        """
         return print

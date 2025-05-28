@@ -20,28 +20,26 @@ def segmToRle(segm: Union[List[float], List[int], dict], w: int, h: int):
     """Convert segm array to run-length encoding.
 
     Args:
-        segm (list of float or int): segmentation map
-        w (int): width of the image
-        h (int): height of the image
+        segm (Union[List[float], List[int], dict]): Segmentation map, can be a list of floats, ints or a dictionary.
+        w (int): Width of the image.
+        h (int): Height of the image.
 
     Returns:
-        rle (dict): run-length encoding of the segmentation map
+        dict: Run-length encoding of the segmentation map.
     """
-
     return _mask.segmToRle(segm, w, h)
 
 
 def rleToBoundaryCV(rle: dict, dilation_ratio: float = 0.02) -> dict:
-    """Convert run-length encoding to boundary rle.
+    """Convert run-length encoding to boundary rle using OpenCV backend.
 
     Args:
-        rle (dict): run-length encoding of a binary mask
-        dilation_ratio (float): ratio of dilation to apply to the mask
+        rle (dict): Run-length encoding of a binary mask.
+        dilation_ratio (float, optional): Ratio of dilation to apply to the mask. Defaults to 0.02.
 
     Returns:
-        boundary_rle (dict): run-length encoding of the boundary mask
+        dict: Run-length encoding of the boundary mask.
     """
-
     mask = _mask.decode([rle])[:, :, 0]
     h, w = rle["size"]
 
@@ -69,16 +67,17 @@ def rleToBoundary(
     """Convert run-length encoding to boundary rle.
 
     Args:
-        rle (dict): run-length encoding of a binary mask
-        dilation_ratio (float): ratio of dilation to apply to the mask
-        backend (str): backend to use for conversion
-            - "mask_api": uses the faster_eval_api_cpp backend
-            - "opencv": uses OpenCV for conversion
+        rle (dict): Run-length encoding of a binary mask.
+        dilation_ratio (float, optional): Ratio of dilation to apply to the mask. Defaults to 0.02.
+        backend (str, optional): Backend to use for conversion. 'mask_api' uses the faster_eval_api_cpp backend,
+            'opencv' uses OpenCV for conversion. Defaults to "mask_api".
 
     Returns:
-        boundary_rle (dict): run-length encoding of the boundary mask
-    """
+        dict: Run-length encoding of the boundary mask.
 
+    Raises:
+        ImportError: If OpenCV is selected as backend but not available.
+    """
     if backend == "mask_api":
         return _mask.toBoundary([rle], dilation_ratio)[0]
     else:
@@ -98,12 +97,15 @@ def calculateRleForAllAnnotations(
     """Calculate run-length encoding for all annotations.
 
     Args:
-        anns (list of dict): annotations
-        img_sizes (dict): dictionary mapping image ids to their sizes (h,w)
-        compute_rle (bool): whether to compute run-length encoding
-        compute_boundary (bool): whether to compute boundary run-length encoding
-        boundary_dilation_ratio (float): ratio of dilation to apply to the mask
-        boundary_cpu_count (int): number of CPUs to use for boundary computation
+        anns (List[dict]): List of annotation dictionaries.
+        img_sizes (Dict[int, tuple]): Dictionary mapping image ids to their sizes (height, width).
+        compute_rle (bool): Whether to compute run-length encoding.
+        compute_boundary (bool): Whether to compute boundary run-length encoding.
+        boundary_dilation_ratio (float): Ratio of dilation to apply to the mask boundary.
+        boundary_cpu_count (int): Number of CPUs to use for boundary computation.
+
+    Returns:
+        None
     """
     _mask.calculateRleForAllAnnotations(
         anns,
@@ -120,18 +122,17 @@ def iou(
     gt: ValidRleType,
     iscrowd: List[int],
 ) -> Union[list, np.ndarray]:
-    """Compute intersection over union between two sets of run-length encoded
-    masks.
+    """Compute intersection over union (IoU) between two sets of run-length
+    encoded masks.
 
     Args:
-        dt (list of dict or dict): detected masks
-        gt (list of dict or dict): ground truth masks
-        iscrowd (list of int): flag indicating whether the mask is crowd
+        dt (ValidRleType): Detected masks, can be a list of RLEs or arrays.
+        gt (ValidRleType): Ground truth masks, can be a list of RLEs or arrays.
+        iscrowd (List[int]): List of flags indicating whether each ground truth mask is a crowd region.
 
     Returns:
-        iou (list or ndarray): intersection over union between dt and gt masks
+        Union[list, np.ndarray]: Intersection over union between dt and gt masks.
     """
-
     return _mask.iou(dt, gt, iscrowd)
 
 
@@ -139,13 +140,12 @@ def merge(rleObjs: List[dict], intersect: int = 0):
     """Merge a list of run-length encoded objects.
 
     Args:
-        rleObjs (list of dict): run-length encoding of binary masks
-        intersect (int): flag for type of merge to perform
+        rleObjs (List[dict]): List of run-length encoding dictionaries of binary masks.
+        intersect (int, optional): Flag for type of merge to perform. Defaults to 0.
 
     Returns:
-        merged (dict): run-length encoding of merged mask
+        dict: Run-length encoding of merged mask.
     """
-
     return _mask.merge(rleObjs, intersect)
 
 
@@ -159,32 +159,28 @@ def frPyObjects(
     h: int,
     w: int,
 ) -> Union[dict, List[dict]]:
-    """Convert a list of objects to a format suitable for use in the
-    _mask.frPyObjects function.
+    """Convert a list of objects to RLE format suitable for use in mask API.
 
     Args:
-        objs (np.ndarray or list of list of float or dict):
-            objects to be converted
-        h (int): height of the image
-        w (int): width of the image
+        objs (Union[ValidRleType, np.ndarray, List[float], dict]): Objects to be converted (polygons, bboxes, etc).
+        h (int): Height of the image.
+        w (int): Width of the image.
 
     Returns:
-        rle (dict or list of dict): run-length encoding of the objects
+        Union[dict, List[dict]]: Run-length encoding of the objects.
     """
-
     return _mask.frPyObjects(objs, h, w)
 
 
 def encode(bimask: np.ndarray) -> dict:
-    """Encode binary masks using RLE.
+    """Encode binary mask(s) using RLE.
 
     Args:
-        bimask (ndarray): binary mask
+        bimask (np.ndarray): Binary mask. Can be 2D (H, W) or 3D (H, W, N).
 
     Returns:
-        rle (dict): run-length encoding of the binary mask
+        dict: Run-length encoding of the binary mask(s).
     """
-
     if len(bimask.shape) == 3:
         return _mask.encode(bimask)
     elif len(bimask.shape) == 2:
@@ -196,12 +192,11 @@ def decode(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
     """Decode binary masks encoded via RLE.
 
     Args:
-        rleObjs (dict or list of dict): run-length encoding of binary mask
+        rleObjs (Union[dict, List[dict]]): Run-length encoding of binary mask(s).
 
     Returns:
-        bimask (ndarray): decoded binary mask
+        np.ndarray: Decoded binary mask(s).
     """
-
     if type(rleObjs) is list:
         return _mask.decode(rleObjs)
     else:
@@ -209,15 +204,14 @@ def decode(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
 
 
 def area(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
-    """
-    Compute area of encoded masks.
+    """Compute area of encoded masks.
+
     Args:
-        rleObjs (dict or list of dict): run-length encoding of binary mask
+        rleObjs (Union[dict, List[dict]]): Run-length encoding of binary mask(s).
 
     Returns:
-        area (np.ndarray): area of run-length encodings
+        np.ndarray: Area(s) of run-length encodings.
     """
-
     if type(rleObjs) is list:
         return _mask.area(rleObjs)
     else:
@@ -228,12 +222,11 @@ def toBbox(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
     """Get bounding boxes surrounding encoded masks.
 
     Args:
-        rleObjs (dict or list of dict): run-length encoding of binary mask
+        rleObjs (Union[dict, List[dict]]): Run-length encoding of binary mask(s).
 
     Returns:
-        bbox (np.ndarray): bounding box of run-length encodings
+        np.ndarray: Bounding box(es) of run-length encodings.
     """
-
     if type(rleObjs) is list:
         return _mask.toBbox(rleObjs)
     else:

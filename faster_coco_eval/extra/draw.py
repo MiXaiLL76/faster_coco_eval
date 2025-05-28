@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 
 A = 0.1
 DT_COLOR = (238, 130, 238, A)
-
 GT_COLOR = (0, 255, 0, A)
 FN_COLOR = (0, 0, 255, A)
 FP_COLOR = (255, 0, 0, A)
@@ -38,13 +37,17 @@ def generate_ann_polygon(
 ) -> go.Scatter:
     """Generate annotation polygon for plotly.
 
-    ann: annotation dictionary
-    color: color of the annotation
-    iouType: type of the annotation bbox or segm or keypoints
-    text: text to display
-    legendgroup: legend group to display
-    category_id_to_skeleton: dictionary of category id to skeleton
-    """
+    Args:
+        ann (dict): Annotation dictionary.
+        color (tuple): Color of the annotation, as (R, G, B, A) tuple.
+        iouType (str, optional): Type of the annotation. One of 'bbox', 'segm', or 'keypoints'. Default is "bbox".
+        text (str, optional): Text to display on hover. Default is None.
+        legendgroup (str, optional): Legend group to display. Default is None.
+        category_id_to_skeleton (dict, optional): Dictionary mapping category_id to skeleton (for keypoints). Default is None.
+
+    Returns:
+        go.Scatter: Plotly Scatter object representing the annotation polygon.
+    """  # noqa: E501
     all_x = []
     all_y = []
 
@@ -68,7 +71,7 @@ def generate_ann_polygon(
         if (skeleton is None) or (keypoints is None):
             return
 
-        xyz = np.int0(keypoints).reshape(-1, 3)
+        xyz = np.array(keypoints).reshape(-1, 3)
         ready_bones = {i: True for i in range(xyz.shape[0])}
         for p1, p2 in skeleton:
             if ready_bones.get(p1 - 1, False) and ready_bones.get(p2 - 1, False):
@@ -117,24 +120,22 @@ def display_image(
     """Display the image with the results.
 
     Args:
-        cocoGt (COCO): Ground truth COCO object
-        cocoDt (COCO, optional): Detection COCO object
-        image_id (int, optional): Image id to display
-        iouType (str, optional): Type of the annotation
-            bbox or segm or keypoints
-        display_fp (bool, optional): Display false positive annotations
-        display_fn (bool, optional): Display false negative annotations
-        display_tp (bool, optional): Display true positive annotations
-        display_gt (bool, optional): Display ground truth annotations
-        data_folder (str, optional): Folder containing the images
-        categories (list, optional): List of categories to display
-        gt_ann_ids (set, optional): Set of GT annotation ids to display
-        dt_ann_ids (set, optional): Set of DT annotation ids to display
-        return_fig (bool, optional): Return the figure object
+        cocoGt (COCO): Ground truth COCO object.
+        cocoDt (COCO, optional): Detection COCO object. Default is None.
+        image_id (int, optional): Image id to display. Default is 1.
+        iouType (str, optional): Type of the annotation, one of 'bbox', 'segm', or 'keypoints'. Default is "bbox".
+        display_fp (bool, optional): Display false positive annotations. Default is True.
+        display_fn (bool, optional): Display false negative annotations. Default is True.
+        display_tp (bool, optional): Display true positive annotations. Default is True.
+        display_gt (bool, optional): Display ground truth annotations. Default is True.
+        data_folder (str, optional): Folder containing the images. Default is None.
+        categories (list, optional): List of category ids to display. Default is None.
+        gt_ann_ids (set, optional): Set of ground truth annotation ids to display. Default is None.
+        dt_ann_ids (set, optional): Set of detection annotation ids to display. Default is None.
+        return_fig (bool, optional): Return the figure object instead of displaying it. Default is False.
 
     Returns:
-            Plotly figure or None:
-                The figure object if return_fig is True, otherwise None.
+        Optional[go.Figure]: The figure object if return_fig is True, otherwise None.
     """
     polygons = []
 
@@ -289,14 +290,13 @@ def display_matrix(
     """Display the confusion matrix.
 
     Args:
-        conf_matrix (np.ndarray): Confusion matrix
-        labels (list): List of labels
-        normalize (bool, optional): Normalize the confusion matrix
-        return_fig (bool, optional): Return the figure object
+        conf_matrix (np.ndarray): Confusion matrix (shape: [n_classes, n_classes + 2]).
+        labels (list): List of class labels.
+        normalize (bool, optional): If True, normalize the confusion matrix to percentage. Default is False.
+        return_fig (bool, optional): If True, return the figure object. Default is False.
 
     Returns:
-            Plotly figure or None:
-                The figure object if return_fig is True, otherwise None.
+        Optional[go.Figure]: The figure object if return_fig is True, otherwise None.
     """
 
     _labels = labels + ["fp", "fn"]
@@ -356,13 +356,12 @@ def plot_pre_rec(curves, return_fig: bool = False):
     """Plot the precision-recall curve.
 
     Args:
-        curves (list): List of curves to plot
-        return_fig (bool, optional): Return the figure object
+        curves (list): List of curves to plot. Each element is a dict with keys: 'recall_list', 'precision_list', 'scores', 'name'.
+        return_fig (bool, optional): If True, return the figure object. Default is False.
 
     Returns:
-        Plotly figure or None:
-            The figure object if return_fig is True, otherwise None.
-    """
+        Optional[go.Figure]: The figure object if return_fig is True, otherwise None.
+    """  # noqa: E501
     fig = go.Figure()
 
     for _curve in curves:
@@ -412,13 +411,12 @@ def plot_f1_confidence(curves, return_fig: bool = False):
     """Plot the F1 confidence curve.
 
     Args:
-        curves (list): List of curves to plot
-        return_fig (bool, optional): Return the figure object
+        curves (list): List of curves to plot. Each element is a dict with keys: 'recall_list', 'precision_list', 'scores', 'label'.
+        return_fig (bool, optional): If True, return the figure object. Default is False.
 
     Returns:
-        Plotly figure or None:
-            The figure object if return_fig is True, otherwise None.
-    """
+        Optional[go.Figure]: The figure object if return_fig is True, otherwise None.
+    """  # noqa: E501
     fig = go.Figure()
     eps = 1e-16
     for _curve in curves:
@@ -466,6 +464,16 @@ def plot_f1_confidence(curves, return_fig: bool = False):
 
 
 def plot_ced_metric(curves, normalize: bool = False, return_fig: bool = False):
+    """Plot the Cumulative Error Distribution (CED) curve.
+
+    Args:
+        curves (list): List of ced curves to plot. Each dict must have keys: 'mae' (dict), 'category' (dict), optionally 'label'.
+        normalize (bool, optional): If True, normalize values to percent. Default is False.
+        return_fig (bool, optional): If True, return the figure object. Default is False.
+
+    Returns:
+        Optional[go.Figure]: The figure object if return_fig is True, otherwise None.
+    """  # noqa: E501
     fig = go.Figure()
 
     if normalize:
@@ -581,6 +589,19 @@ def show_anns(
     data_folder: Optional[str] = None,
     return_fig: bool = False,
 ):
+    """Show ground truth annotations on an image.
+
+    Args:
+        cocoGt (COCO): COCO object containing ground truth data.
+        image_id (int): Image id to display.
+        ann_ids (List[int], optional): List of annotation ids to show. Default is None (show all).
+        iouType (str, optional): Type of the annotation, one of 'bbox' or 'segm'. Default is "bbox".
+        data_folder (str, optional): Folder containing the images. Default is None.
+        return_fig (bool, optional): Return the figure object instead of displaying it. Default is False.
+
+    Returns:
+        Optional[go.Figure]: The figure object if return_fig is True, otherwise None.
+    """
     return display_image(
         cocoGt,
         image_id=image_id,

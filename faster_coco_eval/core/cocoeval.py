@@ -42,37 +42,22 @@ class COCOeval:
         """Initialize CocoEval using coco APIs for gt and dt.
 
         Args:
-            cocoGt (None or COCO):
-                object with ground truth annotations
-            cocoDt (None or COCO):
-                object with detection annotations
-            iouType (str):
-                type of the intersection over union, defaults to segm
-            print_function (callable):
-                function to print output, defaults to logger.debug
-            extra_calc (bool):
-                whether to perform extra calculations, defaults to False
-            kpt_oks_sigmas (None or list):
-                list of sigmas for keypoint evaluation, defaults to None
-            use_area (bool):
-                If gt annotations (eg. CrowdPose) do not have 'area', please set use_area=False.
-            lvis_style (bool):
-                whether to use LVIS style evaluation, defaults to False
-            separate_eval (bool):
-                whether to perform separate evaluation, defaults to False
-            boundary_dilation_ratio (float):
-                ratio for boundary dilation, defaults to 0.02
-            boundary_cpu_count (int):
-                number of CPUs for boundary comput,
-                    defaults to min(os.cpu_count(), 4)
+            cocoGt (Optional[COCO]): Object with ground truth annotations.
+            cocoDt (Optional[COCO]): Object with detection annotations.
+            iouType (iouTypeT): Type of the intersection over union, defaults to "segm".
+            print_function (Callable): Function to print output, defaults to logger.info.
+            extra_calc (bool): Whether to perform extra calculations, defaults to False.
+            kpt_oks_sigmas (Optional[List[float]]): List of sigmas for keypoint evaluation, defaults to None.
+            use_area (Optional[bool]): If gt annotations (eg. CrowdPose) do not have 'area', set use_area=False.
+            lvis_style (bool): Whether to use LVIS style evaluation, defaults to False.
+            separate_eval (bool): Whether to perform separate evaluation, defaults to False.
+            boundary_dilation_ratio (float): Ratio for boundary dilation, defaults to 0.02.
+            boundary_cpu_count (int): Number of CPUs for boundary computation, defaults to min(os.cpu_count(), 4).
         """
         self.cocoGt: COCO = cocoGt  # ground truth COCO API
         self.cocoDt: COCO = cocoDt  # detections COCO API
-        # per-image per-category evaluation results [KxAxI] elements
-        self.evalImgs = defaultdict(list)
+        self.evalImgs = defaultdict(list)  # per-image per-category evaluation results [KxAxI] elements
         self.eval: dict = {}  # accumulated evaluation results
-        # self._gts = defaultdict(list)  # gt for evaluation
-        # self._dts = defaultdict(list)  # dt for evaluation
         self.params = Params(iouType=iouType, kpt_sigmas=kpt_oks_sigmas)  # parameters
         self._paramsEval: dict = {}  # parameters for evaluation
         self.stats: list = []  # result summarization
@@ -111,16 +96,29 @@ class COCOeval:
         self.gt_dataset = _C.Dataset()
 
     @property
-    def print_function(self):
+    def print_function(self) -> Callable:
+        """
+        Returns:
+            Callable: The function used for printing/logging.
+        """
         return self._print_function
 
     @print_function.setter
-    def print_function(self, value):
+    def print_function(self, value: Callable):
+        """Set the print function.
+
+        Args:
+            value (Callable): The new print function.
+        """
         self._print_function = value
 
     def _prepare(self):
         """Prepare self.gt_dataset and self.dt_dataset for evaluation based on
-        params."""
+        params.
+
+        Populates datasets with annotations, computes RLEs and
+        boundaries, and applies LVIS filtering if necessary.
+        """
         p = self.params
 
         # cleanup before create new
@@ -143,27 +141,25 @@ class COCOeval:
         img_nl = {}  # per image map of categories not present in image
 
         if self.lvis_style:
-            # For federated dataset evaluation we will filter out all dt for
-            # an image which belong to categories not present in gt and not
-            # present in the negative list for an image.
-            # In other words detector is not penalized for categories
-            # about which we don't have gt information about their
-            # presence or absence in an image.
             img_data = self.cocoGt.load_imgs(ids=p.imgIds)
-            # per image map of categories not present in image
             img_nl = {d["id"]: d.get("neg_category_ids", []) for d in img_data}
-            # per image list of categories present in image
             for ann in gts:
                 img_pl[ann["image_id"]].add(ann["category_id"])
-            # per image map of categoires which have missing gt. For these
-            # categories we don't penalize the detector for flase positives.
             self.img_nel = {d["id"]: d.get("not_exhaustive_category_ids", []) for d in img_data}
-
             self.freq_groups = self._prepare_freq_group()
 
         img_sizes = defaultdict(tuple)
 
-        def get_img_size_by_id(image_id, dataset: COCO) -> tuple:
+        def get_img_size_by_id(image_id: int, dataset: COCO) -> tuple:
+            """Get image size by image id.
+
+            Args:
+                image_id (int): Image ID.
+                dataset (COCO): COCO dataset.
+
+            Returns:
+                tuple: (height, width)
+            """
             if img_sizes.get(image_id) is None:
                 t = dataset.imgs[image_id]
                 img_sizes[image_id] = t["height"], t["width"]
@@ -213,7 +209,7 @@ class COCOeval:
         """Prepare frequency group for LVIS evaluation.
 
         Returns:
-            list: frequency groups
+            list: Frequency groups, grouping category indices by frequency label.
         """
         p = self.params
         freq_groups = [[] for _ in p.img_count_lbl]
@@ -224,15 +220,15 @@ class COCOeval:
         return freq_groups
 
     def computeIoU(self, imgId: int, catId: int) -> Union[List[float], np.ndarray]:
-        """Compute IoU between gt and dt for a given image and category.
+        """Compute IoU between ground truth and detection for a given image and
+        category.
 
         Args:
-            imgId (int): image id
-            catId (int): category id
+            imgId (int): Image ID.
+            catId (int): Category ID.
 
-        Return:
-            ious (list or ndarray):
-                ious between gt and dt for a given image and category
+        Returns:
+            Union[List[float], np.ndarray]: IoUs between gt and dt for the given image and category.
         """
         p = self.params
 
@@ -283,15 +279,15 @@ class COCOeval:
         return ious
 
     def computeOks(self, imgId: int, catId: int) -> np.ndarray:
-        """Compute oks between gt and dt for a given image and category.
+        """Compute OKS between ground truth and detection for a given image and
+        category.
 
         Args:
-            imgId (int): image id
-            catId (int): category id
+            imgId (int): Image ID.
+            catId (int): Category ID.
 
-        Return:
-            oks (ndarray):
-                oks between gt and dt for a given image and category
+        Returns:
+            np.ndarray: OKS between gt and dt for the given image and category.
         """
         p = self.params
         # dimention here should be Nxm
@@ -302,7 +298,6 @@ class COCOeval:
         dts = [dts[i] for i in inds]
         if len(dts) > p.maxDets[-1]:
             dts = dts[0 : p.maxDets[-1]]
-        # if len(gts) == 0 and len(dts) == 0:
         if len(gts) == 0 or len(dts) == 0:
             return []
         ious = np.zeros((len(dts), len(gts)))
@@ -348,12 +343,36 @@ class COCOeval:
         return ious
 
     def evaluateImg(self, imgId, catId, aRng, maxDet):
+        """Deprecated. Use COCOeval_faster.evaluateImg instead.
+
+        Args:
+            imgId: Image ID.
+            catId: Category ID.
+            aRng: Area range.
+            maxDet: Maximum detections.
+
+        Raises:
+            DeprecationWarning: Always.
+        """
         raise DeprecationWarning("COCOeval.evaluateImg deprecated! Use COCOeval_faster.evaluateImg instead.")
 
     def accumulate(self, p=None):
+        """Deprecated. Use COCOeval_faster.accumulate instead.
+
+        Args:
+            p: Unused.
+
+        Raises:
+            DeprecationWarning: Always.
+        """
         raise DeprecationWarning("COCOeval.accumulate deprecated! Use COCOeval_faster.accumulate instead.")
 
     def evaluate(self):
+        """Deprecated. Use COCOeval_faster.evaluate instead.
+
+        Raises:
+            DeprecationWarning: Always.
+        """
         raise DeprecationWarning("COCOeval.evaluate deprecated! Use COCOeval_faster.evaluate instead.")
 
     def _summarize(
@@ -365,6 +384,19 @@ class COCOeval:
         freq_group_idx=None,
         catIds=None,
     ):
+        """Summarize evaluation results.
+
+        Args:
+            ap (int): 1 for average precision, 0 for average recall.
+            iouThr (float, optional): Specific IoU threshold.
+            areaRng (str): Area range label.
+            maxDets (int): Maximum detections.
+            freq_group_idx (int, optional): Frequency group index (for LVIS).
+            catIds (list, optional): Category IDs to summarize.
+
+        Returns:
+            float: Summary metric.
+        """
         p = self.params
         iStr = " {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} {}] = {:0.3f}"
 
@@ -391,7 +423,6 @@ class COCOeval:
             if iouThr is not None:
                 t = np.where(iouThr == p.iouThrs)[0]
                 s = s[t]
-
             if catIds is not None:
                 s = s[:, :, catIds, aind, mind]
             else:
@@ -402,7 +433,6 @@ class COCOeval:
             if iouThr is not None:
                 t = np.where(iouThr == p.iouThrs)[0]
                 s = s[t]
-
             if catIds is not None:
                 s = s[:, catIds, aind, mind]
             else:
@@ -428,11 +458,16 @@ class COCOeval:
     def summarize(self):
         """Compute and display summary metrics for evaluation results.
 
-        Note this functin can *only* be applied on the default parameter
-        setting
+        Note:
+            This function can *only* be applied on the default parameter setting.
         """
 
         def _summarizeDets():
+            """Summarize detection metrics.
+
+            Returns:
+                np.ndarray: Array of summary statistics.
+            """
             _count = 17 if self.lvis_style else 14
             stats = np.zeros((_count,))
 
@@ -464,6 +499,11 @@ class COCOeval:
             return stats
 
         def _summarizeKps():
+            """Summarize keypoints metrics.
+
+            Returns:
+                np.ndarray: Array of summary statistics.
+            """
             stats = np.zeros((10,))
             stats[0] = self._summarize(1, maxDets=self.params.maxDets[-1])  # AP_all
             stats[1] = self._summarize(1, maxDets=self.params.maxDets[-1], iouThr=0.5)  # AP_50
@@ -478,6 +518,11 @@ class COCOeval:
             return stats
 
         def _summarizeKps_crowd():
+            """Summarize keypoints metrics for crowd setting.
+
+            Returns:
+                np.ndarray: Array of summary statistics.
+            """
             stats = np.zeros((9,))
             stats[0] = self._summarize(1, maxDets=self.params.maxDets[-1])  # AP_all
             stats[1] = self._summarize(1, maxDets=self.params.maxDets[-1], iouThr=0.5)  # AP_50
@@ -520,7 +565,16 @@ class COCOeval:
         self.all_stats = summarize()
         self.stats = self.all_stats[:12]
 
-    def get_type_result(self, first=0.01, second=0.85):
+    def get_type_result(self, first: float = 0.01, second: float = 0.85) -> list:
+        """Calculate type results for easy, medium, and hard splits.
+
+        Args:
+            first (float): Threshold for 'easy' crowdIndex.
+            second (float): Threshold for 'medium' crowdIndex.
+
+        Returns:
+            list: List of scores for [easy, medium, hard].
+        """
         easy, mid, hard = self.split(self.cocoGt.annotation_file, first, second)
         res = []
         prev_print = self.print_function
@@ -537,7 +591,17 @@ class COCOeval:
         self.print_function = prev_print
         return res
 
-    def split(self, gt_file, first=0.01, second=0.85):
+    def split(self, gt_file: str, first: float = 0.01, second: float = 0.85):
+        """Split images into easy, medium, hard according to 'crowdIndex'.
+
+        Args:
+            gt_file (str): Path to the ground truth file.
+            first (float): Threshold for 'easy' crowdIndex.
+            second (float): Threshold for 'medium' crowdIndex.
+
+        Returns:
+            tuple: Lists of image ids for (easy, medium, hard).
+        """
         data = COCO.load_json(gt_file, use_deepcopy=True)
         easy = []
         mid = []
@@ -551,11 +615,19 @@ class COCOeval:
                 hard.append(item["id"])
         return easy, mid, hard
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        Returns:
+            str: String representation after summarization.
+        """
         self.summarize()
         return str(self.__repr__())
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """
+        Returns:
+            str: Representation of the class with author and version info.
+        """
         s = self.__class__.__name__ + "() # "
         s += f"__author__='{__author__}'; "
         s += f"__version__='{__version__}';"
@@ -566,6 +638,7 @@ class Params:
     """Params for coco evaluation api."""
 
     def setDetParams(self):
+        """Set parameters for detection evaluation."""
         self.maxDets = [1, 10, 100]
         self.areaRng = [
             [0**2, 1e5**2],
@@ -576,6 +649,7 @@ class Params:
         self.areaRngLbl = ["all", "small", "medium", "large"]
 
     def setKpParams(self):
+        """Set parameters for keypoint evaluation."""
         self.maxDets = [20]
         self.areaRng = [
             [0**2, 1e5**2],
@@ -612,13 +686,12 @@ class Params:
         iouType: iouTypeT = "segm",
         kpt_sigmas: Optional[List[float]] = None,
     ):
-        """Params for coco evaluation api.
+        """Initialize Params for COCO evaluation API.
 
         Args:
-            iouType: either "segm", "bbox" or "keypoints".
-            kpt_sigmas: list of keypoint sigma values.
+            iouType (iouTypeT): Either "segm", "bbox", "boundary", "keypoints", or "keypoints_crowd".
+            kpt_sigmas (Optional[List[float]]): List of keypoint sigma values.
         """
-
         self.imgIds = []
         self.catIds = []
         # np.arange causes trouble.  the data point on arange is slightly larger than the true value # noqa: E501
@@ -648,52 +721,99 @@ class Params:
         self.imgCountLbl = ["r", "c", "f"]
 
     @property
-    def useSegm(self):
+    def useSegm(self) -> int:
+        """
+        Returns:
+            int: 1 if iouType is "segm", else 0.
+        """
         return int(self.iouType == "segm")
 
     @useSegm.setter
-    def useSegm(self, value):
-        # add backward compatibility if useSegm is specified in params
-        self.iouType = "segm" if value == 1 else "bbox"
+    def useSegm(self, value: int):
+        """Set segmentation mode and issue deprecation warning.
 
+        Args:
+            value (int): 1 for segm, 0 for bbox.
+        """
+        self.iouType = "segm" if value == 1 else "bbox"
         logger.warning("useSegm is deprecated. Please use iouType (string) instead.")
 
     @property
-    def iou_type(self):
+    def iou_type(self) -> iouTypeT:
+        """
+        Returns:
+            iouTypeT: IOU type.
+        """
         return self.iouType
 
     @property
-    def img_ids(self):
+    def img_ids(self) -> list:
+        """
+        Returns:
+            list: Image IDs.
+        """
         return self.imgIds
 
     @property
-    def cat_ids(self):
+    def cat_ids(self) -> list:
+        """
+        Returns:
+            list: Category IDs.
+        """
         return self.catIds
 
     @property
-    def iou_thrs(self):
+    def iou_thrs(self) -> np.ndarray:
+        """
+        Returns:
+            np.ndarray: IOU thresholds.
+        """
         return self.iouThrs
 
     @property
-    def rec_thrs(self):
+    def rec_thrs(self) -> np.ndarray:
+        """
+        Returns:
+            np.ndarray: Recall thresholds.
+        """
         return self.recThrs
 
     @property
-    def max_dets(self):
+    def max_dets(self) -> list:
+        """
+        Returns:
+            list: Maximum number of detections.
+        """
         return self.maxDets
 
     @property
-    def area_rng(self):
+    def area_rng(self) -> list:
+        """
+        Returns:
+            list: Area ranges.
+        """
         return self.areaRng
 
     @property
-    def area_rng_lbl(self):
+    def area_rng_lbl(self) -> list:
+        """
+        Returns:
+            list: Area range labels.
+        """
         return self.areaRngLbl
 
     @property
-    def use_cats(self):
+    def use_cats(self) -> int:
+        """
+        Returns:
+            int: Whether to use categories.
+        """
         return self.useCats
 
     @property
-    def img_count_lbl(self):
+    def img_count_lbl(self) -> list:
+        """
+        Returns:
+            list: Image count frequency labels.
+        """
         return self.imgCountLbl
