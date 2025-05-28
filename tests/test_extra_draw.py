@@ -76,8 +76,6 @@ class TestExtraDraw(unittest.TestCase):
             category_id_to_skeleton=category_id_to_skeleton,
         )
         self.assertIsInstance(result, go.Scatter)
-        # Check that there are lines between keypoints
-        expected_x = [20, 30, None, 30, 10, None, 10, 30, 30, 10, 10, None]
         # Contains closing bbox and 2 keypoint edges, but order may differ due to implementation details
         self.assertTrue(20 in result.x and 10 in result.y)
 
