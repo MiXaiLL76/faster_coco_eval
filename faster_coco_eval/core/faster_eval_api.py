@@ -203,6 +203,104 @@ class COCOeval_faster(COCOevalBase):
         self.summarize()
 
     @property
+    def extended_metrics(self):
+        """Computes extended evaluation metrics for object detection results.
+
+        Calculates per-class and overall (macro) metrics such as mean average precision (mAP) at IoU thresholds,
+        precision, recall, and F1-score. Results are computed using evaluation results stored in the object.
+        For each class, if categories are used, metrics are reported separately and for the overall dataset.
+
+        Returns:
+            dict: A dictionary with the following keys:
+                - 'class_map' (list of dict): List of per-class and overall metrics, each as a dictionary containing:
+                    - 'class' (str): Class name or "all" for macro metrics.
+                    - 'map@50:95' (float): Mean average precision at IoU 0.50:0.95.
+                    - 'map@50' (float): Mean average precision at IoU 0.50.
+                    - 'precision' (float): Macro-averaged precision.
+                    - 'recall' (float): Macro-averaged recall.
+                - 'map' (float): Overall mean average precision at IoU 0.50.
+                - 'precision' (float): Macro-averaged precision for the best F1-score.
+                - 'recall' (float): Macro-averaged recall for the best F1-score.
+
+        Notes:
+            - Uses COCO-style evaluation results (precision and scores arrays).
+            - Filters out classes with NaN results in any metric.
+            - The best F1-score across recall thresholds is used to select macro precision and recall.
+        """
+        # Extract IoU and recall thresholds from parameters
+        iou_thrs, rec_thrs = self.params.iouThrs, self.params.recThrs
+
+        # Indices for IoU=0.50, first area, and last max dets
+        iou50_idx, area_idx, maxdet_idx = (int(np.argwhere(np.isclose(iou_thrs, 0.50))), 0, -1)
+        P = self.eval["precision"]
+        S = self.eval["scores"]
+
+        # Get precision for IoU=0.50, area, and max dets
+        prec_raw = P[iou50_idx, :, :, area_idx, maxdet_idx]
+        prec = prec_raw.copy().astype(float)
+        prec[prec < 0] = np.nan
+
+        # Compute F1 score for each class and recall threshold
+        f1_cls = 2 * prec * rec_thrs[:, None] / (prec + rec_thrs[:, None])
+        f1_macro = np.nanmean(f1_cls, axis=1)
+        best_j = int(f1_macro.argmax())
+
+        # Macro precision and recall at the best F1 score
+        macro_precision = float(np.nanmean(prec[best_j]))
+        macro_recall = float(rec_thrs[best_j])
+
+        # Score vector for the best recall threshold
+        score_vec = S[iou50_idx, best_j, :, area_idx, maxdet_idx].astype(float)
+        score_vec[prec_raw[best_j] < 0] = np.nan
+
+        per_class = []
+        if self.params.useCats:
+            # Map category IDs to names
+            cat_ids = self.params.catIds
+            cat_id_to_name = {c["id"]: c["name"] for c in self.cocoGt.loadCats(cat_ids)}
+            for k, cid in enumerate(cat_ids):
+                # Precision per category
+                p_slice = P[:, :, k, area_idx, maxdet_idx]
+                valid = p_slice > -1
+                ap_50_95 = float(p_slice[valid].mean()) if valid.any() else float("nan")
+                ap_50 = (
+                    float(p_slice[iou50_idx][p_slice[iou50_idx] > -1].mean())
+                    if (p_slice[iou50_idx] > -1).any()
+                    else float("nan")
+                )
+
+                pc = float(prec[best_j, k]) if prec_raw[best_j, k] > -1 else float("nan")
+                rc = macro_recall
+
+                # Filter out dataset class if any metric is NaN
+                if np.isnan(ap_50_95) or np.isnan(ap_50) or np.isnan(pc) or np.isnan(rc):
+                    continue
+
+                per_class.append({
+                    "class": cat_id_to_name[int(cid)],
+                    "map@50:95": ap_50_95,
+                    "map@50": ap_50,
+                    "precision": pc,
+                    "recall": rc,
+                })
+
+        # Add metrics for all classes combined
+        per_class.append({
+            "class": "all",
+            "map@50:95": self.stats_as_dict["AP_all"],
+            "map@50": self.stats_as_dict["AP_50"],
+            "precision": macro_precision,
+            "recall": macro_recall,
+        })
+
+        return {
+            "class_map": per_class,
+            "map": self.stats_as_dict["AP_50"],
+            "precision": macro_precision,
+            "recall": macro_recall,
+        }
+
+    @property
     def stats_as_dict(self):
         """Return the evaluation statistics as a dictionary with descriptive
         labels.
