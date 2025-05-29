@@ -368,7 +368,13 @@ def plot_pre_rec(curves, return_fig: bool = False):
         recall_list = _curve["recall_list"]
         precision_list = _curve["precision_list"]
         scores = _curve["scores"]
-        name = _curve["name"]
+
+        if "name" in _curve and len(_curve["name"]) > 0:
+            name = _curve["name"]
+        elif "label" in _curve and len(_curve["label"]) > 0:
+            name = _curve["label"]
+        else:
+            name = "Precision-Recall"
 
         fig.add_trace(
             go.Scatter(
@@ -425,7 +431,12 @@ def plot_f1_confidence(curves, return_fig: bool = False):
         scores = _curve["scores"]
         f1_curve = 2 * precision_list * recall_list / (precision_list + recall_list + eps)
 
-        name = _curve["label"] if len(_curve["label"]) > 0 else "F1-Confidence"
+        if "name" in _curve and len(_curve["name"]) > 0:
+            name = _curve["name"]
+        elif "label" in _curve and len(_curve["label"]) > 0:
+            name = _curve["label"]
+        else:
+            name = "F1-Confidence"
 
         fig.add_trace(
             go.Scatter(
