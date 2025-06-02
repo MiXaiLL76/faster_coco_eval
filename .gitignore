@@ -16,3 +16,6 @@ examples/comparison/ultralytics/*.pt
 tests/.coverage
 .coverage
 docs/source/examples/*.ipynb
+.ruff_cache
+.pytest_cache
+htmlcov

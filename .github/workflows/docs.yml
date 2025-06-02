@@ -1,8 +1,9 @@
-name: Build Sphinx Docs
+name: Build and Deploy Sphinx Docs
 
 on:
-  - pull_request
-  - workflow_call
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
 
 jobs:
   build-docs:
@@ -23,8 +24,7 @@ jobs:
         run: |
           pipx run build --sdist .
           source_file=$(ls ./dist/*.tar.gz)
-          pip install ${source_file}
-
+          pip install "${source_file}"
           pip install -r requirements/docs.txt
           cp examples/*.ipynb docs/source/examples/
 
@@ -37,3 +37,10 @@ jobs:
         with:
           name: sphinx-html
           path: docs/build/html
+
+      - name: Deploy to GitHub Pages
+        if: github.event_name != 'pull_request'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/build/html
