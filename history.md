@@ -1,4 +1,4 @@
-# history
+# History
 
 ## v1.6.7
 
@@ -37,8 +37,8 @@
 
 ## v1.6.0
 
-- [x] Rework [mask_api](csrc/mask_api/mask_api.cpp) with pybind11 C++ .
-- [x] Rework [RLE support](csrc/mask_api/src/rle.cpp).
+- [x] Rework [mask_api](https://github.com/MiXaiLL76/faster_coco_eval/blob/1.6.0/csrc/mask_api/mask_api.cpp) with pybind11 C++ .
+- [x] Rework [RLE support](https://github.com/MiXaiLL76/faster_coco_eval/blob/1.6.0/csrc/mask_api/src/rle.cpp).
 - [x] Create test files for all components.
 - [x] The math_matches function has been reworked, with an emphasis on using C++ code.
 - [x] Added more documentation of functions. Optimized existing ones.

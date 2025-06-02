@@ -11,7 +11,7 @@ current_year = datetime.now().year
 copyright = f"2024-{current_year}, {__author__}"
 author = __author__
 release = __version__
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.napoleon", "sphinx_autodoc_typehints", "nbsphinx"]
+extensions = ["sphinx.ext.autodoc", "sphinx.ext.napoleon", "sphinx_autodoc_typehints", "nbsphinx", "myst_parser"]
 
 exclude_patterns = []
 html_theme = "sphinx_rtd_theme"
