@@ -25,7 +25,7 @@ jobs:
           make install
           pip install -r requirements/docs.txt
           cp examples/*.ipynb docs/source/examples/
-      
+
       - name: Build documentation
         working-directory: ./docs
         run: make html
