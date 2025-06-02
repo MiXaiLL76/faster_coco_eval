@@ -15,3 +15,4 @@ examples/comparison/ultralytics/*.pt
 *.pyd
 tests/.coverage
 .coverage
+docs/source/examples/*.ipynb

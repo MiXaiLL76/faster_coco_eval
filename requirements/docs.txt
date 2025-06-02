@@ -1,0 +1,7 @@
+sphinx
+sphinx-autodoc-typehints
+sphinxcontrib-napoleon
+nbsphinx
+ipykernel
+pandoc
+sphinx_rtd_theme

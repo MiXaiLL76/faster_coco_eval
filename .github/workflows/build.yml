@@ -5,6 +5,9 @@ on:
   - workflow_call
 
 jobs:
+  docs:
+    uses: ./.github/workflows/docs.yml
+
   test_source:
     uses: ./.github/workflows/unittest.yml
 
