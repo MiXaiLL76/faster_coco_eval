@@ -8,7 +8,7 @@ requires = [
     "numpy>=2.0.0rc1 ; python_version >= \"3.9\"",
     "oldest-supported-numpy ; python_version < \"3.9\"",
     "Cython",
-    "pybind11>=2.12.0",
+    "pybind11>=2.12.0, <3",
 ]
 build-backend = "setuptools.build_meta"
 
