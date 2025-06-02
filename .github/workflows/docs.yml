@@ -32,6 +32,8 @@ jobs:
           pip install "${source_file}"
           pip install -r requirements/docs.txt
           cp examples/*.ipynb docs/source/examples/
+          cp history.md docs/source/history.md
+          cp README.md docs/source/README.md
 
       - name: Build documentation
         working-directory: ./docs

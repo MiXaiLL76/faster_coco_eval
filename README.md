@@ -109,10 +109,12 @@ Code examples for using the library are available on the [Wiki](https://github.c
 
 ### Examples
 
-- [Eval example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/eval_example.ipynb)
-- [Curve example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/curve_example.ipynb)
-- [CED Keypoint example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/ced_example.ipynb)
-- [LVIS example](https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/lvis_example.ipynb)
+- [Eval example](https://mixaill76.github.io/faster_coco_eval/examples/eval_example.html)
+- [Curve example](https://mixaill76.github.io/faster_coco_eval/examples/curve_example.html)
+- [LVIS example](https://mixaill76.github.io/faster_coco_eval/examples/lvis_example.html)
+- [Crowdpose example](https://mixaill76.github.io/faster_coco_eval/examples/crowdpose_example.html)
+- [Custom keypoints example](https://mixaill76.github.io/faster_coco_eval/examples/ced_example.html)
+- [showAnns example](https://mixaill76.github.io/faster_coco_eval/examples/show_example.html)
 
 ## Update history
 
@@ -125,7 +127,7 @@ Available via link [history.md](https://github.com/MiXaiLL76/faster_coco_eval/bl
 ## License
 
 The original module was licensed with apache 2, I will continue with the same license.
-Distributed under the apache version 2.0 license, see [license](LICENSE) for more information.
+Distributed under the apache version 2.0 license, see [license](https://github.com/MiXaiLL76/faster_coco_eval/blob/main/LICENSE) for more information.
 
 ## Citation
 

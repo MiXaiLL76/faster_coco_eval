@@ -5,3 +5,4 @@ nbsphinx
 ipykernel
 pandoc
 sphinx_rtd_theme
+myst-parser

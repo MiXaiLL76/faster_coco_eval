@@ -19,9 +19,14 @@ linter:
 	ruff check --force-exclude
 
 sphinx:
-	rm -rf docs/source/examples/*.ipynb
 	cp examples/*.ipynb docs/source/examples/
+	cp history.md docs/source/history.md
+	cp README.md docs/source/README.md
+
 	$(MAKE) -C docs clean html
+	rm -rf docs/source/examples/*.ipynb
+	rm -rf docs/source/history.md
+	rm -rf docs/source/README.md
 
 clean:
 	rm -rf build
