@@ -14,3 +14,8 @@ examples/comparison/ultralytics/*.pt
 *.whl
 *.pyd
 tests/.coverage
+.coverage
+docs/source/examples/*.ipynb
+.ruff_cache
+.pytest_cache
+htmlcov

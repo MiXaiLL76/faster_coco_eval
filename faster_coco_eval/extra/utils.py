@@ -10,19 +10,17 @@ import numpy as np
 import faster_coco_eval.core.mask as mask_util
 
 
-def conver_mask_to_poly(mask: np.ndarray, bbox: list, boxes_margin=0.1) -> list:
-    """Convert mask (uint8) to list of poly as coco style.
+def conver_mask_to_poly(mask: np.ndarray, bbox: list, boxes_margin: float = 0.1) -> list:
+    """Convert a mask (uint8) to a list of polygons in COCO style.
 
     Args:
-        mask (np.ndarray): mask image
-        bbox (list): x,y,w,h of this ann
-        boxes_margin (float, optional): margin for increase bbox.
-            Defaults to 0.1.
+        mask (np.ndarray): The mask image as a numpy array.
+        bbox (list): Bounding box of the annotation in the format [x, y, w, h].
+        boxes_margin (float, optional): Margin factor to increase the bounding box size. Defaults to 0.1.
 
     Returns:
-        list: list of poly as coco style
+        list: List of polygons in COCO format (list of lists of coordinates).
     """
-
     x1, y1, w, h = bbox
     x2 = x1 + w
     y2 = y1 + h
@@ -38,6 +36,14 @@ def conver_mask_to_poly(mask: np.ndarray, bbox: list, boxes_margin=0.1) -> list:
 
     x2 += m_w
     y2 += m_h
+
+    mask_h, mask_w = mask.shape[:2]
+
+    if x2 > mask_w:
+        x2 = mask_w
+
+    if y2 > mask_h:
+        y2 = mask_h
 
     coords, _ = cv2.findContours(
         mask[int(y1) : int(y2), int(x1) : int(x2)].astype(np.uint8),
@@ -55,28 +61,32 @@ def conver_mask_to_poly(mask: np.ndarray, bbox: list, boxes_margin=0.1) -> list:
     return coords
 
 
-def convert_rle_to_poly(rle: dict, bbox: list):
-    """Convert rle (dict) to list of poly as coco style.
+def convert_rle_to_poly(rle: dict, bbox: list) -> list:
+    """Convert RLE (Run-Length Encoding) to a list of polygons in COCO style.
 
     Args:
-        rle (dict): rle of mask image
-        bbox (list): x,y,w,h of this ann
+        rle (dict): RLE of the mask image (COCO format).
+        bbox (list): Bounding box of the annotation in the format [x, y, w, h].
 
     Returns:
-        list: list of poly as coco style
+        list: List of polygons in COCO format (list of lists of coordinates).
     """
     mask = mask_util.decode(rle) * 255
     return conver_mask_to_poly(mask, bbox)
 
 
-def convert_ann_rle_to_poly(ann: dict):
-    """Convert ann segm from rle to poly style; Save rle in *count* var;
+def convert_ann_rle_to_poly(ann: dict) -> dict:
+    """Convert annotation segmentation from RLE to polygon style and save RLE
+    in the 'counts' variable.
 
     Args:
-        ann (dict): ann dict
+        ann (dict): Annotation dictionary with at least 'segmentation' (RLE) and 'bbox' fields.
 
     Returns:
-        ann (dict): ann dict with poly segm
+        dict: Annotation dictionary with 'segmentation' converted to polygons and original RLE stored in 'counts'.
+
+    Raises:
+        Exception: If OpenCV is not available and conversion is required.
     """
     if type(ann["segmentation"]) is dict:
         if not opencv_available:

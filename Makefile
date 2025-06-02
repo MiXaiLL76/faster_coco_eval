@@ -18,6 +18,11 @@ format:
 linter:
 	ruff check --force-exclude
 
+sphinx:
+	rm -rf docs/source/examples/*.ipynb
+	cp examples/*.ipynb docs/source/examples/
+	$(MAKE) -C docs clean html
+
 clean:
 	rm -rf build
 	rm -rf *.egg-info

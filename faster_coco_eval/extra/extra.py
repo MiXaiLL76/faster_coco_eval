@@ -24,15 +24,20 @@ class ExtraEval:
         useCats: bool = False,
         kpt_oks_sigmas: list = None,
     ):
-        """
-        :param cocoGt (COCO):
-        :param cocoDt (COCO):
-        :param iouType (str): bbox, segm, keypoints
-        :param min_score (float):
-        :param iou_tresh (float):
-        :param recall_count (int):
-        :param useCats (bool):
-        :param kpt_oks_sigmas (list):
+        """Initializes the ExtraEval object.
+
+        Args:
+            cocoGt (COCO, optional): Ground truth COCO object. Defaults to None.
+            cocoDt (COCO, optional): Detection results COCO object. Defaults to None.
+            iouType (str, optional): Type of IoU evaluation ('bbox', 'segm', 'keypoints'). Defaults to "bbox".
+            min_score (float, optional): Minimum score threshold for detections. Defaults to 0.
+            iou_tresh (float, optional): IoU threshold for evaluation. Defaults to 0.0.
+            recall_count (int, optional): Number of recall thresholds. Defaults to 100.
+            useCats (bool, optional): Whether to use categories in evaluation. Defaults to False.
+            kpt_oks_sigmas (list, optional): List of OKS sigmas for keypoints evaluation. Defaults to None.
+
+        Raises:
+            AssertionError: If cocoGt is None.
         """
         self.iouType = iouType
         self.min_score = min_score
@@ -56,6 +61,11 @@ class ExtraEval:
             self.evaluate()
 
     def evaluate(self):
+        """Runs COCO evaluation and accumulates results.
+
+        Raises:
+            AssertionError: If cocoDt is None.
+        """
         assert self.cocoDt is not None, "cocoDt is empty"
 
         cocoEval = COCOeval_faster(
@@ -68,14 +78,13 @@ class ExtraEval:
         cocoEval.params.maxDets = [len(self.cocoGt.anns)]
 
         self.recThrs = np.linspace(0, 1, self.recall_count + 1, endpoint=True)
-
         cocoEval.params.recThrs = self.recThrs
 
         if self.iouType != "keypoints":
             cocoEval.params.iouThrs = [self.iou_tresh]
 
         cocoEval.params.areaRng = [[0, 10000000000]]
-        cocoEval.params.useCats = int(self.useCats)  # Выключение labels
+        cocoEval.params.useCats = int(self.useCats)
 
         self.cocoEval = cocoEval
 
@@ -85,9 +94,14 @@ class ExtraEval:
         self.eval = cocoEval.eval
 
     def drop_cocodt_by_score(self, min_score: float):
-        """
-        :param min_score:
-        :return:
+        """Removes detection annotations with score below min_score from
+        cocoDt.
+
+        Args:
+            min_score (float): Minimum score threshold for detections.
+
+        Raises:
+            AssertionError: If cocoDt is None.
         """
         assert self.cocoDt is not None, "cocoDt is empty"
 
@@ -114,6 +128,12 @@ class ExtraEval:
 
     @property
     def fp_image_ann_map(self) -> Dict[int, Set[int]]:
+        """Gets a mapping from image IDs to sets of annotation IDs for false
+        positives.
+
+        Returns:
+            Dict[int, Set[int]]: Mapping from image_id to set of annotation IDs marked as false positives.
+        """
         image_ann_map = defaultdict(set)
         for ann_id, ann in self.cocoDt.anns.items():
             if ann.get("fp"):
@@ -122,6 +142,12 @@ class ExtraEval:
 
     @property
     def fn_image_ann_map(self) -> Dict[int, Set[int]]:
+        """Gets a mapping from image IDs to sets of annotation IDs for false
+        negatives.
+
+        Returns:
+            Dict[int, Set[int]]: Mapping from image_id to set of annotation IDs marked as false negatives.
+        """
         image_ann_map = defaultdict(set)
         for ann_id, ann in self.cocoGt.anns.items():
             if ann.get("fn"):

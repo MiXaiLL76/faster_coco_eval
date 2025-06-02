@@ -104,6 +104,7 @@ def get_extensions(version_info):
 
     sources = [
         "csrc/faster_eval_api/coco_eval/cocoeval.cpp",
+        "csrc/faster_eval_api/coco_eval/dataset.cpp",
         "csrc/faster_eval_api/faster_eval_api.cpp",
     ]
     print(f"Sources: {sources}")
@@ -152,7 +153,6 @@ setup(
     cmdclass={"build_ext": build_ext},
     classifiers=[
         "Development Status :: 4 - Beta",
-        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",

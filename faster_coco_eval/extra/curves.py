@@ -18,8 +18,11 @@ class Curves(ExtraEval):
             label (str): The label to build the curve for.
 
         Returns:
-            list: A list of dictionaries
-                containing the curve data for each category.
+            List[dict]: A list of dictionaries containing
+                the curve data for each category.
+
+        Raises:
+            AssertionError: If self.eval is None (evaluate() was not called).
         """
         assert self.eval is not None, "Run first self.evaluate()"
 
@@ -63,14 +66,13 @@ class Curves(ExtraEval):
         """Plot the precision-recall curve.
 
         Args:
-            curves (list, optional): List of curves to plot.
-                If None, it will build the curves.
-            label (str, optional): Label for the curves.
-            return_fig (bool, optional): Return the figure object.
+            curves (Optional[List[dict]], optional): List of curves to plot.
+                If None, it will build the curves. Defaults to None.
+            label (Optional[str], optional): Label for the curves. Defaults to "category_id".
+            return_fig (Optional[bool], optional): Return the figure object. Defaults to False.
 
         Returns:
-            Plotly figure or None:
-                The figure object if return_fig is True, otherwise None.
+            plotly.graph_objs._figure.Figure or None: The figure object if return_fig is True, otherwise None.
         """
         if curves is None:
             curves = self.build_curve(label)
@@ -86,21 +88,33 @@ class Curves(ExtraEval):
         """Plot the F1 confidence curve.
 
         Args:
-            curves: list of curves to plot
-            label: label for the curves
-            return_fig: return the figure
+            curves (Optional[List[dict]], optional): List of curves to plot.
+                If None, it will build the curves. Defaults to None.
+            label (Optional[str], optional): Label for the curves. Defaults to "category_id".
+            return_fig (Optional[bool], optional): Return the figure object. Defaults to False.
 
         Returns:
-            Plotly figure or None:
-                The figure object if return_fig is True, otherwise None.
+            plotly.graph_objs._figure.Figure or None: The figure object if return_fig is True, otherwise None.
         """
         if curves is None:
             curves = self.build_curve(label)
 
         return plot_f1_confidence(curves, return_fig=return_fig)
 
-    def build_ced_curve(self, mae_count: int = 1000):
-        """Build the curve for all categories."""
+    def build_ced_curve(self, mae_count: int = 1000) -> List[dict]:
+        """Build the CED (Cumulative Error Distribution) curve for all
+        categories.
+
+        Args:
+            mae_count (int, optional): Number of points to use for the CED curve. Defaults to 1000.
+
+        Returns:
+            List[dict]: List of dictionaries containing CED curve data for each category.
+
+        Raises:
+            AssertionError: If self.eval is None (evaluate() was not called).
+            ValueError: If the iouType is not 'keypoints' (other types are not supported).
+        """
         assert self.eval is not None, "Run first self.evaluate()"
 
         curves = []
@@ -141,7 +155,16 @@ class Curves(ExtraEval):
             if len(_curve["all_mae"]) == 0:
                 continue
 
-            def create_curve(x, count):
+            def create_curve(x: list, count: int) -> dict:
+                """Create the CED curve data.
+
+                Args:
+                    x (list): List of MAE values.
+                    count (int): Number of points for the curve.
+
+                Returns:
+                    dict: Dictionary containing 'x' and 'y' list for the curve.
+                """
                 x = np.array(x)
                 _median = np.median(x)
                 _q3 = np.sqrt(np.var(x))
@@ -182,13 +205,13 @@ class Curves(ExtraEval):
         """Plot the CED metric curve.
 
         Args:
-            curves: list of curves to plot
-            normalize: normalize the curves
-            return_fig: return the figure
+            curves (Optional[List[dict]], optional): List of curves to plot.
+                If None, will build the curves. Defaults to None.
+            normalize (Optional[bool], optional): Whether to normalize the curve. Defaults to True.
+            return_fig (Optional[bool], optional): Return the figure object. Defaults to False.
 
         Returns:
-            Plotly figure or None:
-                The figure object if return_fig is True, otherwise None.
+            plotly.graph_objs._figure.Figure or None: The figure object if return_fig is True, otherwise None.
         """
         if curves is None:
             curves = self.build_ced_curve()

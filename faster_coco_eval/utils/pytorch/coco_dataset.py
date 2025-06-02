@@ -20,10 +20,10 @@ class FasterCocoDetection(torchvision.datasets.CocoDetection):
     """`MS Coco Detection <http://mscoco.org/dataset/#detections-challenge2016>`_ Dataset.
 
     Args:
-        root (string): Root directory where images are downloaded to.
-        annFile (string): Path to json annotation file.
-        transform (callable, optional): A function/transform that  takes in an PIL image
-            and returns a transformed version. E.g, ``transforms.ToTensor``
+        root (str or Path): Root directory where images are downloaded to.
+        annFile (str): Path to json annotation file.
+        transform (callable, optional): A function/transform that takes in a PIL image
+            and returns a transformed version. E.g., ``transforms.ToTensor``.
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         transforms (callable, optional): A function/transform that takes input sample and its target as entry
@@ -38,6 +38,21 @@ class FasterCocoDetection(torchvision.datasets.CocoDetection):
         target_transform: Optional[Callable] = None,
         transforms: Optional[Callable] = None,
     ) -> None:
+        """Initializes the FasterCocoDetection dataset.
+
+        Args:
+            root (str or Path): Root directory where images are downloaded to.
+            annFile (str): Path to json annotation file.
+            transform (Callable, optional): A function/transform that takes in a PIL image
+                and returns a transformed version. Default is None.
+            target_transform (Callable, optional): A function/transform that takes in the
+                target and transforms it. Default is None.
+            transforms (Callable, optional): A function/transform that takes input sample and its target as entry
+                and returns a transformed version. Default is None.
+
+        Returns:
+            None
+        """
         super().__init__(root, transforms, transform, target_transform)
         self.coco = COCO(annFile)
         self.ids = list(sorted(self.coco.imgs.keys()))

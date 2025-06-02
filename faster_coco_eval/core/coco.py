@@ -20,6 +20,14 @@ logger = logging.getLogger(__name__)
 
 
 def _isArrayLike(obj):
+    """Check if the object is array-like.
+
+    Args:
+        obj (Any): Object to check.
+
+    Returns:
+        bool: True if object behaves like an array, False otherwise.
+    """
     return hasattr(obj, "__iter__") and hasattr(obj, "__len__")
 
 
@@ -33,11 +41,10 @@ class COCO:
         """Constructor of Microsoft COCO helper class.
 
         Args:
-            annotation_file (str or dict or PathLike): path to annotation file
-            use_deepcopy (bool, optional):
-                whether to copy the dict annotations. Defaults to False.
-        """
-
+            annotation_file (Optional[Union[str, dict, os.PathLike, pathlib.PosixPath]], optional): Path to annotation file or annotation dict. Defaults to None.
+            use_deepcopy (bool, optional): Whether to copy the dict annotations. Defaults to False.
+            print_function (Callable, optional): Function to use for printing messages. Defaults to logger.debug.
+        """  # noqa: E501
         # load dataset
         self.dataset, self.anns, self.cats, self.imgs = (
             {},
@@ -63,15 +70,30 @@ class COCO:
             self.createIndex()
 
     @property
-    def print_function(self):
+    def print_function(self) -> Callable:
+        """Get the function used for printing/logging messages.
+
+        Returns:
+            Callable: Print/log function.
+        """
         return self._print_function
 
     @print_function.setter
-    def print_function(self, value):
+    def print_function(self, value: Callable):
+        """Set the function used for printing/logging messages.
+
+        Args:
+            value (Callable): Function to use for printing messages.
+        """
         self._print_function = value
 
     def createIndex(self):
-        """Create index for coco annotation data."""
+        """Create index for coco annotation data.
+
+        Creates internal indices for the COCO dataset to enable fast
+        lookups. Builds mappings between images, annotations and
+        categories.
+        """
         tic = time.time()
         # create index
         self.print_function("creating index...")
@@ -115,7 +137,11 @@ class COCO:
         self.cats = cats
 
     def info(self):
-        """Print information about the annotation file."""
+        """Print information about the annotation file.
+
+        Prints the info section of the annotation file using the print
+        function.
+        """
         for key, value in self.dataset["info"].items():
             self.print_function(f"{key}: {value}")
 
@@ -129,15 +155,13 @@ class COCO:
         """Get ann ids that satisfy given filter conditions.
 
         Args:
-            imgIds (int array)    : get anns for given imgs
-            catIds (int array)    : get anns for given cats
-            areaRng (float array) : get anns for given area range
-                (e.g. [0 inf])
-            iscrowd (boolean)     : get anns for given crowd label
-                (False or True)
+            imgIds (List[int], optional): Get anns for given images. Defaults to [].
+            catIds (List[int], optional): Get anns for given categories. Defaults to [].
+            areaRng (List[float], optional): Get anns for given area range (e.g. [0, inf]). Defaults to [].
+            iscrowd (bool, optional): Get anns for given crowd label (False or True). Defaults to None.
 
         Returns:
-            ids (int array) : integer array of ann ids that satisfy the criteria
+            List[int]: Integer array of ann ids that satisfy the criteria.
         """
         imgIds = set(imgIds if _isArrayLike(imgIds) else [imgIds])
         catIds = set(catIds if _isArrayLike(catIds) else [catIds])
@@ -189,14 +213,13 @@ class COCO:
         """Get category ids that satisfy given filter conditions.
 
         Args:
-            catNms (str array)  : get cats for given cat names
-            supNms (str array)  : get cats for given supercategory names
-            catIds (int array)  : get cats for given ids
+            catNms (List[str], optional): Get categories for given cat names. Defaults to [].
+            supNms (List[str], optional): Get categories for given supercategory names. Defaults to [].
+            catIds (List[int], optional): Get categories for given ids. Defaults to [].
 
         Returns:
-            ids (int array)   : integer array of cat ids
+            List[int]: Integer array of cat ids.
         """
-
         catNms = set(catNms if _isArrayLike(catNms) else [catNms])
         supNms = set(supNms if _isArrayLike(supNms) else [supNms])
         catIds = set(catIds if _isArrayLike(catIds) else [catIds])
@@ -222,13 +245,12 @@ class COCO:
         """Get image ids that satisfy given filter conditions.
 
         Args:
-            imgIds (int array) : get imgs for given ids
-            catIds (int array) : get imgs with all given cats
+            imgIds (List[int], optional): Get images for given ids. Defaults to [].
+            catIds (List[int], optional): Get images with all given categories. Defaults to [].
 
-        Return:
-            ids (int array)  : integer array of img ids
+        Returns:
+            List[int]: Integer array of img ids.
         """
-
         imgIds = imgIds if _isArrayLike(imgIds) else [imgIds]
         catIds = catIds if _isArrayLike(catIds) else [catIds]
 
@@ -244,15 +266,14 @@ class COCO:
         return list(ids)
 
     def loadAnns(self, ids: Union[List[int], int] = []) -> List[dict]:
-        """Load anns with the specified ids.
+        """Load annotations with the specified ids.
 
         Args:
-            ids (int array) : integer ids specifying anns.
+            ids (Union[List[int], int], optional): Integer ids specifying annotations. Defaults to [].
 
-        Return:
-            anns (object array) : loaded ann objects
+        Returns:
+            List[dict]: Loaded annotation objects.
         """
-
         if _isArrayLike(ids):
             return [self.anns[i] for i in ids]
         elif type(ids) is int:
@@ -262,10 +283,10 @@ class COCO:
         """Load categories with the specified ids.
 
         Args:
-            ids (int array) : integer ids specifying cats.
+            ids (Union[List[int], int], optional): Integer ids specifying categories. Defaults to [].
 
-        Return:
-            cats (object array) : loaded cat objects
+        Returns:
+            List[dict]: Loaded category objects.
         """
         if _isArrayLike(ids):
             return [self.cats[i] for i in ids]
@@ -276,10 +297,10 @@ class COCO:
         """Load images with the specified ids.
 
         Args:
-            ids (int array) : integer ids specifying img.
+            ids (Union[List[int], int], optional): Integer ids specifying images. Defaults to [].
 
-        Return:
-            imgs (object array) : loaded img objects
+        Returns:
+            List[dict]: Loaded image objects.
         """
         if _isArrayLike(ids):
             return [self.imgs[i] for i in ids]
@@ -293,10 +314,11 @@ class COCO:
         """Load a json file.
 
         Args:
-            json_file (str or os.PathLike or dict or list): Path to the json file or data dict
+            json_file (Union[str, os.PathLike, pathlib.PosixPath, dict, list]): Path to the json file or data dict/list.
+            use_deepcopy (Optional[bool], optional): If True, use deep copy. Defaults to False.
 
-        Return:
-            data (dict): Loaded json data
+        Returns:
+            dict: Loaded json data.
         """
         if type(json_file) in [str, os.PathLike]:
             with open(json_file) as io:
@@ -316,12 +338,12 @@ class COCO:
         """Load result file and return a result api object.
 
         Args:
-            resFile (str or os.PathLike or dict or list)     : file name of result file
-            min_score (float) : minimum score to consider a result
+            resFile (Union[str, os.PathLike, pathlib.PosixPath, dict, list, np.ndarray]): File name of result file or numpy array.
+            min_score (float, optional): Minimum score to consider a result. Defaults to 0.0.
 
-        Return:
-            res (obj)         : result api object
-        """
+        Returns:
+            COCO: Result api object.
+        """  # noqa: E501
         res = COCO()
         res.dataset["info"] = copy.deepcopy(self.dataset.get("info", {}))
         res.dataset["images"] = [img for img in self.dataset["images"]]
@@ -388,10 +410,9 @@ class COCO:
         """Display the specified annotations.
 
         Args:
-            anns (List[dict]) : annotations to display
-            draw_bbox (bool) : display bbox
+            anns (List[dict]): Annotations to display.
+            draw_bbox (Optional[bool], optional): Whether to display bbox. Defaults to False.
         """
-
         if len(anns) == 0:
             return 0
 
@@ -474,19 +495,26 @@ class COCO:
                 print(ann["caption"])
 
     def download(self, tarDir=None, imgIds=[]):
+        """Deprecated: Download images (no longer supported).
+
+        Args:
+            tarDir (Any, optional): Target directory. Not used.
+            imgIds (list, optional): Image ids. Not used.
+
+        Raises:
+            DeprecationWarning: Always raised, function is deprecated.
+        """
         warnings.warn("download deprecated in 1.3.0", DeprecationWarning)
 
     def loadNumpyAnnotations(self, data: np.ndarray) -> List[dict]:
         """Convert result data from array to anns.
 
         Args:
-            data (numpy.ndarray): 2d array where each row contains
-                [imageID, x1, y1, w, h, score, class]
+            data (np.ndarray): 2d array where each row contains [imageID, x1, y1, w, h, score, class]
 
-        Return:
-            anns (python nested list): converted annotations
+        Returns:
+            List[dict]: Converted annotations as a list of dicts.
         """
-
         self.print_function("Converting ndarray to lists...")
         assert type(data) is np.ndarray
         self.print_function(data.shape)
@@ -510,12 +538,11 @@ class COCO:
         """Convert annotation which can be polygons, uncompressed RLE to RLE.
 
         Args:
-            ann (dict): annotation information
+            ann (dict): Annotation information.
 
-        Return:
-            rle (dict): run-length encoding of the annotation
+        Returns:
+            dict: Run-length encoding of the annotation.
         """
-
         t = self.imgs[ann["image_id"]]
         h, w = t["height"], t["width"]
         segm = ann["segmentation"]
@@ -537,10 +564,10 @@ class COCO:
         to binary mask.
 
         Args:
-            ann (dict): annotation information
+            ann (dict): Annotation information.
 
-        Return:
-            mask (binary mask): mask of the annotation
+        Returns:
+            np.ndarray: Binary mask of the annotation.
         """
         rle = self.annToRLE(ann)
         mask = maskUtils.decode(rle)
@@ -556,13 +583,13 @@ class COCO:
         """Get ann ids that satisfy given filter conditions.
 
         Args:
-            img_ids (int array)     : get anns for given imgs
-            cat_ids (int array)     : get anns for given cats
-            area_rng (float array) : get anns with area less than this
-            iscrowd (boolean)       : get anns for given crowd label
+            img_ids (List[int], optional): Get anns for given imgs. Defaults to [].
+            cat_ids (List[int], optional): Get anns for given cats. Defaults to [].
+            area_rng (List[float], optional): Get anns with area less than this. Defaults to [].
+            iscrowd (bool, optional): Get anns for given crowd label. Defaults to None.
 
         Returns:
-            ids (int array)       : integer array of ann ids
+            List[int]: Integer array of ann ids.
         """
         return self.getAnnIds(img_ids, cat_ids, area_rng, iscrowd)
 
@@ -575,12 +602,12 @@ class COCO:
         """Get cat ids that satisfy given filter conditions.
 
         Args:
-            cat_names (str array)  : get cats for given names
-            sup_names (str array)  : get cats for given supercategory names
-            cat_ids (int array)    : get cats for given ids
+            cat_names (List[str], optional): Get cats for given names. Defaults to [].
+            sup_names (List[str], optional): Get cats for given supercategory names. Defaults to [].
+            cat_ids (List[int], optional): Get cats for given ids. Defaults to [].
 
         Returns:
-            ids (int array)       : integer array of cat ids
+            List[int]: Integer array of cat ids.
         """
         return self.getCatIds(cat_names, sup_names, cat_ids)
 
@@ -588,11 +615,11 @@ class COCO:
         """Get img ids that satisfy given filter conditions.
 
         Args:
-            img_ids (int array) : get imgs for given ids
-            cat_ids (int array) : get imgs with all given cats
+            img_ids (List[int], optional): Get imgs for given ids. Defaults to [].
+            cat_ids (List[int], optional): Get imgs with all given cats. Defaults to [].
 
         Returns:
-            ids (int array)       : integer array of img ids
+            List[int]: Integer array of img ids.
         """
         return self.getImgIds(img_ids, cat_ids)
 
@@ -600,10 +627,10 @@ class COCO:
         """Load anns with the specified ids.
 
         Args:
-            ids (int array)       : integer ids specifying ann
+            ids (List[int]): Integer ids specifying anns.
 
         Returns:
-            anns (dict array)  : loaded ann objects
+            List[dict]: Loaded annotation objects.
         """
         return self.loadAnns(ids)
 
@@ -611,10 +638,10 @@ class COCO:
         """Load cats with the specified ids.
 
         Args:
-            ids (int array)       : integer ids specifying cat
+            ids (List[int]): Integer ids specifying cats.
 
         Returns:
-            cats (dict array)  : loaded cat objects
+            List[dict]: Loaded category objects.
         """
         return self.loadCats(ids)
 
@@ -622,10 +649,10 @@ class COCO:
         """Load imgs with the specified ids.
 
         Args:
-            ids (int array)       : integer ids specifying img
+            ids (List[int]): Integer ids specifying imgs.
 
         Returns:
-            imgs (dict array)  : loaded img objects
+            List[dict]: Loaded image objects.
         """
         return self.loadImgs(ids)
 
@@ -634,7 +661,7 @@ class COCO:
         """Return a mapping from image ids to annotation ids.
 
         Returns:
-            imgToAnns (dict): mapping from image ids to annotation ids
+            dict: Mapping from image ids to annotation ids.
         """
         return self.imgToAnns
 
@@ -643,7 +670,7 @@ class COCO:
         """Set the mapping from image ids to annotation ids.
 
         Args:
-            value (dict): mapping from image ids to annotation ids
+            value (dict): Mapping from image ids to annotation ids.
         """
         self.imgToAnns = value
 
@@ -652,7 +679,7 @@ class COCO:
         """Return a mapping from category ids to image ids.
 
         Returns:
-            catToImgs (dict): mapping from category ids to image ids
+            dict: Mapping from category ids to image ids.
         """
         return self.catToImgs
 
@@ -661,11 +688,16 @@ class COCO:
         """Set the mapping from category ids to image ids.
 
         Args:
-            value (dict): mapping from category ids to image ids
+            value (dict): Mapping from category ids to image ids.
         """
         self.catToImgs = value
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """String representation for COCO class.
+
+        Returns:
+            str: Representation with author and version.
+        """
         s = self.__class__.__name__ + "(annotation_file) # "
         s += f"__author__='{__author__}'; "
         s += f"__version__='{__version__}';"
@@ -675,12 +707,11 @@ class COCO:
         """Convert to a standard python dictionary.
 
         Args:
-            separate_fn (bool): whether to separate the fn category
+            separate_fn (bool, optional): Whether to separate the fn category. Defaults to False.
 
         Returns:
-            dict: a standard python dictionary
+            dict: Standard python dictionary containing the COCO data.
         """
-
         cats = list(self.cats.values())
         anns = list(self.anns.values())
 
@@ -713,11 +744,8 @@ class COCO:
     def __iter__(self):
         """Iterate over the annotations.
 
-        Args:
-            separate_fn (bool): whether to separate the fn category
-
         Yields:
-            key, val: the key-value pair of the annotation
+            Tuple[str, Any]: Key-value pair of the annotation data.
         """
         for key, val in self.to_dict().items():  # noqa: UP028
             yield key, val
@@ -726,7 +754,7 @@ class COCO:
         """Dump annotations to a json file.
 
         Args:
-            output_file (str or PathLike): Path to the output json file
+            output_file (Union[str, os.PathLike]): Path to the output json file.
         """
         with open(output_file, "w") as io:
             json.dump(dict(self), io, ensure_ascii=False, indent=4)

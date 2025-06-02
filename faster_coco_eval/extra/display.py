@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 
@@ -26,20 +26,19 @@ class PreviewResults(ExtraEval):
         """Display the image with the results.
 
         Args:
-            image_id: image id
-            display_fp: display false positives
-            display_fn: display false negatives
-            display_tp: display true positives
-            display_gt: display ground truth
-            data_folder: data folder
-            categories: categories to display
-            gt_ann_ids: ground truth annotation ids
-            dt_ann_ids: detected annotation ids
-            return_fig: return the figure
+            image_id (int): Image id.
+            display_fp (bool): Display false positives.
+            display_fn (bool): Display false negatives.
+            display_tp (bool): Display true positives.
+            display_gt (bool): Display ground truth.
+            data_folder (Optional[str]): Data folder.
+            categories (Optional[list]): Categories to display.
+            gt_ann_ids (Optional[set]): Ground truth annotation ids.
+            dt_ann_ids (Optional[set]): Detected annotation ids.
+            return_fig (bool): Return the figure.
 
         Returns:
-            Plotly figure or None:
-                The figure object if return_fig is True, otherwise None.
+            Optional[Any]: The figure object if return_fig is True, otherwise None.
         """
         return display_image(
             self.cocoGt,
@@ -59,14 +58,29 @@ class PreviewResults(ExtraEval):
 
     def display_tp_fp_fn(
         self,
-        image_ids=["all"],
-        display_fp=True,
-        display_fn=True,
-        display_tp=True,
-        display_gt=False,
-        data_folder=None,
-        categories=None,
+        image_ids: Union[List[int], List[str]] = ["all"],
+        display_fp: bool = True,
+        display_fn: bool = True,
+        display_tp: bool = True,
+        display_gt: bool = False,
+        data_folder: Optional[str] = None,
+        categories: Optional[list] = None,
     ):
+        """Display true positives, false positives, and false negatives for
+        given images.
+
+        Args:
+            image_ids (Union[List[int], List[str]]): List of image ids or ["all"] to display all images.
+            display_fp (bool): Display false positives.
+            display_fn (bool): Display false negatives.
+            display_tp (bool): Display true positives.
+            display_gt (bool): Display ground truth.
+            data_folder (Optional[str]): Data folder.
+            categories (Optional[list]): Categories to display.
+
+        Returns:
+            None
+        """
         if image_ids == ["all"]:
             image_ids = list(self.cocoGt.imgs.keys())
 
@@ -85,17 +99,23 @@ class PreviewResults(ExtraEval):
                 categories=categories,
             )
 
-    def _compute_confusion_matrix(self, y_true, y_pred, fp={}, fn={}) -> np.ndarray:
+    def _compute_confusion_matrix(
+        self,
+        y_true: List[int],
+        y_pred: List[int],
+        fp: Dict[int, int] = {},
+        fn: Dict[int, int] = {},
+    ) -> np.ndarray:
         """Compute the confusion matrix.
 
         Args:
-            y_true: true labels
-            y_pred: predicted labels
-            fp: false positive
-            fn: false negative
+            y_true (List[int]): True labels (category ids).
+            y_pred (List[int]): Predicted labels (category ids).
+            fp (Dict[int, int]): False positive counts per category id.
+            fn (Dict[int, int]): False negative counts per category id.
 
-        Return:
-            confusion matrix
+        Returns:
+            np.ndarray: The confusion matrix.
         """
         categories_real_ids = list(self.cocoGt.cats)
         categories_enum_ids = {category_id: _i for _i, category_id in enumerate(categories_real_ids)}
@@ -111,8 +131,15 @@ class PreviewResults(ExtraEval):
 
         return cm
 
-    def compute_confusion_matrix(self):
-        """Compute the confusion matrix."""
+    def compute_confusion_matrix(self) -> np.ndarray:
+        """Compute the confusion matrix for the current evaluation.
+
+        Returns:
+            np.ndarray: The confusion matrix.
+
+        Raises:
+            AssertionError: If self.eval is None (evaluate() was not run).
+        """
         assert self.eval is not None, "Run first self.evaluate()"
 
         if self.useCats:
@@ -146,17 +173,21 @@ class PreviewResults(ExtraEval):
         cm = self._compute_confusion_matrix(y_true, y_pred, fp=fp, fn=fn)
         return cm
 
-    def display_matrix(self, normalize=False, conf_matrix=None, return_fig: bool = False):
+    def display_matrix(
+        self,
+        normalize: bool = False,
+        conf_matrix: Optional[np.ndarray] = None,
+        return_fig: bool = False,
+    ):
         """Display the confusion matrix.
 
         Args:
-            normalize: normalize the matrix
-            conf_matrix: confusion matrix
-            return_fig: return the figure
+            normalize (bool): Normalize the matrix.
+            conf_matrix (Optional[np.ndarray]): Confusion matrix to display. If None, compute it.
+            return_fig (bool): Return the figure.
 
         Returns:
-            Plotly figure or None:
-                The figure object if return_fig is True, otherwise None.
+            Optional[Any]: The figure object if return_fig is True, otherwise None.
         """
         if conf_matrix is None:
             conf_matrix = self.compute_confusion_matrix()

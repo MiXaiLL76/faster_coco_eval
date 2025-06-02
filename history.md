@@ -1,5 +1,17 @@
 # history
 
+## v1.6.7
+
+- [x] Added workflow for automatic Sphinx documentation build and deploy (`.github/workflows/docs.yml`)
+- [x] Improved main build workflow (`build.yml`): now includes documentation generation task and enhanced handling of environment variables and package publishing
+- [x] Updated testing workflow (`test.yaml`): added support for multiple Python versions and triggering via workflow_call
+- [x] Major refactoring and optimization of the C++ core (`cocoeval.cpp`, `cocoeval.h`, new `dataset.cpp`): improved readability, redesigned data structures, and optimized evaluation logic for better speed
+- [x] Significant improvements to annotation parsing, serialization, and evaluation handling in the C++ part
+- [x] Added new hooks and formatters (e.g., clang-format) to `.pre-commit-config.yaml`, cleaned up and structured existing sections
+- [x] Updated README.md: added comparison table between pycocotools and faster-coco-eval, improved project advantages section
+- [x] Performed code decomposition, optimization, and standardization of variables in workflow files
+- [x] Modern C++ idioms applied throughout the codebase for better readability and performance
+
 ## v1.6.6
 
 - [x] Support pytorch dist FasterCocoEvaluator

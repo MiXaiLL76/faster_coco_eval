@@ -20,7 +20,7 @@ import contextlib
 import copy
 import os
 import pickle
-from typing import Dict, List
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import torch
@@ -31,7 +31,22 @@ from faster_coco_eval import COCO, COCOeval_faster
 
 
 class FasterCocoEvaluator:
+    """COCO evaluator for distributed evaluation.
+
+    Args:
+        coco_gt (COCO): Ground truth COCO object.
+        iou_types (List[str]): List of IoU types to evaluate, e.g., ['bbox', 'segm', 'keypoints'].
+        lvis_style (bool, optional): Whether to use LVIS-style evaluation. Defaults to False.
+    """
+
     def __init__(self, coco_gt: COCO, iou_types: List[str], lvis_style: bool = False):
+        """Initializes the FasterCocoEvaluator.
+
+        Args:
+            coco_gt (COCO): Ground truth COCO object.
+            iou_types (List[str]): List of IoU types to evaluate, e.g., ['bbox', 'segm', 'keypoints'].
+            lvis_style (bool, optional): Whether to use LVIS-style evaluation. Defaults to False.
+        """
         assert isinstance(iou_types, (list, tuple))
         coco_gt = copy.deepcopy(coco_gt)
         self.coco_gt = coco_gt
@@ -50,7 +65,13 @@ class FasterCocoEvaluator:
         self.eval_imgs = {k: [] for k in iou_types}
         self.stats_as_dict = {k: [] for k in iou_types}
 
-    def cleanup(self):
+    def cleanup(self) -> None:
+        """Cleans up and re-initializes the evaluator state for a new
+        evaluation run.
+
+        Returns:
+            None
+        """
         self.coco_eval = {}
         for iou_type in self.iou_types:
             self.coco_eval[iou_type] = COCOeval_faster(
@@ -59,7 +80,15 @@ class FasterCocoEvaluator:
         self.img_ids = []
         self.eval_imgs = {k: [] for k in self.iou_types}
 
-    def update(self, predictions):
+    def update(self, predictions: Dict[Any, Any]) -> None:
+        """Updates the evaluator with new predictions.
+
+        Args:
+            predictions (Dict): Dictionary mapping image ids to predictions. The structure depends on the IoU type.
+
+        Returns:
+            None
+        """
         img_ids = list(np.unique(list(predictions.keys())))
         self.img_ids.extend(img_ids)
 
@@ -80,7 +109,12 @@ class FasterCocoEvaluator:
                 )
             )
 
-    def synchronize_between_processes(self):
+    def synchronize_between_processes(self) -> None:
+        """Synchronizes results across distributed processes.
+
+        Returns:
+            None
+        """
         for iou_type in self.iou_types:
             img_ids, eval_imgs = merge(self.img_ids, self.eval_imgs[iou_type], self.world_size)
 
@@ -89,17 +123,36 @@ class FasterCocoEvaluator:
             coco_eval.params.imgIds = img_ids
             coco_eval._paramsEval = copy.deepcopy(coco_eval.params)
 
-    def accumulate(self):
+    def accumulate(self) -> None:
+        """Accumulates evaluation results.
+
+        Returns:
+            None
+        """
         for coco_eval in self.coco_eval.values():
             coco_eval.accumulate()
 
-    def summarize(self):
+    def summarize(self) -> None:
+        """Prints and stores evaluation statistics.
+
+        Returns:
+            None
+        """
         for iou_type, coco_eval in self.coco_eval.items():
             print(f"IoU metric: {iou_type}")
             coco_eval.summarize()
             self.stats_as_dict[iou_type] = coco_eval.stats_as_dict
 
-    def prepare(self, predictions, iou_type):
+    def prepare(self, predictions: Dict[Any, Any], iou_type: str) -> List[Dict[str, Any]]:
+        """Prepares predictions for COCO evaluation.
+
+        Args:
+            predictions (Dict): Dictionary mapping image ids to predictions.
+            iou_type (str): Type of IoU to prepare for, e.g., 'bbox', 'segm', or 'keypoints'.
+
+        Returns:
+            List[Dict]: List of detection results in COCO format.
+        """
         if iou_type == "bbox":
             return self.prepare_for_coco_detection(predictions)
         elif iou_type == "segm":
@@ -109,7 +162,18 @@ class FasterCocoEvaluator:
         else:
             raise ValueError(f"Unknown iou type {iou_type}")
 
-    def prepare_for_coco_detection(self, predictions):
+    def prepare_for_coco_detection(self, predictions: Dict[Any, Any]) -> List[Dict[str, Any]]:
+        """Converts bounding box predictions to COCO detection format.
+
+        Args:
+            predictions (Dict): Dictionary mapping image ids to prediction dicts. Each prediction dict must contain:
+                - "boxes": Tensor of shape [N, 4] (x1, y1, x2, y2)
+                - "scores": torch.Tensor of shape [N] of length N
+                - "labels": torch.Tensor of shape [N] of length N
+
+        Returns:
+            List[Dict]: List of detection results in COCO format.
+        """
         coco_results = []
         for original_id, prediction in predictions.items():
             if len(prediction) == 0:
@@ -131,7 +195,18 @@ class FasterCocoEvaluator:
             ])
         return coco_results
 
-    def prepare_for_coco_segmentation(self, predictions):
+    def prepare_for_coco_segmentation(self, predictions: Dict[Any, Any]) -> List[Dict[str, Any]]:
+        """Converts mask predictions to COCO segmentation format.
+
+        Args:
+            predictions (Dict): Dictionary mapping image ids to prediction dicts. Each prediction dict must contain:
+                - "scores": torch.Tensor of shape [N]
+                - "labels": torch.Tensor of shape [N]
+                - "masks": Tensor of shape [N, 1, H, W]
+
+        Returns:
+            List[Dict]: List of segmentation results in COCO format.
+        """
         coco_results = []
         for original_id, prediction in predictions.items():
             if len(prediction) == 0:
@@ -163,7 +238,19 @@ class FasterCocoEvaluator:
             ])
         return coco_results
 
-    def prepare_for_coco_keypoint(self, predictions):
+    def prepare_for_coco_keypoint(self, predictions: Dict[Any, Any]) -> List[Dict[str, Any]]:
+        """Converts keypoint predictions to COCO keypoint format.
+
+        Args:
+            predictions (Dict): Dictionary mapping image ids to prediction dicts. Each prediction dict must contain:
+                - "boxes": Tensor of shape [N, 4]
+                - "scores": torch.Tensor of shape [N]
+                - "labels": torch.Tensor of shape [N]
+                - "keypoints": Tensor of shape [N, K, 3]
+
+        Returns:
+            List[Dict]: List of keypoint results in COCO format.
+        """
         coco_results = []
         for original_id, prediction in predictions.items():
             if len(prediction) == 0:
@@ -188,18 +275,29 @@ class FasterCocoEvaluator:
         return coco_results
 
 
-def convert_to_xywh(boxes):
+def convert_to_xywh(boxes: torch.Tensor) -> torch.Tensor:
+    """Converts bounding boxes from (xmin, ymin, xmax, ymax) to (xmin, ymin,
+    width, height) format.
+
+    Args:
+        boxes (torch.Tensor): Bounding boxes of shape [N, 4].
+
+    Returns:
+        torch.Tensor: Converted bounding boxes of shape [N, 4].
+    """
     xmin, ymin, xmax, ymax = boxes.unbind(1)
     return torch.stack((xmin, ymin, xmax - xmin, ymax - ymin), dim=1)
 
 
-def all_gather(data, world_size: int = None):
-    """
-    Run all_gather on arbitrary picklable data (not necessarily tensors)
+def all_gather(data: Any, world_size: int = None) -> List[Any]:
+    """Run all_gather on arbitrary picklable data (not necessarily tensors).
+
     Args:
-        data: any picklable object
+        data (Any): Any picklable object.
+        world_size (int, optional): Number of processes in distributed mode. If None, auto-detect.
+
     Returns:
-        list[data]: list of data gathered from each rank
+        List[Any]: List of data gathered from each rank.
     """
     if world_size is None:
         if not (dist.is_available() and dist.is_initialized()):
@@ -241,7 +339,19 @@ def all_gather(data, world_size: int = None):
     return data_list
 
 
-def merge(img_ids, eval_imgs, world_size: int = None):
+def merge(
+    img_ids: Union[List[Any], np.ndarray], eval_imgs: List[Any], world_size: int = None
+) -> Tuple[List[Any], List[Any]]:
+    """Merges evaluation results from all processes.
+
+    Args:
+        img_ids (List or np.ndarray): List or array of image ids.
+        eval_imgs (List): List of evaluation image results.
+        world_size (int, optional): Number of processes in distributed mode. If None, auto-detect.
+
+    Returns:
+        Tuple[List, List]: (merged image ids, merged eval images)
+    """
     all_img_ids = all_gather(img_ids, world_size)
     all_eval_imgs = all_gather(eval_imgs, world_size)
 

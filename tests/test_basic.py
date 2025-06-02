@@ -16,16 +16,20 @@ class TestBaseCoco(unittest.TestCase):
     """Test basic COCO functionality."""
 
     def setUp(self):
-        self.gt_file = os.path.join("dataset", "gt_dataset.json")
-        self.dt_file = os.path.join("dataset", "dt_dataset.json")
-        self.gt_ignore_test_file = os.path.join("dataset", "gt_ignore_test.json")
-        self.dt_ignore_test_file = os.path.join("dataset", "dt_ignore_test.json")
+        self.root_folder = "dataset"
+
+        self.gt_file = os.path.join(self.root_folder, "gt_dataset.json")
+        self.dt_file = os.path.join(self.root_folder, "dt_dataset.json")
+        self.gt_ignore_test_file = os.path.join(self.root_folder, "gt_ignore_test.json")
+        self.dt_ignore_test_file = os.path.join(self.root_folder, "dt_ignore_test.json")
 
         if not os.path.exists(self.gt_file):
-            self.gt_file = os.path.join(os.path.dirname(__file__), self.gt_file)
-            self.dt_file = os.path.join(os.path.dirname(__file__), self.dt_file)
-            self.gt_ignore_test_file = os.path.join(os.path.dirname(__file__), self.gt_ignore_test_file)
-            self.dt_ignore_test_file = os.path.join(os.path.dirname(__file__), self.dt_ignore_test_file)
+            self.root_folder = os.path.join(os.path.dirname(__file__), "dataset")
+
+            self.gt_file = os.path.join(self.root_folder, "gt_dataset.json")
+            self.dt_file = os.path.join(self.root_folder, "dt_dataset.json")
+            self.gt_ignore_test_file = os.path.join(self.root_folder, "gt_ignore_test.json")
+            self.dt_ignore_test_file = os.path.join(self.root_folder, "dt_ignore_test.json")
 
         prepared_anns = COCO.load_json(self.dt_file)
 
@@ -109,7 +113,13 @@ class TestBaseCoco(unittest.TestCase):
 
         cocoEval.run()
 
-        self.assertAlmostEqual(cocoEval.stats_as_dict, stats_as_dict, places=10)
+        for imgId, catId in cocoEval.ious:
+            np.testing.assert_array_equal(
+                cocoEval.ious[(imgId, catId)], np.load(os.path.join(self.root_folder, f"{imgId}_{catId}.npy"))
+            )
+
+        for key in stats_as_dict:
+            self.assertAlmostEqual(cocoEval.stats_as_dict[key], stats_as_dict[key], places=10, msg=key)
 
     def test_coco_eval(self):
         stats_as_dict = {
