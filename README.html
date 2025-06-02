@@ -1,0 +1,285 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Faster-COCO-Eval &mdash; faster-coco-eval 1.6.7 1.6.7 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom_nbsphinx.css?v=ce1cc334" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=b9511c62"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            faster-coco-eval 1.6.7
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="coco.html">COCO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coco_eval.html">COCOeval</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faster_eval_api.html">COCOeval_faster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mask.html">Mask API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="history.html">History</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">faster-coco-eval 1.6.7</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Faster-COCO-Eval</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/README.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="faster-coco-eval">
+<h1>Faster-COCO-Eval<a class="headerlink" href="#faster-coco-eval" title="Link to this heading"></a></h1>
+<p><a class="reference external" href="https://pypi.org/project/faster-coco-eval"><img alt="PyPI" src="https://img.shields.io/pypi/v/faster-coco-eval" /></a>
+<a class="reference external" href="https://pypi.org/project/faster-coco-eval/"><img alt="PyPI Downloads" src="https://img.shields.io/pypi/dm/faster-coco-eval.svg?label=PyPI%20downloads" /></a></p>
+<p><a class="reference external" href="https://anaconda.org/conda-forge/faster-coco-eval"><img alt="Conda Version" src="https://img.shields.io/conda/vn/conda-forge/faster-coco-eval.svg" /></a>
+<a class="reference external" href="https://anaconda.org/conda-forge/faster-coco-eval"><img alt="Conda Platforms" src="https://img.shields.io/conda/pn/conda-forge/faster-coco-eval.svg" /></a></p>
+<p><a class="reference external" href="https://github.com/MiXaiLL76/faster_coco_eval/wiki"><img alt="docs" src="https://img.shields.io/badge/docs-latest-blue" /></a>
+<a class="reference external" href="https://github.com/MiXaiLL76/faster_coco_eval/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/github/license/MiXaiLL76/faster_coco_eval.svg" /></a></p>
+<p><a class="reference external" href="https://github.com/MiXaiLL76/faster_coco_eval/actions/workflows/unittest.yml"><img alt="CI - Test" src="https://github.com/MiXaiLL76/faster_coco_eval/actions/workflows/unittest.yml/badge.svg" /></a></p>
+<section id="why-should-you-replace-pycocotools-with-faster-coco-eval">
+<h2>Why should you replace pycocotools with <strong>faster-coco-eval</strong>?<a class="headerlink" href="#why-should-you-replace-pycocotools-with-faster-coco-eval" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Aspect</p></th>
+<th class="head"><p>pycocotools</p></th>
+<th class="head"><p><strong>faster-coco-eval</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Support &amp; Development</strong></p></td>
+<td><p>Outdated and not actively maintained. Issues and incompatibilities arise with new releases.</p></td>
+<td><p>Actively maintained, continuously evolving, and regularly updated with new features and bug fixes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Transparency &amp; Reliability</strong></p></td>
+<td><p>Lacks comprehensive testing, making updates risky and results less predictable.</p></td>
+<td><p>Emphasizes extensive test coverage and code quality, ensuring trustworthy and reliable results.</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Performance</strong></p></td>
+<td><p>Significantly slower, especially on large datasets or distributed workloads.</p></td>
+<td><p>Several times faster due to C++ optimizations and modern algorithms.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Functionality</strong></p></td>
+<td><p>Limited to basic COCO format evaluation.</p></td>
+<td><p>Offers extended metrics, support for new IoU types, compatibility with more datasets (e.g., CrowdPose, LVIS), advanced visualizations, and seamless integration with PyTorch/TorchVision.</p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p><strong>By choosing faster-coco-eval, you benefit from:</strong></p>
+<ul class="simple">
+<li><p>Reliability and confidence in your results</p></li>
+<li><p>High processing speed</p></li>
+<li><p>Modern functionality and support for new tasks</p></li>
+<li><p>An active community and prompt response to your requests</p></li>
+</ul>
+<p>Switch to <strong>faster-coco-eval</strong> and experience a new standard in working with COCO annotations!</p>
+</section>
+<section id="install">
+<h2>Install<a class="headerlink" href="#install" title="Link to this heading"></a></h2>
+<section id="basic-implementation-identical-to-pycocotools">
+<h3>Basic implementation identical to pycocotools<a class="headerlink" href="#basic-implementation-identical-to-pycocotools" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>faster-coco-eval
+</pre></div>
+</div>
+</section>
+<section id="additional-visualization-options">
+<h3>Additional visualization options<a class="headerlink" href="#additional-visualization-options" title="Link to this heading"></a></h3>
+<blockquote>
+<div><p>Only 1 additional package needed opencv-python-headless</p>
+</div></blockquote>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>faster-coco-eval<span class="o">[</span>extra<span class="o">]</span>
+</pre></div>
+</div>
+</section>
+<section id="conda-install">
+<h3>Conda install<a class="headerlink" href="#conda-install" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>conda-forge::faster-coco-eval
+</pre></div>
+</div>
+</section>
+<section id="basic-usage">
+<h3>Basic usage<a class="headerlink" href="#basic-usage" title="Link to this heading"></a></h3>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">faster_coco_eval</span>
+
+<span class="c1"># Replace pycocotools with faster_coco_eval</span>
+<span class="n">faster_coco_eval</span><span class="o">.</span><span class="n">init_as_pycocotools</span><span class="p">()</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycocotools.coco</span><span class="w"> </span><span class="kn">import</span> <span class="n">COCO</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycocotools.cocoeval</span><span class="w"> </span><span class="kn">import</span> <span class="n">COCOeval</span>
+
+<span class="n">anno</span> <span class="o">=</span> <span class="n">COCO</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">anno_json</span><span class="p">))</span>  <span class="c1"># init annotations api</span>
+<span class="n">pred</span> <span class="o">=</span> <span class="n">anno</span><span class="o">.</span><span class="n">loadRes</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">pred_json</span><span class="p">))</span>  <span class="c1"># init predictions api (must pass string, not Path)</span>
+
+<span class="n">val</span> <span class="o">=</span> <span class="n">COCOeval</span><span class="p">(</span><span class="n">anno</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="s2">&quot;bbox&quot;</span><span class="p">)</span>
+<span class="n">val</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
+<span class="n">val</span><span class="o">.</span><span class="n">accumulate</span><span class="p">()</span>
+<span class="n">val</span><span class="o">.</span><span class="n">summarize</span><span class="p">()</span>
+
+</pre></div>
+</div>
+</section>
+</section>
+<section id="faster-coco-eval-base">
+<h2>Faster-COCO-Eval base<a class="headerlink" href="#faster-coco-eval-base" title="Link to this heading"></a></h2>
+<p>This package wraps a facebook C++ implementation of COCO-eval operations found in the
+<a class="reference external" href="https://github.com/cocodataset/cocoapi/tree/master/PythonAPI/pycocotools">pycocotools</a> package.
+This implementation greatly speeds up the evaluation time
+for coco’s AP metrics, especially when dealing with a high number of instances in an image.</p>
+</section>
+<section id="comparison">
+<h2>Comparison<a class="headerlink" href="#comparison" title="Link to this heading"></a></h2>
+<p>For our use case with a test dataset of 5000 images from the coco val dataset.
+Testing was carried out using the mmdetection framework and the eval_metric.py script. The indicators are presented below.</p>
+<p>Visualization of testing <strong>colab_example.ipynb</strong> available in directory <a class="reference external" href="https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/comparison">examples/comparison</a></p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/comparison/mmdet/colab_example.ipynb">mmdet example</a></p></li>
+<li><p><a class="reference external" href="https://nbviewer.org/github/MiXaiLL76/faster_coco_eval/blob/main/examples/comparison/ultralytics/colab_example.ipynb">ultralytics example</a></p></li>
+</ul>
+<section id="summary-for-5000-imgs">
+<h3>Summary for 5000 imgs<a class="headerlink" href="#summary-for-5000-imgs" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head text-left"><p>Type</p></th>
+<th class="head text-right"><p>faster-coco-eval</p></th>
+<th class="head text-right"><p>pycocotools</p></th>
+<th class="head text-right"><p>Profit</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-left"><p>bbox</p></td>
+<td class="text-right"><p>5.812</p></td>
+<td class="text-right"><p>22.72</p></td>
+<td class="text-right"><p>3.909</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p>segm</p></td>
+<td class="text-right"><p>7.413</p></td>
+<td class="text-right"><p>24.434</p></td>
+<td class="text-right"><p>3.296</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="feautures">
+<h2>Feautures<a class="headerlink" href="#feautures" title="Link to this heading"></a></h2>
+<p>This library provides not only validation functions, but also error visualization functions. Including visualization of errors in the image.
+You can study in more detail in the <a class="reference external" href="https://github.com/MiXaiLL76/faster_coco_eval/blob/main/examples">examples</a> and <a class="reference external" href="https://github.com/MiXaiLL76/faster_coco_eval/wiki">Wiki</a>.</p>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<p>Code examples for using the library are available on the <a class="reference external" href="https://github.com/MiXaiLL76/faster_coco_eval/wiki">Wiki</a></p>
+<section id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="https://mixaill76.github.io/faster_coco_eval/examples/eval_example.html">Eval example</a></p></li>
+<li><p><a class="reference external" href="https://mixaill76.github.io/faster_coco_eval/examples/curve_example.html">Curve example</a></p></li>
+<li><p><a class="reference external" href="https://mixaill76.github.io/faster_coco_eval/examples/lvis_example.html">LVIS example</a></p></li>
+<li><p><a class="reference external" href="https://mixaill76.github.io/faster_coco_eval/examples/crowdpose_example.html">Crowdpose example</a></p></li>
+<li><p><a class="reference external" href="https://mixaill76.github.io/faster_coco_eval/examples/ced_example.html">Custom keypoints example</a></p></li>
+<li><p><a class="reference external" href="https://mixaill76.github.io/faster_coco_eval/examples/show_example.html">showAnns example</a></p></li>
+</ul>
+</section>
+</section>
+<section id="update-history">
+<h2>Update history<a class="headerlink" href="#update-history" title="Link to this heading"></a></h2>
+<p>Available via link <a class="reference external" href="https://github.com/MiXaiLL76/faster_coco_eval/blob/main/history.md">history.md</a></p>
+</section>
+<section id="star-history">
+<h2>Star History<a class="headerlink" href="#star-history" title="Link to this heading"></a></h2>
+<p><a class="reference external" href="https://star-history.com/#MiXaiLL76/faster_coco_eval&amp;amp;Date"><img alt="Star History Chart" src="https://api.star-history.com/svg?repos=MiXaiLL76/faster_coco_eval&amp;type=Date" /></a></p>
+</section>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Link to this heading"></a></h2>
+<p>The original module was licensed with apache 2, I will continue with the same license.
+Distributed under the apache version 2.0 license, see <a class="reference external" href="https://github.com/MiXaiLL76/faster_coco_eval/blob/main/LICENSE">license</a> for more information.</p>
+</section>
+<section id="citation">
+<h2>Citation<a class="headerlink" href="#citation" title="Link to this heading"></a></h2>
+<p>If you use this benchmark in your research, please cite this project.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@article</span><span class="p">{</span><span class="n">faster</span><span class="o">-</span><span class="n">coco</span><span class="o">-</span><span class="nb">eval</span><span class="p">,</span>
+  <span class="n">title</span>   <span class="o">=</span> <span class="p">{{</span><span class="n">Faster</span><span class="o">-</span><span class="n">COCO</span><span class="o">-</span><span class="n">Eval</span><span class="p">}:</span> <span class="n">Faster</span> <span class="n">interpretation</span> <span class="n">of</span> <span class="n">the</span> <span class="n">original</span> <span class="n">COCOEval</span><span class="p">},</span>
+  <span class="n">author</span>  <span class="o">=</span> <span class="p">{</span><span class="n">MiXaiLL76</span><span class="p">},</span>
+  <span class="n">year</span>    <span class="o">=</span> <span class="p">{</span><span class="mi">2024</span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024-2025, MiXaiLL76.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

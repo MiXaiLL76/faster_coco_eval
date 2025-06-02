@@ -1,0 +1,393 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>History &mdash; faster-coco-eval 1.6.7 1.6.7 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom_nbsphinx.css?v=ce1cc334" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=b9511c62"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="showAnns example" href="examples/show_example.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            faster-coco-eval 1.6.7
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="coco.html">COCO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coco_eval.html">COCOeval</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faster_eval_api.html">COCOeval_faster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mask.html">Mask API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">History</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#v1-6-7">v1.6.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-6-6">v1.6.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-6-5">v1.6.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-6-4">v1.6.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-6-1-v1-6-3">v1.6.1 - v1.6.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-6-0">v1.6.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-5-7">v1.5.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-5-6">v1.5.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-5-5">v1.5.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-5-3-v1-5-4">v1.5.3 - v1.5.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-5-2">v1.5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-5-1">v1.5.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-4-2">v1.4.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-4-1">v1.4.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-4-0">v1.4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-3-3">v1.3.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-3-2">v1.3.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-3-1">v1.3.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-3-0">v1.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-2-3">v1.2.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-2-2">v1.2.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-2-1">v1.2.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-1-3-v1-1-4">v1.1.3-v1.1.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-1-2">v1.1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-1-1">v1.1.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-1-0">v1.1.0</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">faster-coco-eval 1.6.7</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">History</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/history.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="history">
+<h1>History<a class="headerlink" href="#history" title="Link to this heading"></a></h1>
+<section id="v1-6-7">
+<h2>v1.6.7<a class="headerlink" href="#v1-6-7" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] Added workflow for automatic Sphinx documentation build and deploy (<code class="docutils literal notranslate"><span class="pre">.github/workflows/docs.yml</span></code>)</p></li>
+<li><p>[x] Improved main build workflow (<code class="docutils literal notranslate"><span class="pre">build.yml</span></code>): now includes documentation generation task and enhanced handling of environment variables and package publishing</p></li>
+<li><p>[x] Updated testing workflow (<code class="docutils literal notranslate"><span class="pre">test.yaml</span></code>): added support for multiple Python versions and triggering via workflow_call</p></li>
+<li><p>[x] Major refactoring and optimization of the C++ core (<code class="docutils literal notranslate"><span class="pre">cocoeval.cpp</span></code>, <code class="docutils literal notranslate"><span class="pre">cocoeval.h</span></code>, new <code class="docutils literal notranslate"><span class="pre">dataset.cpp</span></code>): improved readability, redesigned data structures, and optimized evaluation logic for better speed</p></li>
+<li><p>[x] Significant improvements to annotation parsing, serialization, and evaluation handling in the C++ part</p></li>
+<li><p>[x] Added new hooks and formatters (e.g., clang-format) to <code class="docutils literal notranslate"><span class="pre">.pre-commit-config.yaml</span></code>, cleaned up and structured existing sections</p></li>
+<li><p>[x] Updated README.md: added comparison table between pycocotools and faster-coco-eval, improved project advantages section</p></li>
+<li><p>[x] Performed code decomposition, optimization, and standardization of variables in workflow files</p></li>
+<li><p>[x] Modern C++ idioms applied throughout the codebase for better readability and performance</p></li>
+</ul>
+</section>
+<section id="v1-6-6">
+<h2>v1.6.6<a class="headerlink" href="#v1-6-6" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] Support pytorch dist FasterCocoEvaluator</p></li>
+<li><p>[x] Support torchvision CocoDetection Dataset as FasterCocoDetection</p></li>
+<li><p>[x] Return COCO.showAnns https://github.com/MiXaiLL76/faster_coco_eval/issues/52</p></li>
+</ul>
+</section>
+<section id="v1-6-5">
+<h2>v1.6.5<a class="headerlink" href="#v1-6-5" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] Support CrowdPose Dataset</p>
+<ul>
+<li><p>[x] add CrowdPose simple test</p></li>
+</ul>
+</li>
+<li><p>[x] ImageEvaluation pickleable https://github.com/MiXaiLL76/faster_coco_eval/issues/45</p></li>
+<li><p>[x] Create test for MP eval https://github.com/MiXaiLL76/faster_coco_eval/blob/main/tests/test_world_evalutor.py</p></li>
+</ul>
+</section>
+<section id="v1-6-4">
+<h2>v1.6.4<a class="headerlink" href="#v1-6-4" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] fix windows mask api.</p></li>
+<li><p>[x] numpy&gt;=2 support for py39+</p></li>
+<li><p>[x] update CI\CD for build macos &amp; windows whl</p></li>
+</ul>
+</section>
+<section id="v1-6-1-v1-6-3">
+<h2>v1.6.1 - v1.6.3<a class="headerlink" href="#v1-6-1-v1-6-3" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] fix windows &amp; macos build for <a class="reference external" href="https://github.com/Lightning-AI/torchmetrics/pull/2750">torchmetrics</a></p></li>
+</ul>
+</section>
+<section id="v1-6-0">
+<h2>v1.6.0<a class="headerlink" href="#v1-6-0" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] Rework <a class="reference external" href="https://github.com/MiXaiLL76/faster_coco_eval/blob/1.6.0/csrc/mask_api/mask_api.cpp">mask_api</a> with pybind11 C++ .</p></li>
+<li><p>[x] Rework <a class="reference external" href="https://github.com/MiXaiLL76/faster_coco_eval/blob/1.6.0/csrc/mask_api/src/rle.cpp">RLE support</a>.</p></li>
+<li><p>[x] Create test files for all components.</p></li>
+<li><p>[x] The math_matches function has been reworked, with an emphasis on using C++ code.</p></li>
+<li><p>[x] Added more documentation of functions. Optimized existing ones.</p></li>
+<li><p>[x] Added rleToBoundary func with 2 backend [“mask_api”, “opencv”]</p></li>
+<li><p>[x] IoU type <a class="reference external" href="https://github.com/bowenc0221/boundary-iou-api/tree/master">boundary</a> support (further testing is needed)</p></li>
+<li><p>[x] Create async rle and boundary comput <a class="reference external" href="https://github.com/MiXaiLL76/faster_coco_eval/pull/31#issuecomment-2308369319">discussion</a></p></li>
+</ul>
+</section>
+<section id="v1-5-7">
+<h2>v1.5.7<a class="headerlink" href="#v1-5-7" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] Compare COCOEval bug fix.</p></li>
+</ul>
+</section>
+<section id="v1-5-6">
+<h2>v1.5.6<a class="headerlink" href="#v1-5-6" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] Replace CED MSE curve with MAE (px) curve</p></li>
+<li><p>[x] Add CED examples</p></li>
+<li><p>[x] Display IoU and MAE for keypoints</p></li>
+<li><p>[x] Reworked eval._prepare to clear up the return flow</p></li>
+<li><p>[x] Reworked the C++ part of <strong>COCOevalEvaluateImages</strong> and <strong>COCOevalAccumulate</strong></p>
+<ul>
+<li><p>[x] Add new <strong>COCOevalEvaluateAccumulate</strong> to combine these two calls. You can use old style <strong>separate_eval==True</strong> (default=False)</p></li>
+<li><p>[x] <strong>COCOevalAccumulate</strong> &amp; <strong>COCOevalEvaluateAccumulate</strong> -&gt; <em>COCOeval_faster.eval</em> is now correctly created as numpy arrays.</p></li>
+</ul>
+</li>
+<li><p>[x] Append LVIS dataset support <strong>lvis_style=True</strong> in COCOeval_faster</p></li>
+</ul>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">cocoEval</span> <span class="o">=</span> <span class="n">COCOeval_faster</span><span class="p">(</span><span class="n">cocoGt</span><span class="p">,</span> <span class="n">cocoDt</span><span class="p">,</span> <span class="n">iouType</span><span class="p">,</span> <span class="n">lvis_style</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">print_function</span><span class="o">=</span><span class="nb">print</span><span class="p">)</span>
+<span class="n">cocoEval</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">maxDets</span> <span class="o">=</span> <span class="p">[</span><span class="mi">300</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="v1-5-5">
+<h2>v1.5.5<a class="headerlink" href="#v1-5-5" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] Add CED MSE curve</p></li>
+<li><p>[x] Review tests</p></li>
+<li><p>[x] Review <strong>COCOeval_faster.math_matches</strong> function and <strong>COCOeval_faster.compute_mIoU</strong> function</p></li>
+</ul>
+</section>
+<section id="v1-5-3-v1-5-4">
+<h2>v1.5.3 - v1.5.4<a class="headerlink" href="#v1-5-3-v1-5-4" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] Worked out the ability to work with skeletons and various key points</p></li>
+<li><p>[x] <code class="docutils literal notranslate"><span class="pre">eval.state_as_dict</span></code> Now works for key points</p></li>
+</ul>
+</section>
+<section id="v1-5-2">
+<h2>v1.5.2<a class="headerlink" href="#v1-5-2" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] Change comparison to colab_example</p></li>
+<li><p>[x] append utils with opencv <strong>conver_mask_to_poly</strong> (extra)</p></li>
+<li><p>[x] append <strong>drop_cocodt_by_score</strong> for extra eval</p></li>
+</ul>
+</section>
+<section id="v1-5-1">
+<h2>v1.5.1<a class="headerlink" href="#v1-5-1" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] <strong>breaking change</strong> | new static function COCO.load_json</p></li>
+<li><p>[x] new curve f1_confidence with <code class="docutils literal notranslate"><span class="pre">cur.plot_f1_confidence()</span></code></p></li>
+<li><p>[x] <strong>breaking change</strong> | replace display_matrix arg <code class="docutils literal notranslate"><span class="pre">in_percent</span></code> to <code class="docutils literal notranslate"><span class="pre">normalize</span></code></p></li>
+<li><p>[x] <strong>breaking change</strong> | rework draw functions</p></li>
+</ul>
+</section>
+<section id="v1-4-2">
+<h2>v1.4.2<a class="headerlink" href="#v1-4-2" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] append Auto-formatters</p></li>
+<li><p>[x] append py36 support</p></li>
+<li><p>[x] append pandas to requirements for plotly[express]</p></li>
+<li><p>[x] update mask api with pycootools</p></li>
+</ul>
+</section>
+<section id="v1-4-1">
+<h2>v1.4.1<a class="headerlink" href="#v1-4-1" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] append Plotly fig return</p></li>
+<li><p>[x] append preview GT only func. Without eval.</p></li>
+</ul>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">cocoGt</span> <span class="o">=</span> <span class="n">COCO</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">preview</span> <span class="o">=</span> <span class="n">PreviewResults</span><span class="p">(</span><span class="n">cocoGt</span><span class="p">,</span> <span class="n">iouType</span><span class="o">=</span><span class="s1">&#39;segm&#39;</span><span class="p">)</span>
+<span class="n">preview</span><span class="o">.</span><span class="n">display_tp_fp_fn</span><span class="p">(</span><span class="n">data_folder</span><span class="o">=...</span><span class="p">,</span> <span class="n">image_ids</span><span class="o">=...</span><span class="p">,</span> <span class="n">display_gt</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="v1-4-0">
+<h2>v1.4.0<a class="headerlink" href="#v1-4-0" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] fix issue <a class="reference external" href="https://github.com/MiXaiLL76/faster_coco_eval/issues/12">https://github.com/MiXaiLL76/faster_coco_eval/issues/12</a></p></li>
+<li><p>[x] Updated pre-rec calculation method</p></li>
+<li><p>[x] Updated required libraries</p></li>
+<li><p>[x] Moved all matplotlib dependencies to plotly</p></li>
+<li><p>[x] Append new examples &amp; mmeval test file</p></li>
+</ul>
+</section>
+<section id="v1-3-3">
+<h2>v1.3.3<a class="headerlink" href="#v1-3-3" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] fix by ViTrox <a class="reference external" href="https://github.com/vitrox-technologies/faster_coco_eval">https://github.com/vitrox-technologies/faster_coco_eval</a></p>
+<ul>
+<li><p>missing file issue</p></li>
+<li><p>issue discovered by torchmetric</p></li>
+<li><p>fstring for python3.7</p></li>
+<li><p>Windows compilation</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="v1-3-2">
+<h2>v1.3.2<a class="headerlink" href="#v1-3-2" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] rework math_matches function. moved to faster_eval_api</p></li>
+<li><p>[x] Moved calculations from python to c++</p></li>
+<li><p>[x] Separated extra classes</p></li>
+<li><p>[x] Added new sample data</p></li>
+<li><p>[x] append mIoU based on TP pred.</p></li>
+<li><p>[x] append mAUC based on Coco pre/rec.</p></li>
+</ul>
+</section>
+<section id="v1-3-1">
+<h2>v1.3.1<a class="headerlink" href="#v1-3-1" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] rework mask code</p></li>
+<li><p>[x] change np.float to float (<a class="reference external" href="https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations">numpy deprecations</a>)</p></li>
+</ul>
+</section>
+<section id="v1-3-0">
+<h2>v1.3.0<a class="headerlink" href="#v1-3-0" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] remove pycocotools dependencies</p></li>
+<li><p>[x] clean c/c++ code</p></li>
+</ul>
+</section>
+<section id="v1-2-3">
+<h2>v1.2.3<a class="headerlink" href="#v1-2-3" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] Implemented of mean IoU for TP</p></li>
+<li><p>[x] set FP-red FN-blue</p></li>
+</ul>
+</section>
+<section id="v1-2-2">
+<h2>v1.2.2<a class="headerlink" href="#v1-2-2" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] Removed own implementation of pre-rec</p></li>
+<li><p>[x] Switched to the implementation of pre-rec calculation from COCO eval</p></li>
+<li><p>[x] Lost backward compatibility</p></li>
+<li><p>[x] Implemented output fp/fn/tp + gt to pictures</p></li>
+</ul>
+</section>
+<section id="v1-2-1">
+<h2>v1.2.1<a class="headerlink" href="#v1-2-1" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] bug fix with pre-rec curve</p></li>
+<li><p>[x] rework error calc (tp/fp/fn)</p></li>
+<li><p>[x] change image plot to plotly</p></li>
+<li><p>[x] append docker auto builder</p></li>
+<li><p>[x] append native iou calc (slow but accurate)</p></li>
+<li><p>[x] rework auc calc with <a class="reference external" href="https://towardsdatascience.com/how-to-efficiently-implement-area-under-precision-recall-curve-pr-auc-a85872fd7f14">link</a></p></li>
+</ul>
+</section>
+<section id="v1-1-3-v1-1-4">
+<h2>v1.1.3-v1.1.4<a class="headerlink" href="#v1-1-3-v1-1-4" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] rebuild plotly backend</p></li>
+<li><p>[x] Segm bug-fix</p></li>
+</ul>
+</section>
+<section id="v1-1-2">
+<h2>v1.1.2<a class="headerlink" href="#v1-1-2" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] Append fp fn error analysis via curves</p></li>
+<li><p>[x] Append confusion matrix</p></li>
+<li><p>[x] Append plotly backend support for ROC / AUC</p></li>
+</ul>
+</section>
+<section id="v1-1-1">
+<h2>v1.1.1<a class="headerlink" href="#v1-1-1" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] Redesigned curves</p></li>
+<li><p>[x] Reworked data preload</p></li>
+<li><p>[x] Append csrc to setup</p></li>
+<li><p>[x] Build sdist Package</p></li>
+</ul>
+</section>
+<section id="v1-1-0">
+<h2>v1.1.0<a class="headerlink" href="#v1-1-0" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] Wrap c++ code</p></li>
+<li><p>[x] Get it to compile</p></li>
+<li><p>[x] Add COCOEval class wraper</p></li>
+<li><p>[x] Remove detectron2 dependencies</p></li>
+<li><p>[x] Remove torch dependencies</p></li>
+<li><p>[x] Append unittest</p></li>
+<li><p>[x] Append ROC / AUC curves</p></li>
+<li><p>[x] Check if it works on windows</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="examples/show_example.html" class="btn btn-neutral float-left" title="showAnns example" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024-2025, MiXaiLL76.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
