@@ -1,0 +1,345 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mask API &mdash; faster-coco-eval 1.6.7 1.6.7 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom_nbsphinx.css?v=ce1cc334" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=b9511c62"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Examples" href="examples.html" />
+    <link rel="prev" title="COCOeval_faster" href="faster_eval_api.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            faster-coco-eval 1.6.7
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="coco.html">COCO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coco_eval.html">COCOeval</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faster_eval_api.html">COCOeval_faster</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Mask API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#faster_coco_eval.core.mask.area"><code class="docutils literal notranslate"><span class="pre">area()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#faster_coco_eval.core.mask.calculateRleForAllAnnotations"><code class="docutils literal notranslate"><span class="pre">calculateRleForAllAnnotations()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#faster_coco_eval.core.mask.decode"><code class="docutils literal notranslate"><span class="pre">decode()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#faster_coco_eval.core.mask.encode"><code class="docutils literal notranslate"><span class="pre">encode()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#faster_coco_eval.core.mask.frPyObjects"><code class="docutils literal notranslate"><span class="pre">frPyObjects()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#faster_coco_eval.core.mask.iou"><code class="docutils literal notranslate"><span class="pre">iou()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#faster_coco_eval.core.mask.merge"><code class="docutils literal notranslate"><span class="pre">merge()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#faster_coco_eval.core.mask.rleToBoundary"><code class="docutils literal notranslate"><span class="pre">rleToBoundary()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#faster_coco_eval.core.mask.rleToBoundaryCV"><code class="docutils literal notranslate"><span class="pre">rleToBoundaryCV()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#faster_coco_eval.core.mask.segmToRle"><code class="docutils literal notranslate"><span class="pre">segmToRle()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#faster_coco_eval.core.mask.toBbox"><code class="docutils literal notranslate"><span class="pre">toBbox()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">faster-coco-eval 1.6.7</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Mask API</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/mask.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-faster_coco_eval.core.mask">
+<span id="mask-api"></span><h1>Mask API<a class="headerlink" href="#module-faster_coco_eval.core.mask" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="faster_coco_eval.core.mask.area">
+<span class="sig-prename descclassname"><span class="pre">faster_coco_eval.core.mask.</span></span><span class="sig-name descname"><span class="pre">area</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rleObjs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.core.mask.area" title="Link to this definition"></a></dt>
+<dd><p>Compute area of encoded masks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rleObjs</strong> (<em>Union</em><em>[</em><em>dict</em><em>, </em><em>List</em><em>[</em><em>dict</em><em>]</em><em>]</em>) – Run-length encoding of binary mask(s).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Area(s) of run-length encodings.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="faster_coco_eval.core.mask.calculateRleForAllAnnotations">
+<span class="sig-prename descclassname"><span class="pre">faster_coco_eval.core.mask.</span></span><span class="sig-name descname"><span class="pre">calculateRleForAllAnnotations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">anns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_sizes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_rle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_boundary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_dilation_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_cpu_count</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.core.mask.calculateRleForAllAnnotations" title="Link to this definition"></a></dt>
+<dd><p>Calculate run-length encoding for all annotations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>anns</strong> (<em>List</em><em>[</em><em>dict</em><em>]</em>) – List of annotation dictionaries.</p></li>
+<li><p><strong>img_sizes</strong> (<em>Dict</em><em>[</em><em>int</em><em>, </em><em>tuple</em><em>]</em>) – Dictionary mapping image ids to their sizes (height, width).</p></li>
+<li><p><strong>compute_rle</strong> (<em>bool</em>) – Whether to compute run-length encoding.</p></li>
+<li><p><strong>compute_boundary</strong> (<em>bool</em>) – Whether to compute boundary run-length encoding.</p></li>
+<li><p><strong>boundary_dilation_ratio</strong> (<em>float</em>) – Ratio of dilation to apply to the mask boundary.</p></li>
+<li><p><strong>boundary_cpu_count</strong> (<em>int</em>) – Number of CPUs to use for boundary computation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="faster_coco_eval.core.mask.decode">
+<span class="sig-prename descclassname"><span class="pre">faster_coco_eval.core.mask.</span></span><span class="sig-name descname"><span class="pre">decode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rleObjs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.core.mask.decode" title="Link to this definition"></a></dt>
+<dd><p>Decode binary masks encoded via RLE.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rleObjs</strong> (<em>Union</em><em>[</em><em>dict</em><em>, </em><em>List</em><em>[</em><em>dict</em><em>]</em><em>]</em>) – Run-length encoding of binary mask(s).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Decoded binary mask(s).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="faster_coco_eval.core.mask.encode">
+<span class="sig-prename descclassname"><span class="pre">faster_coco_eval.core.mask.</span></span><span class="sig-name descname"><span class="pre">encode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bimask</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.core.mask.encode" title="Link to this definition"></a></dt>
+<dd><p>Encode binary mask(s) using RLE.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>bimask</strong> (<em>np.ndarray</em>) – Binary mask. Can be 2D (H, W) or 3D (H, W, N).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Run-length encoding of the binary mask(s).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="faster_coco_eval.core.mask.frPyObjects">
+<span class="sig-prename descclassname"><span class="pre">faster_coco_eval.core.mask.</span></span><span class="sig-name descname"><span class="pre">frPyObjects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">objs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.core.mask.frPyObjects" title="Link to this definition"></a></dt>
+<dd><p>Convert a list of objects to RLE format suitable for use in mask API.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>objs</strong> (<em>Union</em><em>[</em><em>ValidRleType</em><em>, </em><em>np.ndarray</em><em>, </em><em>List</em><em>[</em><em>float</em><em>]</em><em>, </em><em>dict</em><em>]</em>) – Objects to be converted (polygons, bboxes, etc).</p></li>
+<li><p><strong>h</strong> (<em>int</em>) – Height of the image.</p></li>
+<li><p><strong>w</strong> (<em>int</em>) – Width of the image.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Run-length encoding of the objects.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[dict, List[dict]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="faster_coco_eval.core.mask.iou">
+<span class="sig-prename descclassname"><span class="pre">faster_coco_eval.core.mask.</span></span><span class="sig-name descname"><span class="pre">iou</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iscrowd</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.core.mask.iou" title="Link to this definition"></a></dt>
+<dd><p>Compute intersection over union (IoU) between two sets of run-length
+encoded masks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dt</strong> (<em>ValidRleType</em>) – Detected masks, can be a list of RLEs or arrays.</p></li>
+<li><p><strong>gt</strong> (<em>ValidRleType</em>) – Ground truth masks, can be a list of RLEs or arrays.</p></li>
+<li><p><strong>iscrowd</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – List of flags indicating whether each ground truth mask is a crowd region.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Intersection over union between dt and gt masks.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[list, np.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="faster_coco_eval.core.mask.merge">
+<span class="sig-prename descclassname"><span class="pre">faster_coco_eval.core.mask.</span></span><span class="sig-name descname"><span class="pre">merge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rleObjs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intersect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.core.mask.merge" title="Link to this definition"></a></dt>
+<dd><p>Merge a list of run-length encoded objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rleObjs</strong> (<em>List</em><em>[</em><em>dict</em><em>]</em>) – List of run-length encoding dictionaries of binary masks.</p></li>
+<li><p><strong>intersect</strong> (<em>int</em><em>, </em><em>optional</em>) – Flag for type of merge to perform. Defaults to 0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Run-length encoding of merged mask.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="faster_coco_eval.core.mask.rleToBoundary">
+<span class="sig-prename descclassname"><span class="pre">faster_coco_eval.core.mask.</span></span><span class="sig-name descname"><span class="pre">rleToBoundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilation_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mask_api'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.core.mask.rleToBoundary" title="Link to this definition"></a></dt>
+<dd><p>Convert run-length encoding to boundary rle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rle</strong> (<em>dict</em>) – Run-length encoding of a binary mask.</p></li>
+<li><p><strong>dilation_ratio</strong> (<em>float</em><em>, </em><em>optional</em>) – Ratio of dilation to apply to the mask. Defaults to 0.02.</p></li>
+<li><p><strong>backend</strong> (<em>str</em><em>, </em><em>optional</em>) – Backend to use for conversion. ‘mask_api’ uses the faster_eval_api_cpp backend,
+‘opencv’ uses OpenCV for conversion. Defaults to “mask_api”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Run-length encoding of the boundary mask.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ImportError</strong> – If OpenCV is selected as backend but not available.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="faster_coco_eval.core.mask.rleToBoundaryCV">
+<span class="sig-prename descclassname"><span class="pre">faster_coco_eval.core.mask.</span></span><span class="sig-name descname"><span class="pre">rleToBoundaryCV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilation_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.core.mask.rleToBoundaryCV" title="Link to this definition"></a></dt>
+<dd><p>Convert run-length encoding to boundary rle using OpenCV backend.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rle</strong> (<em>dict</em>) – Run-length encoding of a binary mask.</p></li>
+<li><p><strong>dilation_ratio</strong> (<em>float</em><em>, </em><em>optional</em>) – Ratio of dilation to apply to the mask. Defaults to 0.02.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Run-length encoding of the boundary mask.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="faster_coco_eval.core.mask.segmToRle">
+<span class="sig-prename descclassname"><span class="pre">faster_coco_eval.core.mask.</span></span><span class="sig-name descname"><span class="pre">segmToRle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.core.mask.segmToRle" title="Link to this definition"></a></dt>
+<dd><p>Convert segm array to run-length encoding.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segm</strong> (<em>Union</em><em>[</em><em>List</em><em>[</em><em>float</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>, </em><em>dict</em><em>]</em>) – Segmentation map, can be a list of floats, ints or a dictionary.</p></li>
+<li><p><strong>w</strong> (<em>int</em>) – Width of the image.</p></li>
+<li><p><strong>h</strong> (<em>int</em>) – Height of the image.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Run-length encoding of the segmentation map.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="faster_coco_eval.core.mask.toBbox">
+<span class="sig-prename descclassname"><span class="pre">faster_coco_eval.core.mask.</span></span><span class="sig-name descname"><span class="pre">toBbox</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rleObjs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.core.mask.toBbox" title="Link to this definition"></a></dt>
+<dd><p>Get bounding boxes surrounding encoded masks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rleObjs</strong> (<em>Union</em><em>[</em><em>dict</em><em>, </em><em>List</em><em>[</em><em>dict</em><em>]</em><em>]</em>) – Run-length encoding of binary mask(s).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Bounding box(es) of run-length encodings.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="faster_eval_api.html" class="btn btn-neutral float-left" title="COCOeval_faster" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="examples.html" class="btn btn-neutral float-right" title="Examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024-2025, MiXaiLL76.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
