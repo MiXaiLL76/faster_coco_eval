@@ -11,12 +11,25 @@
 
 [![CI - Test](https://github.com/MiXaiLL76/faster_coco_eval/actions/workflows/unittest.yml/badge.svg)](https://github.com/MiXaiLL76/faster_coco_eval/actions/workflows/unittest.yml)
 
-<!-- [![Coverage](https://codecov.io/github/MiXaiLL76/faster_coco_eval/coverage.svg?branch=main)](https://codecov.io/gh/MiXaiLL76/faster_coco_eval)       -->
+## Why should you replace pycocotools with **faster-coco-eval**?
 
-## Disclaimer
+| Aspect                         | pycocotools                                                                                 | **faster-coco-eval**                                                                                                                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Support & Development**      | Outdated and not actively maintained. Issues and incompatibilities arise with new releases. | Actively maintained, continuously evolving, and regularly updated with new features and bug fixes.                                                                                        |
+| **Transparency & Reliability** | Lacks comprehensive testing, making updates risky and results less predictable.             | Emphasizes extensive test coverage and code quality, ensuring trustworthy and reliable results.                                                                                           |
+| **Performance**                | Significantly slower, especially on large datasets or distributed workloads.                | Several times faster due to C++ optimizations and modern algorithms.                                                                                                                      |
+| **Functionality**              | Limited to basic COCO format evaluation.                                                    | Offers extended metrics, support for new IoU types, compatibility with more datasets (e.g., CrowdPose, LVIS), advanced visualizations, and seamless integration with PyTorch/TorchVision. |
 
-I often use this project, but I saw it abandoned and without a public repository on github.
-Also, part of the project remained unfinished for a long time. I implemented some of the author's ideas and decided to make the results publicly available.
+______________________________________________________________________
+
+**By choosing faster-coco-eval, you benefit from:**
+
+- Reliability and confidence in your results
+- High processing speed
+- Modern functionality and support for new tasks
+- An active community and prompt response to your requests
+
+Switch to **faster-coco-eval** and experience a new standard in working with COCO annotations!
 
 ## Install
 
