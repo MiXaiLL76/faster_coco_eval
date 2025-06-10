@@ -86,5 +86,6 @@ class TestCOCOAPI(unittest.TestCase):
         for idx, key in enumerate(self.stats["keys"]):
             self.assertAlmostEqual(cocoEval.stats[idx], self.stats[iouType][idx], places=10, msg=key)
 
+
 if __name__ == "__main__":
     unittest.main()
