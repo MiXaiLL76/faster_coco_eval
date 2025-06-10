@@ -113,10 +113,6 @@ jobs:
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
           repository-url: https://test.pypi.org/legacy/
 
-  docs:
-    needs: [publish_test]
-    uses: ./.github/workflows/docs.yml
-
   publish_prod:
     needs: [publish_test]
     name: Publish package to PyPI
@@ -138,3 +134,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
+
+  docs:
+    needs: [publish_prod]
+    uses: ./.github/workflows/docs.yml
