@@ -34,14 +34,14 @@ def _isArrayLike(obj):
 class COCO:
     def __init__(
         self,
-        annotation_file: Optional[Union[str, dict, os.PathLike, pathlib.PosixPath]] = None,
+        annotation_file: Optional[Union[str, dict, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath]] = None,
         use_deepcopy: bool = False,
         print_function: Callable = logger.debug,
     ):
         """Constructor of Microsoft COCO helper class.
 
         Args:
-            annotation_file (Optional[Union[str, dict, os.PathLike, pathlib.PosixPath]], optional): Path to annotation file or annotation dict. Defaults to None.
+            annotation_file (Optional[Union[str, dict, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath]], optional): Path to annotation file or annotation dict. Defaults to None.
             use_deepcopy (bool, optional): Whether to copy the dict annotations. Defaults to False.
             print_function (Callable, optional): Function to use for printing messages. Defaults to logger.debug.
         """  # noqa: E501
@@ -60,7 +60,7 @@ class COCO:
         if annotation_file is not None:
             self._print_function("loading annotations into memory...")
             tic = time.time()
-            if type(annotation_file) in [str, os.PathLike, pathlib.PosixPath, dict, list]:
+            if type(annotation_file) in [str, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath, dict, list]:
                 self.dataset = COCO.load_json(annotation_file, self.use_deepcopy)
             else:
                 raise TypeError(f"type {type(annotation_file)} is not supported")
@@ -309,18 +309,19 @@ class COCO:
 
     @staticmethod
     def load_json(
-        json_file: Union[str, os.PathLike, pathlib.PosixPath, dict, list], use_deepcopy: Optional[bool] = False
+        json_file: Union[str, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath, dict, list],
+        use_deepcopy: Optional[bool] = False,
     ) -> dict:
         """Load a json file.
 
         Args:
-            json_file (Union[str, os.PathLike, pathlib.PosixPath, dict, list]): Path to the json file or data dict/list.
+            json_file (Union[str, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath, dict, list]): Path to the json file or data dict/list.
             use_deepcopy (Optional[bool], optional): If True, use deep copy. Defaults to False.
 
         Returns:
             dict: Loaded json data.
-        """
-        if type(json_file) in [str, os.PathLike, pathlib.PosixPath]:
+        """  # noqa: E501
+        if type(json_file) in [str, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath]:
             with open(json_file) as io:
                 _data = json.load(io)
         else:
@@ -332,13 +333,13 @@ class COCO:
 
     def loadRes(
         self,
-        resFile: Union[str, os.PathLike, pathlib.PosixPath, dict, list, np.ndarray],
+        resFile: Union[str, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath, dict, list, np.ndarray],
         min_score: float = 0.0,
     ) -> "COCO":
         """Load result file and return a result api object.
 
         Args:
-            resFile (Union[str, os.PathLike, pathlib.PosixPath, dict, list, np.ndarray]): File name of result file or numpy array.
+            resFile (Union[str, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath, dict, list, np.ndarray]): File name of result file or numpy array.
             min_score (float, optional): Minimum score to consider a result. Defaults to 0.0.
 
         Returns:
@@ -350,7 +351,7 @@ class COCO:
 
         self.print_function("Loading and preparing results...")
         tic = time.time()
-        if type(resFile) in [str, os.PathLike, pathlib.PosixPath, dict, list]:
+        if type(resFile) in [str, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath, dict, list]:
             anns = COCO.load_json(resFile, getattr(self, "use_deepcopy", False))
         elif type(resFile) is np.ndarray:
             anns = self.loadNumpyAnnotations(resFile)
