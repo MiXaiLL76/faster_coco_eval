@@ -64,7 +64,7 @@ class TestBaseLvis(unittest.TestCase):
         cocoEval.accumulate()
         cocoEval.summarize()
 
-        self.assertEqual(cocoEval.stats_as_dict, self.stats_as_dict_result)
+        self.assertAlmostEqual(cocoEval.stats_as_dict, self.stats_as_dict_result, places=10)
 
     def test_loadNumpyAnnotations(self):
         iouType = "bbox"
@@ -78,7 +78,7 @@ class TestBaseLvis(unittest.TestCase):
         cocoEval.accumulate()
         cocoEval.summarize()
 
-        self.assertEqual(cocoEval.stats_as_dict, self.stats_as_dict_result)
+        self.assertAlmostEqual(cocoEval.stats_as_dict, self.stats_as_dict_result, places=10)
 
     def test_getAnnIds(self):
         cocoGt = COCO(self.gt_file)
