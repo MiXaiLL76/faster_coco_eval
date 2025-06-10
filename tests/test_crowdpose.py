@@ -10,6 +10,8 @@ from faster_coco_eval import COCO, COCOeval_faster
 class TestCrowdpose(unittest.TestCase):
     """Test Crowdpose functionality."""
 
+    maxDiff = None
+
     def setUp(self):
         self.gt_file = os.path.join("dataset", "example_crowdpose_val.json")
         self.dt_file = os.path.join("dataset", "example_crowdpose_preds.json")

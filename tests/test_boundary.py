@@ -10,6 +10,8 @@ from faster_coco_eval import COCO, COCOeval_faster
 
 
 class TestBoundary(unittest.TestCase):
+    maxDiff = None
+
     def setUp(self):
         # fmt: off
         segm = [

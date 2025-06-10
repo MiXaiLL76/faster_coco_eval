@@ -10,6 +10,8 @@ import faster_coco_eval.faster_eval_api_cpp as _C
 class TestBaseCoco(unittest.TestCase):
     """Test basic COCO functionality."""
 
+    maxDiff = None
+
     def setUp(self):
         pass
 

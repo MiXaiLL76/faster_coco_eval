@@ -13,6 +13,7 @@ class TestBaseLvis(unittest.TestCase):
 
     prepared_coco_in_dict = None
     prepared_anns = None
+    maxDiff = None
 
     def setUp(self):
         self.gt_file = os.path.join("lvis_dataset", "lvis_val_100.json")

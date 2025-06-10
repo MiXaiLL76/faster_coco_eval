@@ -26,6 +26,8 @@ class DummyCOCO:
 
 
 class TestExtraDraw(unittest.TestCase):
+    maxDiff = None
+
     def setUp(self):
         self.dummy_coco = DummyCOCO()
         # Create a fake jpg file for testing

@@ -16,6 +16,8 @@ def _encode(x):
 
 
 class TestMaskApi(unittest.TestCase):
+    maxDiff = None
+
     def setUp(self):
         self.rleObjs = []
         self.areas = []

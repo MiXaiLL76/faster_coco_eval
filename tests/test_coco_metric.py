@@ -19,6 +19,8 @@ from faster_coco_eval import COCO, COCOeval_faster
 
 
 class TestCocoMetric(TestCase):
+    maxDiff = None
+
     def _create_dummy_coco_json(self, json_name):
         dummy_mask = np.zeros((10, 10), order="F", dtype=np.uint8)
         dummy_mask[:5, :5] = 1

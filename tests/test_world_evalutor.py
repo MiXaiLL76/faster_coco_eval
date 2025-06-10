@@ -17,6 +17,8 @@ from faster_coco_eval.utils.pytorch import FasterCocoEvaluator
 class TestWorldCoco(unittest.TestCase):
     """Test basic rankX COCO functionality."""
 
+    maxDiff = None
+
     def setUp(self):
         self.gt_lvis_file = os.path.join("lvis_dataset", "lvis_val_100.json")
         self.dt_lvis_file = os.path.join("lvis_dataset", "lvis_results_100.json")

@@ -142,6 +142,8 @@ _inputs = {
 
 
 class TestTorchmetricsLib(TestCase):
+    maxDiff = None
+
     def setUp(self):
         # Preds should be a list of elements, where each element is a dict
         # containing 3 keys: boxes, scores, labels

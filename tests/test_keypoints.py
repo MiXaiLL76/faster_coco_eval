@@ -15,6 +15,8 @@ from faster_coco_eval import COCO, COCOeval_faster
 
 
 class TestKeypointsMetric(TestCase):
+    maxDiff = None
+
     def setUp(self):
         self.gt_file = os.path.join("keypoints_dataset", "gt_dataset.json")
         self.dt_file = os.path.join("keypoints_dataset", "dt_dataset.json")

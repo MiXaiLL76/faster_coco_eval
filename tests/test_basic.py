@@ -15,6 +15,8 @@ from faster_coco_eval.extra import PreviewResults
 class TestBaseCoco(unittest.TestCase):
     """Test basic COCO functionality."""
 
+    maxDiff = None
+
     def setUp(self):
         self.root_folder = "dataset"
 
