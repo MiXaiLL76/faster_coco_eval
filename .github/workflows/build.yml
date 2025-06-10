@@ -114,6 +114,7 @@ jobs:
           repository-url: https://test.pypi.org/legacy/
 
   docs:
+    needs: [publish_test]
     uses: ./.github/workflows/docs.yml
 
   publish_prod:
