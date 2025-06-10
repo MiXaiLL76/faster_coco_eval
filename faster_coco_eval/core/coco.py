@@ -320,7 +320,7 @@ class COCO:
         Returns:
             dict: Loaded json data.
         """
-        if type(json_file) in [str, os.PathLike]:
+        if type(json_file) in [str, os.PathLike, pathlib.PosixPath]:
             with open(json_file) as io:
                 _data = json.load(io)
         else:
