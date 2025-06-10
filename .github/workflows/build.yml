@@ -1,8 +1,13 @@
 name: Build and Publish
 
 on:
-  - workflow_dispatch
-  - workflow_call
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
   test_source:
