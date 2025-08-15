@@ -22,6 +22,7 @@ class PreviewResults(ExtraEval):
         gt_ann_ids: Optional[set] = None,
         dt_ann_ids: Optional[set] = None,
         return_fig: bool = False,
+        show_false_only: bool = False,
     ):
         """Display the image with the results.
 
@@ -36,6 +37,7 @@ class PreviewResults(ExtraEval):
             gt_ann_ids (Optional[set]): Ground truth annotation ids.
             dt_ann_ids (Optional[set]): Detected annotation ids.
             return_fig (bool): Return the figure.
+            show_false_only (bool): If True, only display images that contains false positives or false negatives.
 
         Returns:
             Optional[Any]: The figure object if return_fig is True, otherwise None.
@@ -54,6 +56,7 @@ class PreviewResults(ExtraEval):
             gt_ann_ids=gt_ann_ids,
             dt_ann_ids=dt_ann_ids,
             return_fig=return_fig,
+            show_false_only=show_false_only,
         )
 
     def display_tp_fp_fn(
@@ -65,6 +68,7 @@ class PreviewResults(ExtraEval):
         display_gt: bool = False,
         data_folder: Optional[str] = None,
         categories: Optional[list] = None,
+        show_false_only: bool = False,
     ):
         """Display true positives, false positives, and false negatives for
         given images.
@@ -77,6 +81,7 @@ class PreviewResults(ExtraEval):
             display_gt (bool): Display ground truth.
             data_folder (Optional[str]): Data folder.
             categories (Optional[list]): Categories to display.
+            show_false_only (bool): If True, only display images that contains false positives or false negatives.
 
         Returns:
             None
@@ -97,6 +102,7 @@ class PreviewResults(ExtraEval):
                 display_gt=display_gt,
                 data_folder=data_folder,
                 categories=categories,
+                show_false_only=show_false_only,
             )
 
     def _compute_confusion_matrix(

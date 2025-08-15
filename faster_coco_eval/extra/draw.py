@@ -116,6 +116,7 @@ def display_image(
     gt_ann_ids: Optional[set] = None,
     dt_ann_ids: Optional[set] = None,
     return_fig: bool = False,
+    show_false_only: bool = False,
 ) -> Optional[go.Figure]:
     """Display the image with the results.
 
@@ -133,11 +134,13 @@ def display_image(
         gt_ann_ids (set, optional): Set of ground truth annotation ids to display. Default is None.
         dt_ann_ids (set, optional): Set of detection annotation ids to display. Default is None.
         return_fig (bool, optional): Return the figure object instead of displaying it. Default is False.
+        show_false_only (bool, optional): If True, only display images that contains false positives or false negatives. Default is False.
 
     Returns:
         Optional[go.Figure]: The figure object if return_fig is True, otherwise None.
     """
     polygons = []
+    contains_false = False
 
     image = cocoGt.imgs[image_id]
     gt_anns = {ann["id"]: ann for ann in cocoGt.imgToAnns[image_id]}
@@ -178,6 +181,7 @@ def display_image(
                     "category={}".format(categories_labels[ann["category_id"]]),
                 ]
                 if ann.get("fn", False):
+                    contains_false = True
                     if display_fn:
                         fn_text = ["<b>FN</b>"] + _text
                         poly = generate_ann_polygon(
@@ -233,6 +237,7 @@ def display_image(
                         if poly is not None:
                             polygons.append(poly)
                 else:
+                    contains_false = True
                     if display_fp:
                         fp_text = ["<b>FP</b>"] + _text
 
@@ -246,6 +251,9 @@ def display_image(
                         )
                         if poly is not None:
                             polygons.append(poly)
+
+    if show_false_only and contains_false is False:
+        return None
 
     fig = px.imshow(
         im,
