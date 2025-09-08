@@ -1,13 +1,22 @@
+import numpy as np
+
+import faster_coco_eval.core.mask as mask_util
+
 try:
     import cv2
 
     opencv_available = True
 except ImportError:
+    cv2 = None
     opencv_available = False
 
-import numpy as np
 
-import faster_coco_eval.core.mask as mask_util
+def _check_opencv():
+    """Check if OpenCV is available and raise informative error."""
+    if not opencv_available:
+        message = "Missing dependency: opencv-python\n"
+        message += "Use: pip install faster-coco-eval[extra]"
+        raise ImportError(message)
 
 
 def conver_mask_to_poly(mask: np.ndarray, bbox: list, boxes_margin: float = 0.1) -> list:
@@ -21,6 +30,8 @@ def conver_mask_to_poly(mask: np.ndarray, bbox: list, boxes_margin: float = 0.1)
     Returns:
         list: List of polygons in COCO format (list of lists of coordinates).
     """
+    _check_opencv()
+
     x1, y1, w, h = bbox
     x2 = x1 + w
     y2 = y1 + h
@@ -89,9 +100,6 @@ def convert_ann_rle_to_poly(ann: dict) -> dict:
         Exception: If OpenCV is not available and conversion is required.
     """
     if type(ann["segmentation"]) is dict:
-        if not opencv_available:
-            raise Exception("Your dataset needs to be converted to polygons. Install **opencv-python** for this.")
-
         ann["counts"] = ann["segmentation"]
         ann["segmentation"] = convert_rle_to_poly(ann["segmentation"], ann["bbox"])
     return ann

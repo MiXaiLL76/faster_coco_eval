@@ -1,1 +1,4 @@
 opencv-python-headless
+pandas
+plotly
+Pillow

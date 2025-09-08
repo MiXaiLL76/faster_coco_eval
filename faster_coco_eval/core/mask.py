@@ -4,14 +4,24 @@ from typing import Dict, List, Union
 
 import numpy as np
 
+import faster_coco_eval.mask_api_new_cpp as _mask
+
 try:
     import cv2
 
     opencv_available = True
 except ImportError:
+    cv2 = None
     opencv_available = False
 
-import faster_coco_eval.mask_api_new_cpp as _mask
+
+def _check_opencv():
+    """Check if OpenCV is available and raise informative error."""
+    if not opencv_available:
+        message = "Missing dependency: opencv-python\n"
+        message += "Use: pip install faster-coco-eval[extra]"
+        raise ImportError(message)
+
 
 ValidRleType = Union[List[np.ndarray], List[List[float]], np.ndarray, List[dict]]
 
@@ -40,6 +50,8 @@ def rleToBoundaryCV(rle: dict, dilation_ratio: float = 0.02) -> dict:
     Returns:
         dict: Run-length encoding of the boundary mask.
     """
+    _check_opencv()
+
     mask = _mask.decode([rle])[:, :, 0]
     h, w = rle["size"]
 
@@ -81,8 +93,6 @@ def rleToBoundary(
     if backend == "mask_api":
         return _mask.toBoundary([rle], dilation_ratio)[0]
     else:
-        if not opencv_available:
-            raise ImportError("OpenCV is not available. Please install OpenCV to use this function.")
         return rleToBoundaryCV(rle, dilation_ratio)
 
 
