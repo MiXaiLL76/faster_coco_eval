@@ -425,9 +425,14 @@ class COCO:
             raise Exception("datasetType not supported")
 
         if datasetType == "instances":
-            import matplotlib.pyplot as plt
-            from matplotlib.collections import PatchCollection
-            from matplotlib.patches import Polygon
+            try:
+                import matplotlib.pyplot as plt
+                from matplotlib.collections import PatchCollection
+                from matplotlib.patches import Polygon
+            except ImportError:
+                message = "Missing dependencies: matplotlib\n"
+                message += "Use: pip install matplotlib"
+                raise ImportError(message)
 
             ax = plt.gca()
             ax.set_autoscale_on(False)

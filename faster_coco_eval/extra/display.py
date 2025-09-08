@@ -17,6 +17,7 @@ class PreviewResults(ExtraEval):
         display_fn: bool = True,
         display_tp: bool = True,
         display_gt: bool = True,
+        show_false_only: bool = False,
         data_folder: Optional[str] = None,
         categories: Optional[list] = None,
         gt_ann_ids: Optional[set] = None,
@@ -31,6 +32,7 @@ class PreviewResults(ExtraEval):
             display_fn (bool): Display false negatives.
             display_tp (bool): Display true positives.
             display_gt (bool): Display ground truth.
+            show_false_only (bool): If True, only display images that contains false positives or false negatives.
             data_folder (Optional[str]): Data folder.
             categories (Optional[list]): Categories to display.
             gt_ann_ids (Optional[set]): Ground truth annotation ids.
@@ -49,6 +51,7 @@ class PreviewResults(ExtraEval):
             display_fn=display_fn,
             display_tp=display_tp,
             display_gt=display_gt,
+            show_false_only=show_false_only,
             data_folder=data_folder,
             categories=categories,
             gt_ann_ids=gt_ann_ids,
@@ -63,6 +66,7 @@ class PreviewResults(ExtraEval):
         display_fn: bool = True,
         display_tp: bool = True,
         display_gt: bool = False,
+        show_false_only: bool = False,
         data_folder: Optional[str] = None,
         categories: Optional[list] = None,
     ):
@@ -75,6 +79,7 @@ class PreviewResults(ExtraEval):
             display_fn (bool): Display false negatives.
             display_tp (bool): Display true positives.
             display_gt (bool): Display ground truth.
+            show_false_only (bool): If True, only display images that contains false positives or false negatives.
             data_folder (Optional[str]): Data folder.
             categories (Optional[list]): Categories to display.
 
@@ -95,6 +100,7 @@ class PreviewResults(ExtraEval):
                 display_fn=display_fn,
                 display_tp=display_tp,
                 display_gt=display_gt,
+                show_false_only=show_false_only,
                 data_folder=data_folder,
                 categories=categories,
             )

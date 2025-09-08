@@ -11,12 +11,43 @@ else:
     showAnnsiouTypeT = str
 
 import numpy as np
-import plotly.express as px
-import plotly.graph_objs as go
-from PIL import Image
+
+try:
+    import plotly.express as px
+    import plotly.graph_objs as go
+
+    plotly_available = True
+except ImportError:
+    px = None
+    go = None
+    plotly_available = False
+
+try:
+    from PIL import Image
+
+    pillow_available = True
+except ImportError:
+    Image = None
+    pillow_available = False
 
 from ..core import COCO
 from .utils import convert_ann_rle_to_poly
+
+
+def _check_dependencies(*deps):
+    """Check if required dependencies are available and raise informative
+    error."""
+    missing = []
+    if "plotly" in deps and not plotly_available:
+        missing.append("plotly")
+    if "pillow" in deps and not pillow_available:
+        missing.append("Pillow")
+
+    if missing:
+        message = f"Missing dependencies: {', '.join(missing)}\n"
+        message += "Use: pip install faster-coco-eval[extra]"
+        raise ImportError(message)
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +65,7 @@ def generate_ann_polygon(
     text: Optional[str] = None,
     legendgroup: Optional[str] = None,
     category_id_to_skeleton: Optional[dict] = None,
-) -> go.Scatter:
+) -> "go.Scatter":
     """Generate annotation polygon for plotly.
 
     Args:
@@ -48,6 +79,8 @@ def generate_ann_polygon(
     Returns:
         go.Scatter: Plotly Scatter object representing the annotation polygon.
     """  # noqa: E501
+    _check_dependencies("plotly")
+
     all_x = []
     all_y = []
 
@@ -111,12 +144,13 @@ def display_image(
     display_fn: bool = True,
     display_tp: bool = True,
     display_gt: bool = True,
+    show_false_only: bool = False,
     data_folder: Optional[str] = None,
     categories: Optional[list] = None,
     gt_ann_ids: Optional[set] = None,
     dt_ann_ids: Optional[set] = None,
     return_fig: bool = False,
-) -> Optional[go.Figure]:
+) -> Optional["go.Figure"]:
     """Display the image with the results.
 
     Args:
@@ -128,6 +162,7 @@ def display_image(
         display_fn (bool, optional): Display false negative annotations. Default is True.
         display_tp (bool, optional): Display true positive annotations. Default is True.
         display_gt (bool, optional): Display ground truth annotations. Default is True.
+        show_false_only (bool): If True, only display images that contains false positives or false negatives.
         data_folder (str, optional): Folder containing the images. Default is None.
         categories (list, optional): List of category ids to display. Default is None.
         gt_ann_ids (set, optional): Set of ground truth annotation ids to display. Default is None.
@@ -137,7 +172,10 @@ def display_image(
     Returns:
         Optional[go.Figure]: The figure object if return_fig is True, otherwise None.
     """
+    _check_dependencies("plotly", "pillow")
+
     polygons = []
+    contains_false = False
 
     image = cocoGt.imgs[image_id]
     gt_anns = {ann["id"]: ann for ann in cocoGt.imgToAnns[image_id]}
@@ -178,6 +216,7 @@ def display_image(
                     "category={}".format(categories_labels[ann["category_id"]]),
                 ]
                 if ann.get("fn", False):
+                    contains_false = True
                     if display_fn:
                         fn_text = ["<b>FN</b>"] + _text
                         poly = generate_ann_polygon(
@@ -233,6 +272,7 @@ def display_image(
                         if poly is not None:
                             polygons.append(poly)
                 else:
+                    contains_false = True
                     if display_fp:
                         fp_text = ["<b>FP</b>"] + _text
 
@@ -246,6 +286,9 @@ def display_image(
                         )
                         if poly is not None:
                             polygons.append(poly)
+
+    if show_false_only and contains_false is False:
+        return None
 
     fig = px.imshow(
         im,
@@ -286,7 +329,7 @@ def display_matrix(
     labels: list,
     normalize: bool = False,
     return_fig: bool = False,
-) -> Optional[go.Figure]:
+) -> Optional["go.Figure"]:
     """Display the confusion matrix.
 
     Args:
@@ -298,6 +341,7 @@ def display_matrix(
     Returns:
         Optional[go.Figure]: The figure object if return_fig is True, otherwise None.
     """
+    _check_dependencies("plotly")
 
     _labels = labels + ["fp", "fn"]
 
@@ -362,6 +406,8 @@ def plot_pre_rec(curves, return_fig: bool = False):
     Returns:
         Optional[go.Figure]: The figure object if return_fig is True, otherwise None.
     """  # noqa: E501
+    _check_dependencies("plotly")
+
     fig = go.Figure()
 
     for _curve in curves:
@@ -423,6 +469,8 @@ def plot_f1_confidence(curves, return_fig: bool = False):
     Returns:
         Optional[go.Figure]: The figure object if return_fig is True, otherwise None.
     """  # noqa: E501
+    _check_dependencies("plotly")
+
     fig = go.Figure()
     eps = 1e-16
     for _curve in curves:
@@ -485,6 +533,8 @@ def plot_ced_metric(curves, normalize: bool = False, return_fig: bool = False):
     Returns:
         Optional[go.Figure]: The figure object if return_fig is True, otherwise None.
     """  # noqa: E501
+    _check_dependencies("plotly")
+
     fig = go.Figure()
 
     if normalize:
@@ -613,6 +663,8 @@ def show_anns(
     Returns:
         Optional[go.Figure]: The figure object if return_fig is True, otherwise None.
     """
+    _check_dependencies("plotly", "pillow")
+
     return display_image(
         cocoGt,
         image_id=image_id,

@@ -2,8 +2,12 @@ import os
 import unittest
 
 import numpy as np
-import plotly.graph_objs as go
-from PIL import Image
+
+try:
+    import plotly.graph_objs as go
+    from PIL import Image
+except ImportError:
+    raise unittest.SkipTest("Skipping all tests for faster_coco_eval.extra.draw.")
 
 from faster_coco_eval.extra.draw import (
     display_image,

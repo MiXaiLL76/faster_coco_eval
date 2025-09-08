@@ -19,3 +19,5 @@ docs/source/examples/*.ipynb
 .ruff_cache
 .pytest_cache
 htmlcov
+examples/comparison/ultralytics/datasets/*
+examples/profile/baseline.prof
