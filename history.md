@@ -1,5 +1,10 @@
 # History
 
+## v1.6.8
+
+- [x] fix <https://github.com/MiXaiLL76/faster_coco_eval/pull/59>
+- [x] fix <https://github.com/MiXaiLL76/faster_coco_eval/issues/56>
+
 ## v1.6.7
 
 - [x] Added workflow for automatic Sphinx documentation build and deploy (`.github/workflows/docs.yml`)
