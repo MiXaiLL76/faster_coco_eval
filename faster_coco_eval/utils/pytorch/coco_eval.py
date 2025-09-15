@@ -39,7 +39,17 @@ class FasterCocoEvaluator:
         lvis_style (bool, optional): Whether to use LVIS-style evaluation. Defaults to False.
     """
 
-    def __init__(self, coco_gt: COCO, iou_types: List[str], lvis_style: bool = False):
+    def __init__(
+        self,
+        coco_gt: COCO,
+        iou_types: List[str],
+        lvis_style: bool = False,
+        ranges={
+            "small": [0 ** 2, 32 ** 2],
+            "medium": [32 ** 2, 96 ** 2],
+            "large": [96 ** 2, 1e5 ** 2],
+        },
+    ) -> None:
         """Initializes the FasterCocoEvaluator.
 
         Args:
@@ -55,10 +65,16 @@ class FasterCocoEvaluator:
         self.lvis_style = lvis_style
 
         self.iou_types = iou_types
+        self.ranges = ranges
         self.coco_eval: Dict[str, COCOeval_faster] = {}
         for iou_type in iou_types:
             self.coco_eval[iou_type] = COCOeval_faster(
-                coco_gt, iouType=iou_type, lvis_style=lvis_style, print_function=print, separate_eval=True
+                coco_gt,
+                iouType=iou_type,
+                ranges=ranges,
+                lvis_style=lvis_style,
+                print_function=print,
+                separate_eval=True,
             )
 
         self.img_ids = []
@@ -75,7 +91,12 @@ class FasterCocoEvaluator:
         self.coco_eval = {}
         for iou_type in self.iou_types:
             self.coco_eval[iou_type] = COCOeval_faster(
-                self.coco_gt, iouType=iou_type, lvis_style=self.lvis_style, print_function=print, separate_eval=True
+                self.coco_gt,
+                iouType=iou_type,
+                ranges=self.ranges,
+                lvis_style=self.lvis_style,
+                print_function=print,
+                separate_eval=True,
             )
         self.img_ids = []
         self.eval_imgs = {k: [] for k in self.iou_types}
@@ -105,7 +126,9 @@ class FasterCocoEvaluator:
 
             self.eval_imgs[iou_type].append(
                 np.array(coco_eval._evalImgs_cpp).reshape(
-                    len(coco_eval.params.catIds), len(coco_eval.params.areaRng), len(coco_eval.params.imgIds)
+                    len(coco_eval.params.catIds),
+                    len(coco_eval.params.areaRng),
+                    len(coco_eval.params.imgIds),
                 )
             )
 
@@ -116,7 +139,9 @@ class FasterCocoEvaluator:
             None
         """
         for iou_type in self.iou_types:
-            img_ids, eval_imgs = merge(self.img_ids, self.eval_imgs[iou_type], self.world_size)
+            img_ids, eval_imgs = merge(
+                self.img_ids, self.eval_imgs[iou_type], self.world_size
+            )
 
             coco_eval = self.coco_eval[iou_type]
             coco_eval._evalImgs_cpp = eval_imgs
@@ -143,7 +168,9 @@ class FasterCocoEvaluator:
             coco_eval.summarize()
             self.stats_as_dict[iou_type] = coco_eval.stats_as_dict
 
-    def prepare(self, predictions: Dict[Any, Any], iou_type: str) -> List[Dict[str, Any]]:
+    def prepare(
+        self, predictions: Dict[Any, Any], iou_type: str
+    ) -> List[Dict[str, Any]]:
         """Prepares predictions for COCO evaluation.
 
         Args:
@@ -162,7 +189,9 @@ class FasterCocoEvaluator:
         else:
             raise ValueError(f"Unknown iou type {iou_type}")
 
-    def prepare_for_coco_detection(self, predictions: Dict[Any, Any]) -> List[Dict[str, Any]]:
+    def prepare_for_coco_detection(
+        self, predictions: Dict[Any, Any]
+    ) -> List[Dict[str, Any]]:
         """Converts bounding box predictions to COCO detection format.
 
         Args:
@@ -184,18 +213,22 @@ class FasterCocoEvaluator:
             scores = prediction["scores"].tolist()
             labels = prediction["labels"].tolist()
 
-            coco_results.extend([
-                {
-                    "image_id": original_id,
-                    "category_id": int(labels[k]),
-                    "bbox": box,
-                    "score": scores[k],
-                }
-                for k, box in enumerate(boxes)
-            ])
+            coco_results.extend(
+                [
+                    {
+                        "image_id": original_id,
+                        "category_id": int(labels[k]),
+                        "bbox": box,
+                        "score": scores[k],
+                    }
+                    for k, box in enumerate(boxes)
+                ]
+            )
         return coco_results
 
-    def prepare_for_coco_segmentation(self, predictions: Dict[Any, Any]) -> List[Dict[str, Any]]:
+    def prepare_for_coco_segmentation(
+        self, predictions: Dict[Any, Any]
+    ) -> List[Dict[str, Any]]:
         """Converts mask predictions to COCO segmentation format.
 
         Args:
@@ -222,23 +255,30 @@ class FasterCocoEvaluator:
             labels = prediction["labels"].tolist()
 
             rles = [
-                mask_util.encode(np.array(mask[0, :, :, np.newaxis], dtype=np.uint8, order="F"))[0] for mask in masks
+                mask_util.encode(
+                    np.array(mask[0, :, :, np.newaxis], dtype=np.uint8, order="F")
+                )[0]
+                for mask in masks
             ]
             for rle in rles:
                 rle["counts"] = rle["counts"].decode("utf-8")
 
-            coco_results.extend([
-                {
-                    "image_id": original_id,
-                    "category_id": int(labels[k]),
-                    "segmentation": rle,
-                    "score": scores[k],
-                }
-                for k, rle in enumerate(rles)
-            ])
+            coco_results.extend(
+                [
+                    {
+                        "image_id": original_id,
+                        "category_id": int(labels[k]),
+                        "segmentation": rle,
+                        "score": scores[k],
+                    }
+                    for k, rle in enumerate(rles)
+                ]
+            )
         return coco_results
 
-    def prepare_for_coco_keypoint(self, predictions: Dict[Any, Any]) -> List[Dict[str, Any]]:
+    def prepare_for_coco_keypoint(
+        self, predictions: Dict[Any, Any]
+    ) -> List[Dict[str, Any]]:
         """Converts keypoint predictions to COCO keypoint format.
 
         Args:
@@ -263,15 +303,17 @@ class FasterCocoEvaluator:
             keypoints = prediction["keypoints"]
             keypoints = keypoints.flatten(start_dim=1).tolist()
 
-            coco_results.extend([
-                {
-                    "image_id": original_id,
-                    "category_id": int(labels[k]),
-                    "keypoints": keypoint,
-                    "score": scores[k],
-                }
-                for k, keypoint in enumerate(keypoints)
-            ])
+            coco_results.extend(
+                [
+                    {
+                        "image_id": original_id,
+                        "category_id": int(labels[k]),
+                        "keypoints": keypoint,
+                        "score": scores[k],
+                    }
+                    for k, keypoint in enumerate(keypoints)
+                ]
+            )
         return coco_results
 
 
@@ -327,7 +369,9 @@ def all_gather(data: Any, world_size: int = None) -> List[Any]:
     for _ in size_list:
         tensor_list.append(torch.empty((max_size,), dtype=torch.uint8, device="cuda"))
     if local_size != max_size:
-        padding = torch.empty(size=(max_size - local_size,), dtype=torch.uint8, device="cuda")
+        padding = torch.empty(
+            size=(max_size - local_size,), dtype=torch.uint8, device="cuda"
+        )
         tensor = torch.cat((tensor, padding), dim=0)
     dist.all_gather(tensor_list, tensor)
 

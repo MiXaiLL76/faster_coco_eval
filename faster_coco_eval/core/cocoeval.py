@@ -30,6 +30,11 @@ class COCOeval:
         cocoGt: Optional[COCO] = None,
         cocoDt: Optional[COCO] = None,
         iouType: iouTypeT = "segm",
+        ranges: Optional[dict] = {
+            "small": [0, 32 ** 2],
+            "medium": [32 ** 2, 96 ** 2],
+            "large": [96 ** 2, 1e5 ** 2],
+        },
         print_function: Callable = logger.info,
         extra_calc: bool = False,
         kpt_oks_sigmas: Optional[List[float]] = None,
@@ -45,6 +50,7 @@ class COCOeval:
             cocoGt (Optional[COCO]): Object with ground truth annotations.
             cocoDt (Optional[COCO]): Object with detection annotations.
             iouType (iouTypeT): Type of the intersection over union, defaults to "segm".
+            ranges (Optional[dict]): Dictionary of area ranges, defaults to predefined ranges.
             print_function (Callable): Function to print output, defaults to logger.info.
             extra_calc (bool): Whether to perform extra calculations, defaults to False.
             kpt_oks_sigmas (Optional[List[float]]): List of sigmas for keypoint evaluation, defaults to None.
@@ -58,7 +64,7 @@ class COCOeval:
         self.cocoDt: COCO = cocoDt  # detections COCO API
         self.evalImgs = defaultdict(list)  # per-image per-category evaluation results [KxAxI] elements
         self.eval: dict = {}  # accumulated evaluation results
-        self.params = Params(iouType=iouType, kpt_sigmas=kpt_oks_sigmas)  # parameters
+        self.params = Params(iouType=iouType, kpt_sigmas=kpt_oks_sigmas, ranges=ranges)  # parameters
         self._paramsEval: dict = {}  # parameters for evaluation
         self.stats: list = []  # result summarization
         self.ious: dict = {}  # ious between all gts and dts
@@ -332,10 +338,10 @@ class COCOeval:
                     dy = np.max((z, y0 - yd), axis=0) + np.max((z, yd - y1), axis=0)
 
                 if self.use_area:
-                    e = (dx**2 + dy**2) / vars / (gt["area"] + np.spacing(1)) / 2
+                    e = (dx ** 2 + dy ** 2) / vars / (gt["area"] + np.spacing(1)) / 2
                 else:
                     tmparea = gt["bbox"][3] * gt["bbox"][2] * 0.53
-                    e = (dx**2 + dy**2) / vars / (tmparea + np.spacing(1)) / 2
+                    e = (dx ** 2 + dy ** 2) / vars / (tmparea + np.spacing(1)) / 2
 
                 if k1 > 0:
                     e = e[vg > 0]
@@ -457,6 +463,8 @@ class COCOeval:
 
     def summarize(self):
         """Compute and display summary metrics for evaluation results.
+        After calling this method, self.all_stats will contain the **full results** including all metrics
+        while self.stats contains a subset of the most commonly used metrics.
 
         Note:
             This function can *only* be applied on the default parameter setting.
@@ -468,33 +476,39 @@ class COCOeval:
             Returns:
                 np.ndarray: Array of summary statistics.
             """
-            _count = 17 if self.lvis_style else 14
+            nb_rngs = len(self.params.areaRngLbl) - 1  # exclude 'all'
+            _count = 2 * nb_rngs + (11 if self.lvis_style else 8)
             stats = np.zeros((_count,))
 
+            # Add AP global metrics
             stats[0] = self._summarize(1, maxDets=self.params.maxDets[-1])  # AP_all
             stats[1] = self._summarize(1, iouThr=0.5, maxDets=self.params.maxDets[-1])  # AP_50
             stats[2] = self._summarize(1, iouThr=0.75, maxDets=self.params.maxDets[-1])  # AP_75
-            stats[3] = self._summarize(1, areaRng="small", maxDets=self.params.maxDets[-1])  # AP_small
-            stats[4] = self._summarize(1, areaRng="medium", maxDets=self.params.maxDets[-1])  # AP_medium
-            stats[5] = self._summarize(1, areaRng="large", maxDets=self.params.maxDets[-1])  # AP_large
 
+            # Add AP metrics for each area range (AP_*label*)
+            for idx, label in enumerate(self.params.areaRngLbl[1:]):  # exclude 'all'
+                stats[3 + idx] = self._summarize(1, areaRng=label, maxDets=self.params.maxDets[-1])
+
+            # Add lvis style metrics if necessary
             if self.lvis_style:
-                stats[14] = self._summarize(1, maxDets=self.params.maxDets[-1], freq_group_idx=0)  # APr
-                stats[15] = self._summarize(1, maxDets=self.params.maxDets[-1], freq_group_idx=1)  # APc
-                stats[16] = self._summarize(1, maxDets=self.params.maxDets[-1], freq_group_idx=2)  # APf
+                stats[2 * nb_rngs + 8] = self._summarize(1, maxDets=self.params.maxDets[-1], freq_group_idx=0)  # APr
+                stats[2 * nb_rngs + 9] = self._summarize(1, maxDets=self.params.maxDets[-1], freq_group_idx=1)  # APc
+                stats[2 * nb_rngs + 10] = self._summarize(1, maxDets=self.params.maxDets[-1], freq_group_idx=2)  # APf
 
-            stats[6] = self._summarize(0, maxDets=self.params.maxDets[0])  # AR_first or AR_all
+            # Add AR metrics
+            stats[3 + nb_rngs] = self._summarize(0, maxDets=self.params.maxDets[0])  # AR_first or AR_all
             if len(self.params.maxDets) >= 2:
-                stats[7] = self._summarize(0, maxDets=self.params.maxDets[1])  # AR_second
+                stats[3 + nb_rngs + 1] = self._summarize(0, maxDets=self.params.maxDets[1])  # AR_second
             if len(self.params.maxDets) >= 3:
-                stats[8] = self._summarize(0, maxDets=self.params.maxDets[2])  # AR_third
+                stats[3 + nb_rngs + 2] = self._summarize(0, maxDets=self.params.maxDets[2])  # AR_third
 
-            stats[9] = self._summarize(0, areaRng="small", maxDets=self.params.maxDets[-1])  # AR_small
-            stats[10] = self._summarize(0, areaRng="medium", maxDets=self.params.maxDets[-1])  # AR_medium
-            stats[11] = self._summarize(0, areaRng="large", maxDets=self.params.maxDets[-1])  # AR_large
+            # Add AR metrics for each area range (AR_*label*)
+            for idx, label in enumerate(self.params.areaRngLbl[1:]):  # exclude 'all'
+                stats[6 + nb_rngs + idx] = self._summarize(0, areaRng=label, maxDets=self.params.maxDets[-1])
 
-            stats[12] = self._summarize(0, iouThr=0.5, maxDets=self.params.maxDets[-1])  # AR_50
-            stats[13] = self._summarize(0, iouThr=0.75, maxDets=self.params.maxDets[-1])  # AR_75
+            # Add AR at IoU thresholds 0.5 and 0.75
+            stats[6 + 2 * nb_rngs] = self._summarize(0, iouThr=0.5, maxDets=self.params.maxDets[-1])  # AR_50
+            stats[6 + 2 * nb_rngs + 1] = self._summarize(0, iouThr=0.75, maxDets=self.params.maxDets[-1])  # AR_75
 
             return stats
 
@@ -637,47 +651,61 @@ class COCOeval:
 class Params:
     """Params for coco evaluation api."""
 
-    def setDetParams(self):
+    def setDetParams(self, ranges: dict):
         """Set parameters for detection evaluation."""
         self.maxDets = [1, 10, 100]
-        self.areaRng = [
-            [0**2, 1e5**2],
-            [0**2, 32**2],
-            [32**2, 96**2],
-            [96**2, 1e5**2],
-        ]
-        self.areaRngLbl = ["all", "small", "medium", "large"]
+
+        self.areaRng = [[0 ** 2, 1e5 ** 2]]
+        self.areaRngLbl = ["all"]  # First range is always "all"
+
+        min_area = 1e5 ** 2
+        max_area = 0
+        for key, val in ranges.items():
+            self.areaRng.append(val)
+            self.areaRngLbl.append(key)
+
+            # Determine the min and max area to ensure full dimension coverage
+            range_i = val
+            if range_i[0] < min_area:
+                min_area = range_i[0]
+            if range_i[1] > max_area:
+                max_area = range_i[1]
+
+        if min_area > 0 or max_area < 1e5 ** 2:
+            logger.warning("Provided area ranges do not span full range from 0 to 1e5^2.")
 
     def setKpParams(self):
         """Set parameters for keypoint evaluation."""
         self.maxDets = [20]
         self.areaRng = [
-            [0**2, 1e5**2],
-            [32**2, 96**2],
-            [96**2, 1e5**2],
+            [0 ** 2, 1e5 ** 2],
+            [32 ** 2, 96 ** 2],
+            [96 ** 2, 1e5 ** 2],
         ]
         self.areaRngLbl = ["all", "medium", "large"]
 
         self.kpt_oks_sigmas = (
-            np.array([
-                0.26,
-                0.25,
-                0.25,
-                0.35,
-                0.35,
-                0.79,
-                0.79,
-                0.72,
-                0.72,
-                0.62,
-                0.62,
-                1.07,
-                1.07,
-                0.87,
-                0.87,
-                0.89,
-                0.89,
-            ])
+            np.array(
+                [
+                    0.26,
+                    0.25,
+                    0.25,
+                    0.35,
+                    0.35,
+                    0.79,
+                    0.79,
+                    0.72,
+                    0.72,
+                    0.62,
+                    0.62,
+                    1.07,
+                    1.07,
+                    0.87,
+                    0.87,
+                    0.89,
+                    0.89,
+                ]
+            )
             / 10.0
         )
 
@@ -685,12 +713,18 @@ class Params:
         self,
         iouType: iouTypeT = "segm",
         kpt_sigmas: Optional[List[float]] = None,
+        ranges: Optional[dict] = {
+            "small": [0 ** 2, 32 ** 2],
+            "medium": [32 ** 2, 96 ** 2],
+            "large": [96 ** 2, 1e5 ** 2],
+        },
     ):
         """Initialize Params for COCO evaluation API.
 
         Args:
             iouType (iouTypeT): Either "segm", "bbox", "boundary", "keypoints", or "keypoints_crowd".
             kpt_sigmas (Optional[List[float]]): List of keypoint sigma values.
+            ranges (Optional[dict]): Dictionary defining area ranges with labels as keys and [min, max] as values.
         """
         self.imgIds = []
         self.catIds = []
@@ -700,7 +734,7 @@ class Params:
         self.useCats = 1
 
         if iouType in set(["segm", "bbox", "boundary"]):
-            self.setDetParams()
+            self.setDetParams(ranges)
         elif "keypoints" in iouType:
             self.setKpParams()
             if kpt_sigmas is not None:

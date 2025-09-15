@@ -309,19 +309,14 @@ class COCOeval_faster(COCOevalBase):
             dict[str, float]: Dictionary mapping metric names to their values.
         """
         if self.params.iouType in set(["segm", "bbox", "boundary"]):
-            labels = [
-                "AP_all",
-                "AP_50",
-                "AP_75",
-                "AP_small",
-                "AP_medium",
-                "AP_large",
-                "AR_all",
-                "AR_second",
-                "AR_third",
-                "AR_small",
-                "AR_medium",
-                "AR_large",
+            p = self.params
+            AP_labels = [f"AP_{label}" for label in p.areaRngLbl if label != "all"]
+            AR_labels = [f"AR_{label}" for label in p.areaRngLbl if label != "all"]
+            labels = ["AP_all", "AP_50", "AP_75"]
+            labels += AP_labels
+            labels += ["AR_all", "AR_second", "AR_third"]
+            labels += AR_labels
+            labels += [
                 "AR_50",
                 "AR_75",
             ]
