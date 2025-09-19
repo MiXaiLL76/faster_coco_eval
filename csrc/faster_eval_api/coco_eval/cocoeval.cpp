@@ -189,17 +189,12 @@ std::vector<ImageEvaluation> EvaluateImages(
     const std::vector<std::array<double, 2>> &area_ranges, int max_detections,
     const std::vector<double> &iou_thresholds,
     const ImageCategoryInstances<std::vector<double>> &image_category_ious,
-    const ImageCategoryInstances<InstanceAnnotation>
-        &image_category_ground_truth_instances,
-    const ImageCategoryInstances<InstanceAnnotation>
-        &image_category_detection_instances) {
+    const Dataset &gt_dataset, const Dataset &dt_dataset,
+    const std::vector<double> &img_ids, const std::vector<double> &cat_ids,
+    bool useCats) {
         const int num_area_ranges = (const int)area_ranges.size();
-        const int num_images =
-            (const int)image_category_ground_truth_instances.size();
-        const int num_categories =
-            (const int)(image_category_ious.size() > 0
-                            ? image_category_ious[0].size()
-                            : 0);
+        const int num_images = (const int)img_ids.size();
+        const int num_categories = useCats ? (const int)cat_ids.size() : 1;
         std::vector<uint64_t> detection_sorted_indices;
         std::vector<uint64_t> ground_truth_sorted_indices;
         std::vector<bool> ignores;
@@ -211,12 +206,48 @@ std::vector<ImageEvaluation> EvaluateImages(
         // ImageEvaluation object
         for (auto i = 0; i < num_images; ++i) {
                 for (auto c = 0; c < num_categories; ++c) {
-                        const std::vector<InstanceAnnotation>
-                            &ground_truth_instances =
-                                image_category_ground_truth_instances[i][c];
-                        const std::vector<InstanceAnnotation>
-                            &detection_instances =
-                                image_category_detection_instances[i][c];
+                        // Read annotations on-demand from datasets
+                        double img_id = img_ids[i];
+
+                        std::vector<InstanceAnnotation> ground_truth_instances;
+                        std::vector<InstanceAnnotation> detection_instances;
+
+                        if (useCats) {
+                                double cat_id = cat_ids[c];
+                                ground_truth_instances =
+                                    gt_dataset.get_cpp_annotations(img_id,
+                                                                   cat_id);
+                                detection_instances =
+                                    dt_dataset.get_cpp_annotations(img_id,
+                                                                   cat_id);
+                        } else {
+                                // When useCats=False, merge all categories for
+                                // this image
+                                for (size_t j = 0; j < cat_ids.size(); ++j) {
+                                        double cat_id = cat_ids[j];
+                                        std::vector<InstanceAnnotation>
+                                            gt_anns =
+                                                gt_dataset.get_cpp_annotations(
+                                                    img_id, cat_id);
+                                        std::vector<InstanceAnnotation>
+                                            dt_anns =
+                                                dt_dataset.get_cpp_annotations(
+                                                    img_id, cat_id);
+
+                                        ground_truth_instances.insert(
+                                            ground_truth_instances.end(),
+                                            std::make_move_iterator(
+                                                gt_anns.begin()),
+                                            std::make_move_iterator(
+                                                gt_anns.end()));
+                                        detection_instances.insert(
+                                            detection_instances.end(),
+                                            std::make_move_iterator(
+                                                dt_anns.begin()),
+                                            std::make_move_iterator(
+                                                dt_anns.end()));
+                                }
+                        }
 
                         SortInstancesByDetectionScore(
                             detection_instances, &detection_sorted_indices);
@@ -614,10 +645,9 @@ py::dict Accumulate(const py::object &params,
 py::dict EvaluateAccumulate(
     const py::object &params,
     const ImageCategoryInstances<std::vector<double>> &image_category_ious,
-    const ImageCategoryInstances<InstanceAnnotation>
-        &image_category_ground_truth_instances,
-    const ImageCategoryInstances<InstanceAnnotation>
-        &image_category_detection_instances) {
+    const Dataset &gt_dataset, const Dataset &dt_dataset,
+    const std::vector<double> &img_ids, const std::vector<double> &cat_ids,
+    bool useCats) {
         const std::vector<int> max_detections =
             list_to_vec<int>(params.attr("maxDets"));
         const std::vector<std::array<double, 2>> area_ranges =
@@ -625,10 +655,10 @@ py::dict EvaluateAccumulate(
         const std::vector<double> iou_thresholds =
             list_to_vec<double>(params.attr("iouThrs"));
 
-        std::vector<ImageEvaluation> result = EvaluateImages(
-            area_ranges, max_detections.back(), iou_thresholds,
-            image_category_ious, image_category_ground_truth_instances,
-            image_category_detection_instances);
+        std::vector<ImageEvaluation> result =
+            EvaluateImages(area_ranges, max_detections.back(), iou_thresholds,
+                           image_category_ious, gt_dataset, dt_dataset, img_ids,
+                           cat_ids, useCats);
         return Accumulate(params, result);
 }
 

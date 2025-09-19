@@ -190,8 +190,8 @@ InstanceAnnotation parseInstanceAnnotation(const json &ann) {
 
 // Returns a vector of InstanceAnnotation objects for a given (img_id, cat_id)
 // pair. Works directly with data for efficiency.
-std::vector<InstanceAnnotation> Dataset::get_cpp_annotations(double img_id,
-                                                             double cat_id) {
+std::vector<InstanceAnnotation> Dataset::get_cpp_annotations(
+    double img_id, double cat_id) const {
         const std::pair<int64_t, int64_t> key(static_cast<int64_t>(img_id),
                                               static_cast<int64_t>(cat_id));
         auto it = data.find(key);

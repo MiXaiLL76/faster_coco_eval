@@ -8,6 +8,7 @@
 
 #include "json.hpp"
 #include "pybind11_json.hpp"
+#include "types.h"
 
 namespace py = pybind11;
 
@@ -60,8 +61,8 @@ class Dataset {
         std::vector<py::dict> get(double img_id, double cat_id);
 
         // Get C++ annotation objects for a given image/category pair.
-        std::vector<InstanceAnnotation> get_cpp_annotations(double img_id,
-                                                            double cat_id);
+        std::vector<InstanceAnnotation> get_cpp_annotations(
+            double img_id, double cat_id) const;
 
         // Get all C++ annotation objects for provided img_ids and cat_ids. If
         // useCats is false, cat_ids is ignored.
