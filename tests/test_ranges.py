@@ -89,7 +89,13 @@ class TestRanges(unittest.TestCase):
 
         cocoDt = cocoGt.loadRes(self.data_files[iouType])
 
-        new_ranges= {"nano": [0, 8**2], "micro": [8**2, 16**2], "small": [16**2, 32**2], "medium": [32**2, 96**2], "large": [96**2, 1e5**2]}
+        new_ranges = {
+            "nano": [0, 8**2],
+            "micro": [8**2, 16**2],
+            "small": [16**2, 32**2],
+            "medium": [32**2, 96**2],
+            "large": [96**2, 1e5**2],
+        }
         cocoEval = COCOeval_faster(cocoGt, cocoDt, iouType=iouType, ranges=new_ranges)
         cocoEval.evaluate()
         cocoEval.accumulate()

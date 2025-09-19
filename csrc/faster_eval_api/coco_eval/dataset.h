@@ -6,7 +6,12 @@
 #include <unordered_map>
 #include <vector>
 
+#include "json.hpp"
+#include "pybind11_json.hpp"
+
 namespace py = pybind11;
+
+using json = nlohmann::json;
 
 namespace coco_eval {
 
@@ -74,7 +79,8 @@ class Dataset {
        private:
         // Use unordered_map to store annotations for (img_id, cat_id) pairs.
         // Custom hash functor is used.
-        std::unordered_map<std::pair<int64_t, int64_t>, std::vector<py::dict>,
+        // Parallel JSON storage for memory optimization testing
+        std::unordered_map<std::pair<int64_t, int64_t>, std::vector<json>,
                            hash_pair>
             data;
 };

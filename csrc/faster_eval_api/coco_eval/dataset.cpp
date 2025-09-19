@@ -18,17 +18,21 @@ namespace COCOeval {
 // Uses emplace_back for efficient insertion. Accepts ann as const reference to
 // avoid unnecessary copying.
 void Dataset::append(double img_id, double cat_id, const py::dict &ann) {
-        // Use emplace_back to construct py::dict in-place for efficiency.
-        data[{static_cast<int64_t>(img_id), static_cast<int64_t>(cat_id)}]
-            .emplace_back(ann);
+        const std::pair<int64_t, int64_t> key{static_cast<int64_t>(img_id),
+                                              static_cast<int64_t>(cat_id)};
+
+        // Convert and store in JSON format for memory optimization testing
+        json json_ann = ann;  // py::dict → json conversion
+        data[key].emplace_back(std::move(json_ann));
 }
 
 // Removes all stored annotations and frees internal memory used by the data
 // container.
 void Dataset::clean() {
         data.clear();
-        // Optionally reclaim memory by swapping with an empty map (C++17 idiom)
-        std::unordered_map<std::pair<int64_t, int64_t>, std::vector<py::dict>,
+
+        // Optionally reclaim memory by swapping with empty maps (C++17 idiom)
+        std::unordered_map<std::pair<int64_t, int64_t>, std::vector<json>,
                            hash_pair>()
             .swap(data);
 }
@@ -37,73 +41,90 @@ void Dataset::clean() {
 size_t Dataset::size() const { return data.size(); }
 
 // Serializes the Dataset into a Python tuple for pickling support.
-// Stores the keys and values as two separate vectors for efficient transfer to
-// Python.
+// Stores size and data as string for memory efficient transfer.
 py::tuple Dataset::make_tuple() const {
-        // Preallocate storage for better memory efficiency.
-        std::vector<std::pair<int64_t, int64_t>> keys;
-        std::vector<std::vector<py::dict>> values;
-        keys.reserve(data.size());
-        values.reserve(data.size());
-
-        // Iterate over all key-value pairs and collect them.
+        // Create JSON object with all data
+        json serialized_data;
         for (const auto &kv : data) {
-                keys.push_back(kv.first);
-                values.push_back(kv.second);
+                // Convert key pair to string for JSON compatibility
+                std::string key_str = std::to_string(kv.first.first) + "," +
+                                      std::to_string(kv.first.second);
+                serialized_data[key_str] = kv.second;
         }
-        // Return as Python tuple (keys, values).
-        return py::make_tuple(keys, values);
+
+        // Convert to string
+        std::string json_string = serialized_data.dump();
+
+        // Return as Python tuple (size, json_string).
+        return py::make_tuple(static_cast<int>(data.size()), json_string);
 }
 
 // Loads the Dataset state from a Python tuple (typically for unpickling).
-// The tuple must contain two elements: a vector of keys and a vector of value
-// vectors. Throws a runtime error if the state is invalid.
+// The tuple must contain two elements: size (int) and json_string (str).
+// Throws a runtime error if the state is invalid.
 void Dataset::load_tuple(py::tuple pickle_data) {
         if (pickle_data.size() != 2)
                 throw std::runtime_error(
                     "Invalid state! Tuple must have 2 elements.");
 
-        // Cast Python objects to C++ vectors.
-        std::vector<std::pair<int64_t, int64_t>> keys =
-            pickle_data[0].cast<std::vector<std::pair<int64_t, int64_t>>>();
-        std::vector<std::vector<py::dict>> values =
-            pickle_data[1].cast<std::vector<std::vector<py::dict>>>();
+        // Get size and json string from tuple
+        int expected_size = pickle_data[0].cast<int>();
+        std::string json_string = pickle_data[1].cast<std::string>();
 
-        if (keys.size() != values.size())
-                throw std::runtime_error(
-                    "Invalid state! Keys and values vectors must have the same "
-                    "size.");
+        // Parse JSON from string
+        json serialized_data = json::parse(json_string);
 
         // Clear existing data and reserve memory for efficiency.
         data.clear();
-        data.reserve(keys.size());
+        data.reserve(expected_size);
 
-        // Insert each key-value pair using move semantics for optimal
-        // performance.
-        for (size_t i = 0; i < keys.size(); ++i) {
-                data.emplace(std::move(keys[i]), std::move(values[i]));
+        // Reconstruct data from parsed JSON
+        for (const auto &item : serialized_data.items()) {
+                const std::string &key_str = item.key();
+                const json &value = item.value();
+
+                // Parse key string back to pair<int64_t, int64_t>
+                size_t comma_pos = key_str.find(',');
+                if (comma_pos != std::string::npos) {
+                        int64_t img_id =
+                            std::stoll(key_str.substr(0, comma_pos));
+                        int64_t cat_id =
+                            std::stoll(key_str.substr(comma_pos + 1));
+
+                        data.emplace(std::make_pair(img_id, cat_id),
+                                     value.get<std::vector<json>>());
+                }
         }
 }
 
 // Returns a vector of Python dictionaries for a given (img_id, cat_id) pair.
 // If the pair is not found, returns an empty vector.
-// Uses find() to avoid unnecessary construction or lookup.
+// Works directly with data storage for memory optimization.
 std::vector<py::dict> Dataset::get(double img_id, double cat_id) {
         const std::pair<int64_t, int64_t> key(static_cast<int64_t>(img_id),
                                               static_cast<int64_t>(cat_id));
         auto it = data.find(key);
         if (it != data.end()) {
-                return it->second;
+                // Convert json → py::dict for return
+                std::vector<py::dict> result;
+                result.reserve(it->second.size());
+
+                for (const auto &json_ann : it->second) {
+                        // Convert json → py::dict
+                        py::dict converted_dict = json_ann;
+                        result.emplace_back(std::move(converted_dict));
+                }
+
+                return result;
         } else {
                 // Return empty vector if key is not found.
                 return {};
         }
 }
 
-// Parses a py::dict annotation into an InstanceAnnotation object.
-// Extracts fields by name and casts to appropriate type.
-// Optimized for C++17: uses const references, avoids unnecessary string copies.
-InstanceAnnotation parseInstanceAnnotation(const py::dict &ann) {
+// Parses a JSON annotation into an InstanceAnnotation object.
+// Extracts fields by name directly from JSON for better performance.
+InstanceAnnotation parseInstanceAnnotation(const json &ann) {
         uint64_t id = 0;
         double score = 0.0;
         double area = 0.0;
@@ -111,45 +132,81 @@ InstanceAnnotation parseInstanceAnnotation(const py::dict &ann) {
         bool ignore = false;
         bool lvis_mark = false;
 
-        // Iterate using const reference for efficiency.
-        for (const auto &item : ann) {
-                const auto &key_obj = item.first;
-                const auto &val_obj = item.second;
-
-                std::string key = key_obj.cast<std::string>();
-
-                if (key == "id") {
-                        id = val_obj.cast<uint64_t>();
-                } else if (key == "score") {
-                        score = val_obj.cast<double>();
-                } else if (key == "area") {
-                        area = val_obj.cast<double>();
-                } else if (key == "is_crowd" || key == "iscrowd") {
-                        is_crowd = val_obj.cast<bool>();
-                } else if (key == "ignore") {
-                        ignore = val_obj.cast<bool>();
-                } else if (key == "lvis_mark") {
-                        lvis_mark = val_obj.cast<bool>();
+        // Extract values directly from JSON with flexible type handling
+        if (ann.contains("id")) {
+                if (ann["id"].is_number_integer()) {
+                        id = ann["id"].get<uint64_t>();
+                } else if (ann["id"].is_number_float()) {
+                        id = static_cast<uint64_t>(ann["id"].get<double>());
+                } else if (ann["id"].is_string()) {
+                        id = std::stoull(ann["id"].get<std::string>());
                 }
         }
+        if (ann.contains("score")) {
+                if (ann["score"].is_number()) {
+                        score = ann["score"].get<double>();
+                } else if (ann["score"].is_string()) {
+                        score = std::stod(ann["score"].get<std::string>());
+                }
+        }
+        if (ann.contains("area")) {
+                if (ann["area"].is_number()) {
+                        area = ann["area"].get<double>();
+                } else if (ann["area"].is_string()) {
+                        area = std::stod(ann["area"].get<std::string>());
+                }
+        }
+        if (ann.contains("is_crowd")) {
+                if (ann["is_crowd"].is_boolean()) {
+                        is_crowd = ann["is_crowd"].get<bool>();
+                } else if (ann["is_crowd"].is_number()) {
+                        is_crowd = ann["is_crowd"].get<int>() != 0;
+                }
+        } else if (ann.contains("iscrowd")) {
+                if (ann["iscrowd"].is_boolean()) {
+                        is_crowd = ann["iscrowd"].get<bool>();
+                } else if (ann["iscrowd"].is_number()) {
+                        is_crowd = ann["iscrowd"].get<int>() != 0;
+                }
+        }
+        if (ann.contains("ignore")) {
+                if (ann["ignore"].is_boolean()) {
+                        ignore = ann["ignore"].get<bool>();
+                } else if (ann["ignore"].is_number()) {
+                        ignore = ann["ignore"].get<int>() != 0;
+                }
+        }
+        if (ann.contains("lvis_mark")) {
+                if (ann["lvis_mark"].is_boolean()) {
+                        lvis_mark = ann["lvis_mark"].get<bool>();
+                } else if (ann["lvis_mark"].is_number()) {
+                        lvis_mark = ann["lvis_mark"].get<int>() != 0;
+                }
+        }
+
         // Construct and return the annotation.
         return InstanceAnnotation(id, score, area, is_crowd, ignore, lvis_mark);
 }
 
 // Returns a vector of InstanceAnnotation objects for a given (img_id, cat_id)
-// pair. Uses reserve() for performance and emplace_back for efficient
-// insertion.
+// pair. Works directly with data for efficiency.
 std::vector<InstanceAnnotation> Dataset::get_cpp_annotations(double img_id,
                                                              double cat_id) {
-        std::vector<py::dict> anns = get(img_id, cat_id);
-        std::vector<InstanceAnnotation> result;
-        result.reserve(anns.size());  // Reserve space to avoid reallocations.
+        const std::pair<int64_t, int64_t> key(static_cast<int64_t>(img_id),
+                                              static_cast<int64_t>(cat_id));
+        auto it = data.find(key);
+        if (it != data.end()) {
+                std::vector<InstanceAnnotation> result;
+                result.reserve(it->second.size());
 
-        // Convert each py::dict annotation to InstanceAnnotation.
-        for (const auto &ann : anns) {
-                result.emplace_back(parseInstanceAnnotation(ann));
+                // Convert each JSON annotation directly to InstanceAnnotation.
+                for (const auto &json_ann : it->second) {
+                        result.emplace_back(parseInstanceAnnotation(json_ann));
+                }
+                return result;
+        } else {
+                return {};
         }
-        return result;
 }
 
 // Returns all InstanceAnnotations for each combination of img_ids and cat_ids.

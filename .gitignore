@@ -21,3 +21,4 @@ docs/source/examples/*.ipynb
 htmlcov
 examples/comparison/ultralytics/datasets/*
 examples/profile/baseline.prof
+faster_coco_eval/*.so
