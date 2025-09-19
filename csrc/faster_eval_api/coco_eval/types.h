@@ -17,12 +17,12 @@ struct InstanceAnnotation {
               ignore(ignore),
               lvis_mark(lvis_mark) {}
 
-        uint64_t id;      // annotation id
-        double score;     // confidence score
-        double area;      // bounding box area
-        bool is_crowd;    // crowd annotation
-        bool ignore;      // ignore annotation
-        bool lvis_mark;   // lvis mark
+        uint64_t id;     // annotation id
+        double score;    // confidence score
+        double area;     // bounding box area
+        bool is_crowd;   // crowd annotation
+        bool ignore;     // ignore annotation
+        bool lvis_mark;  // lvis mark
 };
 
 // Data for storing object match annotation results for each
