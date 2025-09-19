@@ -18,7 +18,7 @@ def test_extra_eval_keypoints_usecats():
     mock_gt = Mock()
     mock_gt.anns = {}
 
-    with patch.object(ExtraEval, "evaluate") as mock_evaluate:
+    with patch.object(ExtraEval, "evaluate"):
         extra_eval = ExtraEval(
             cocoGt=mock_gt,
             cocoDt=None,
@@ -37,7 +37,7 @@ def test_extra_eval_non_keypoints():
     mock_gt = Mock()
     mock_gt.anns = {}
 
-    with patch.object(ExtraEval, "evaluate") as mock_evaluate:
+    with patch.object(ExtraEval, "evaluate"):
         extra_eval = ExtraEval(cocoGt=mock_gt, cocoDt=None, iouType="bbox", useCats=True)
 
         assert extra_eval.useCats is True
