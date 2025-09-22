@@ -34,6 +34,7 @@ namespace Mask {
 // Each count is delta-encoded and variable-length encoded as a string.
 std::string RLE::toString() const {
         std::string result;
+        result.reserve(m * 2);  // SAFE OPTIMIZATION: Conservative pre-allocation
 
         for (std::size_t i = 0; i < m; ++i) {
                 int64_t x = static_cast<int64_t>(cnts[i]);
@@ -181,8 +182,16 @@ RLE RLE::frPoly(const std::vector<double> &xy, uint64_t h, uint64_t w) {
         x[k] = x[0];
         y[k] = y[0];
 
-        std::vector<int> u;
-        std::vector<int> v;
+        // Estimate memory requirements to reduce reallocations (OPTIMIZATION)
+        std::size_t estimated_points = 0;
+        for (j = 0; j < k; ++j) {
+                estimated_points += std::abs(x[j + 1] - x[j]) + std::abs(y[j + 1] - y[j]);
+        }
+        estimated_points += k; // Safety margin
+
+        std::vector<int> u, v;
+        u.reserve(estimated_points);  // OPTIMIZATION: Pre-allocate memory
+        v.reserve(estimated_points);  // OPTIMIZATION: Pre-allocate memory
 
         // Draw lines between consecutive points, using Bresenham-like approach
         for (j = 0; j < k; ++j) {
@@ -219,6 +228,9 @@ RLE RLE::frPoly(const std::vector<double> &xy, uint64_t h, uint64_t w) {
         // Get points along y-boundary and downsample
         x.clear();
         y.clear();
+        x.reserve(u.size() / 2);  // OPTIMIZATION: Reserve estimated space
+        y.reserve(u.size() / 2);  // OPTIMIZATION: Reserve estimated space
+
         double xd, yd;
         for (std::size_t j = 1; j < u.size(); ++j) {
                 if (u[j] != u[j - 1]) {
@@ -245,6 +257,8 @@ RLE RLE::frPoly(const std::vector<double> &xy, uint64_t h, uint64_t w) {
 
         // Compute RLE encoding given y-boundary points
         std::vector<uint32_t> a;
+        a.reserve(x.size() + 1);  // OPTIMIZATION: Pre-allocate memory
+
         for (std::size_t j = 0; j < x.size(); ++j)
                 a.emplace_back(
                     static_cast<uint32_t>(x[j] * static_cast<int>(h) + y[j]));
@@ -260,6 +274,8 @@ RLE RLE::frPoly(const std::vector<double> &xy, uint64_t h, uint64_t w) {
         }
 
         std::vector<uint64_t> b;
+        b.reserve(a.size());  // OPTIMIZATION: Pre-allocate memory
+
         std::size_t j2 = 1;
         b.emplace_back(a[0]);
         while (j2 < a.size()) {
@@ -577,8 +593,9 @@ RLE RLE::frSegm(const pybind11::object &pyobj, uint64_t w, uint64_t h) {
                 std::vector<std::vector<double>> poly =
                     pyobj.cast<std::vector<std::vector<double>>>();
                 std::vector<RLE> rles;
+                rles.reserve(poly.size());  // OPTIMIZATION: Pre-allocate memory
                 for (const auto &p : poly) {
-                        rles.push_back(RLE::frPoly(p, h, w));
+                        rles.emplace_back(RLE::frPoly(p, h, w));  // OPTIMIZATION: emplace_back instead of push_back
                 }
                 return RLE::merge(rles, 0);  // union of polygons
         } else if (type == "<class 'dict'>") {
