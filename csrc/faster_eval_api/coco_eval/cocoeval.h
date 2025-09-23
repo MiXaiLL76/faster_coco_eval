@@ -17,7 +17,7 @@ namespace coco_eval {
 namespace COCOeval {
 
 // Forward declaration
-class Dataset;
+class LightweightDataset;
 
 // Stores intermediate results for evaluating detection results for a single
 // image that has D detected instances and G ground truth instances. This stores
@@ -63,7 +63,7 @@ std::vector<ImageEvaluation> EvaluateImages(
         &area_ranges,  // vector of 2-tuples
     int max_detections, const std::vector<double> &iou_thresholds,
     const ImageCategoryInstances<std::vector<double>> &image_category_ious,
-    const Dataset &gt_dataset, const Dataset &dt_dataset,
+    const LightweightDataset &gt_dataset, const LightweightDataset &dt_dataset,
     const std::vector<double> &img_ids, const std::vector<double> &cat_ids,
     bool useCats);
 
@@ -78,7 +78,7 @@ py::dict Accumulate(const py::object &params,
 py::dict EvaluateAccumulate(
     const py::object &params,
     const ImageCategoryInstances<std::vector<double>> &image_category_ious,
-    const Dataset &gt_dataset, const Dataset &dt_dataset,
+    const LightweightDataset &gt_dataset, const LightweightDataset &dt_dataset,
     const std::vector<double> &img_ids, const std::vector<double> &cat_ids,
     bool useCats);
 

@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-import json
 import unittest
 
 import numpy as np
@@ -62,9 +61,8 @@ class TestBaseCoco(unittest.TestCase):
         dataset.clean()
         self.assertEqual(len(dataset), 0)
 
-    def test_json_serialization_basic(self):
-        """Test JSON serialization/deserialization with
-        make_tuple/load_tuple."""
+    def test_serialization_basic(self):
+        """Test serialization/deserialization with make_tuple/load_tuple."""
         dataset = _C.Dataset()
 
         # Add some test data
@@ -79,15 +77,22 @@ class TestBaseCoco(unittest.TestCase):
 
         self.assertEqual(len(dataset), 3)
 
-        # Test serialization
+        # Test serialization - new format returns (size, list_of_tuples)
         tuple_data = dataset.make_tuple()
         self.assertEqual(len(tuple_data), 2)
         self.assertEqual(tuple_data[0], 3)  # size
-        self.assertIsInstance(tuple_data[1], str)  # json string
+        self.assertIsInstance(tuple_data[1], list)  # list of (img_id, cat_id, annotations) tuples
 
-        # Test that JSON string is valid
-        parsed_json = json.loads(tuple_data[1])
-        self.assertIsInstance(parsed_json, dict)
+        # Verify serialized data structure
+        serialized_list = tuple_data[1]
+        self.assertEqual(len(serialized_list), 3)  # 3 unique (img_id, cat_id) pairs
+
+        # Each item should be (img_id, cat_id, [annotations])
+        for item in serialized_list:
+            self.assertEqual(len(item), 3)  # (img_id, cat_id, ann_list)
+            self.assertIsInstance(item[0], float)  # img_id
+            self.assertIsInstance(item[1], float)  # cat_id
+            self.assertIsInstance(item[2], list)  # annotation list
 
         # Test deserialization
         new_dataset = _C.Dataset()
@@ -133,7 +138,7 @@ class TestBaseCoco(unittest.TestCase):
             self.assertIsInstance(ann, _C.InstanceAnnotation)
 
     def test_rle_data_integrity(self):
-        """Test that RLE bytes data survives JSON conversion."""
+        """Test that RLE bytes data survives serialization."""
         dataset = _C.Dataset()
 
         # Create test RLE data (simulated)
@@ -149,7 +154,7 @@ class TestBaseCoco(unittest.TestCase):
 
         dataset.append(1, 1, rle_data)
 
-        # Test round-trip through JSON serialization
+        # Test round-trip through serialization
         tuple_data = dataset.make_tuple()
         new_dataset = _C.Dataset()
         new_dataset.load_tuple(tuple_data)
@@ -173,8 +178,8 @@ class TestBaseCoco(unittest.TestCase):
 
         tuple_data = dataset.make_tuple()
         self.assertEqual(tuple_data[0], 0)  # size should be 0
-        # Empty JSON object could be {} or null depending on implementation
-        self.assertTrue(tuple_data[1] in ["{}", "null"])
+        # Empty dataset should return empty list
+        self.assertEqual(tuple_data[1], [])
 
         # Test loading empty dataset
         new_dataset = _C.Dataset()

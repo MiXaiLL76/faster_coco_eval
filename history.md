@@ -1,5 +1,12 @@
 # History
 
+## v1.7.0
+
+- [x] bug <https://github.com/MiXaiLL76/faster_coco_eval/issues/46>
+- [x] nano and micro ranges feuture <https://github.com/MiXaiLL76/faster_coco_eval/pull/61>
+- [x] solving memory problems feuture <https://github.com/MiXaiLL76/faster_coco_eval/pull/62>
+- [x] Rework DATASET C++ version
+
 ## v1.6.8
 
 - [x] fix <https://github.com/MiXaiLL76/faster_coco_eval/pull/59>

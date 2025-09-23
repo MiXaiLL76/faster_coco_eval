@@ -6,8 +6,6 @@
 #include "coco_eval/cocoeval.h"
 #include "coco_eval/dataset.h"
 
-using json = nlohmann::json;
-
 // Stringification macros for version info
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
@@ -100,26 +98,29 @@ PYBIND11_MODULE(faster_eval_api_cpp, m) {
                         return p;
                 }));
 
-        // Expose Dataset with methods and pickle support
-        pybind11::class_<COCOeval::Dataset>(m, "Dataset")
+        // Expose LightweightDataset with methods and pickle support
+        pybind11::class_<COCOeval::LightweightDataset>(m, "Dataset")
             .def(pybind11::init<>())
-            .def("append", &COCOeval::Dataset::append)
-            .def("clean", &COCOeval::Dataset::clean)
-            .def("get", &COCOeval::Dataset::get)
-            .def("get_instances", &COCOeval::Dataset::get_instances)
-            .def("get_cpp_annotations", &COCOeval::Dataset::get_cpp_annotations)
-            .def("get_cpp_instances", &COCOeval::Dataset::get_cpp_instances)
-            .def("__len__", [](const COCOeval::Dataset &p) { return p.size(); })
-            .def("make_tuple", &COCOeval::Dataset::make_tuple)
-            .def("load_tuple", &COCOeval::Dataset::load_tuple)
+            .def("append_ref", &COCOeval::LightweightDataset::append_ref)
+            .def("append",
+                 &COCOeval::LightweightDataset::append)  // Legacy compatibility
+            .def("clean", &COCOeval::LightweightDataset::clean)
+            .def("get", &COCOeval::LightweightDataset::get)
+            .def("get_instances", &COCOeval::LightweightDataset::get_instances)
+            .def("get_cpp_annotations",
+                 &COCOeval::LightweightDataset::get_cpp_annotations)
+            .def("get_cpp_instances",
+                 &COCOeval::LightweightDataset::get_cpp_instances)
+            .def("__len__",
+                 [](const COCOeval::LightweightDataset &p) { return p.size(); })
+            .def("make_tuple", &COCOeval::LightweightDataset::make_tuple)
+            .def("load_tuple", &COCOeval::LightweightDataset::load_tuple)
             .def(pybind11::pickle(
-                [](const COCOeval::Dataset &p) {
-                        // Recommend: Ensure make_tuple() is efficient and
-                        // returns minimal necessary state.
+                [](const COCOeval::LightweightDataset &p) {
                         return p.make_tuple();
                 },
                 [](pybind11::tuple t) {
-                        COCOeval::Dataset p;
+                        COCOeval::LightweightDataset p;
                         p.load_tuple(t);
                         return p;
                 }));

@@ -189,7 +189,7 @@ std::vector<ImageEvaluation> EvaluateImages(
     const std::vector<std::array<double, 2>> &area_ranges, int max_detections,
     const std::vector<double> &iou_thresholds,
     const ImageCategoryInstances<std::vector<double>> &image_category_ious,
-    const Dataset &gt_dataset, const Dataset &dt_dataset,
+    const LightweightDataset &gt_dataset, const LightweightDataset &dt_dataset,
     const std::vector<double> &img_ids, const std::vector<double> &cat_ids,
     bool useCats) {
         const int num_area_ranges = (const int)area_ranges.size();
@@ -645,7 +645,7 @@ py::dict Accumulate(const py::object &params,
 py::dict EvaluateAccumulate(
     const py::object &params,
     const ImageCategoryInstances<std::vector<double>> &image_category_ious,
-    const Dataset &gt_dataset, const Dataset &dt_dataset,
+    const LightweightDataset &gt_dataset, const LightweightDataset &dt_dataset,
     const std::vector<double> &img_ids, const std::vector<double> &cat_ids,
     bool useCats) {
         const std::vector<int> max_detections =

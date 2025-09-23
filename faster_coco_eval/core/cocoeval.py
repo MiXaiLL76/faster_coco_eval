@@ -184,7 +184,7 @@ class COCOeval:
         )
 
         for gt in gts:
-            self.gt_dataset.append(gt["image_id"], gt["category_id"], gt)
+            self.gt_dataset.append_ref(gt["image_id"], gt["category_id"], gt)
 
         for dt in dts:
             img_id, cat_id = dt["image_id"], dt["category_id"]
@@ -209,7 +209,7 @@ class COCOeval:
 
         for dt in dts:
             if not dt.get("drop", False):
-                self.dt_dataset.append(dt["image_id"], dt["category_id"], dt)
+                self.dt_dataset.append_ref(dt["image_id"], dt["category_id"], dt)
 
     def _prepare_freq_group(self) -> list:
         """Prepare frequency group for LVIS evaluation.
