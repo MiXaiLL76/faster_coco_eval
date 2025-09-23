@@ -272,6 +272,24 @@ std::vector<ImageEvaluation> EvaluateImages(
                                                      num_images +
                                                  a * num_images + i]);
                         }
+
+                        // Clear cache entries to free memory after processing
+                        // all area_ranges
+                        if (useCats) {
+                                double cat_id = cat_ids[c];
+                                gt_dataset.clear_cache_entry(img_id, cat_id);
+                                dt_dataset.clear_cache_entry(img_id, cat_id);
+                        } else {
+                                // When useCats=False, clear cache for all
+                                // categories used
+                                for (size_t j = 0; j < cat_ids.size(); ++j) {
+                                        double cat_id = cat_ids[j];
+                                        gt_dataset.clear_cache_entry(img_id,
+                                                                     cat_id);
+                                        dt_dataset.clear_cache_entry(img_id,
+                                                                     cat_id);
+                                }
+                        }
                 }
         }
 

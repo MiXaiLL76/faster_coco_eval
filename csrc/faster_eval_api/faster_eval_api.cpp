@@ -109,6 +109,8 @@ PYBIND11_MODULE(faster_eval_api_cpp, m) {
             .def("get_instances", &COCOeval::LightweightDataset::get_instances)
             .def("get_cpp_annotations",
                  &COCOeval::LightweightDataset::get_cpp_annotations)
+            .def("clear_cache_entry",
+                 &COCOeval::LightweightDataset::clear_cache_entry)
             .def("get_cpp_instances",
                  &COCOeval::LightweightDataset::get_cpp_instances)
             .def("__len__",

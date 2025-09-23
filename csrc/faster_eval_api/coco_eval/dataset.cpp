@@ -211,6 +211,13 @@ std::vector<InstanceAnnotation> LightweightDataset::get_cpp_annotations(
         }
 }
 
+// Clear cache entry for specific (img_id, cat_id) to free memory
+void LightweightDataset::clear_cache_entry(double img_id, double cat_id) const {
+        const std::pair<int64_t, int64_t> key(static_cast<int64_t>(img_id),
+                                              static_cast<int64_t>(cat_id));
+        cpp_cache.erase(key);
+}
+
 // Get all C++ annotation objects for provided img_ids and cat_ids
 std::vector<std::vector<std::vector<InstanceAnnotation>>>
 LightweightDataset::get_cpp_instances(const std::vector<double> &img_ids,
