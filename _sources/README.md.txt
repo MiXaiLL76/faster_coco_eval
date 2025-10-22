@@ -98,7 +98,7 @@ Visualization of testing **colab_example.ipynb** available in directory [example
 | bbox |            5.812 |       22.72 |  3.909 |
 | segm |            7.413 |      24.434 |  3.296 |
 
-## Feautures
+## Features
 
 This library provides not only validation functions, but also error visualization functions. Including visualization of errors in the image.
 You can study in more detail in the [examples](https://mixaill76.github.io/faster_coco_eval/examples.html) and [Wiki](https://github.com/MiXaiLL76/faster_coco_eval/wiki).
