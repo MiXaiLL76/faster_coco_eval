@@ -117,6 +117,7 @@ def get_extensions(version_info):
             "-ffinite-math-only",
             "-fno-signed-zeros",
             "-ftree-vectorize",
+            "-funroll-loops",
         ]
 
     if MACOS:

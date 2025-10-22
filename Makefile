@@ -32,4 +32,5 @@ clean:
 	rm -rf build
 	rm -rf *.egg-info
 	rm -rf dist
+	rm -rf faster_coco_eval/*.so
 	pip3 uninstall faster-coco-eval -y

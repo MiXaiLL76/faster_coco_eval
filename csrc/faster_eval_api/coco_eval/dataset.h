@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "types.h"
+
 namespace py = pybind11;
 
 namespace coco_eval {
@@ -26,57 +28,68 @@ struct hash_pair {
         }
 };
 
-class Dataset {
+class LightweightDataset {
        public:
-        Dataset() {
-                // Reserve initial space to reduce rehashing, improving memory
-                // and performance.
-                data.reserve(8192);
-                // Optionally, you can set max_load_factor to lower value if
-                // memory is less critical: data.max_load_factor(0.25f);
+        LightweightDataset() {
+                // Reserve initial space to reduce rehashing
+                annotation_refs.reserve(8192);
         }
 
-        // Append a new annotation for (img_id, cat_id) key.
-        void append(double img_id, double cat_id, const py::dict &ann);
+        // Store reference to annotation instead of copying data
+        void append_ref(double img_id, double cat_id, py::object ann_ref);
 
-        // Remove all stored annotations and free memory.
+        // Remove all stored references and clear cache
         void clean();
 
-        // Get dataset size (number of (img_id, cat_id) pairs with annotations).
+        // Get dataset size (number of (img_id, cat_id) pairs with annotations)
         size_t size() const;
 
-        // Pickle support: Serialize dataset contents to a tuple.
+        // Pickle support: Serialize dataset contents to a tuple
         py::tuple make_tuple() const;
 
-        // Pickle support: Load dataset contents from a tuple.
+        // Pickle support: Load dataset contents from a tuple
         void load_tuple(py::tuple pickle_data);
 
-        // Get all Python dict annotations for a given image/category pair.
+        // Get all Python dict annotations for a given image/category pair
         std::vector<py::dict> get(double img_id, double cat_id);
 
-        // Get C++ annotation objects for a given image/category pair.
-        std::vector<InstanceAnnotation> get_cpp_annotations(double img_id,
-                                                            double cat_id);
+        // Get C++ annotation objects with caching for performance
+        std::vector<InstanceAnnotation> get_cpp_annotations(
+            double img_id, double cat_id) const;
 
-        // Get all C++ annotation objects for provided img_ids and cat_ids. If
-        // useCats is false, cat_ids is ignored.
+        // Clear cache entry for specific (img_id, cat_id) to free memory
+        void clear_cache_entry(double img_id, double cat_id) const;
+
+        // Get all C++ annotation objects for provided img_ids and cat_ids
         std::vector<std::vector<std::vector<InstanceAnnotation>>>
         get_cpp_instances(const std::vector<double> &img_ids,
                           const std::vector<double> &cat_ids,
                           const bool &useCats);
 
-        // Get all Python dict annotations for provided img_ids and cat_ids. If
-        // useCats is false, cat_ids is ignored.
+        // Get all Python dict annotations for provided img_ids and cat_ids
         std::vector<std::vector<std::vector<py::dict>>> get_instances(
             const std::vector<double> &img_ids,
             const std::vector<double> &cat_ids, const bool &useCats);
 
+        // Legacy compatibility - same as append_ref but with different
+        // signature
+        void append(double img_id, double cat_id, const py::dict &ann) {
+                append_ref(img_id, cat_id, py::cast<py::object>(ann));
+        }
+
        private:
-        // Use unordered_map to store annotations for (img_id, cat_id) pairs.
-        // Custom hash functor is used.
-        std::unordered_map<std::pair<int64_t, int64_t>, std::vector<py::dict>,
+        // Lightweight storage: only references to Python objects
+        std::unordered_map<std::pair<int64_t, int64_t>, std::vector<py::object>,
                            hash_pair>
-            data;
+            annotation_refs;
+
+        // Cache for frequently accessed InstanceAnnotation objects
+        mutable std::unordered_map<std::pair<int64_t, int64_t>,
+                                   std::vector<InstanceAnnotation>, hash_pair>
+            cpp_cache;
+
+        // Helper method to convert py::object to InstanceAnnotation
+        InstanceAnnotation parse_py_annotation(const py::object &ann) const;
 };
 }  // namespace COCOeval
 }  // namespace coco_eval

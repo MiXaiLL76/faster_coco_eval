@@ -57,9 +57,7 @@ class COCOeval_faster(COCOevalBase):
             (imgId, catId): computeIoU(imgId, catId) for (imgId, catId) in itertools.product(p.imgIds, catIds)
         }  # bottleneck
 
-        # Convert GT annotations, detections, and IOUs to a format that's fast to access in C++ # noqa: E501
-        ground_truth_instances = self.gt_dataset.get_cpp_instances(p.imgIds, p.catIds, bool(p.useCats))
-        detected_instances = self.dt_dataset.get_cpp_instances(p.imgIds, p.catIds, bool(p.useCats))
+        # Memory optimization: pass datasets directly instead of pre-loading all instances
 
         # List Comp faster then map of map
         ious = [[self.ious[imgId, catId] for catId in catIds] for imgId in p.imgIds]
@@ -73,15 +71,21 @@ class COCOeval_faster(COCOevalBase):
                 p.maxDets[-1],
                 p.iouThrs,
                 ious,
-                ground_truth_instances,
-                detected_instances,
+                self.gt_dataset,
+                self.dt_dataset,
+                p.imgIds,
+                p.catIds,
+                bool(p.useCats),
             )
         else:
             self.eval = _C.COCOevalEvaluateAccumulate(
                 self._paramsEval,
                 ious,
-                ground_truth_instances,
-                detected_instances,
+                self.gt_dataset,
+                self.dt_dataset,
+                p.imgIds,
+                p.catIds,
+                bool(p.useCats),
             )
 
         toc = time.time()

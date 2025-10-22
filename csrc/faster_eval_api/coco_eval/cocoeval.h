@@ -8,38 +8,16 @@
 
 #include <vector>
 
+#include "types.h"
+
 namespace py = pybind11;
 
 namespace coco_eval {
 
 namespace COCOeval {
 
-// Annotation data for a single object instance in an image
-struct InstanceAnnotation {
-        InstanceAnnotation(uint64_t id, double score, double area,
-                           bool is_crowd, bool ignore, bool lvis_mark)
-            : id{id},
-              score{score},
-              area{area},
-              is_crowd{is_crowd},
-              ignore{ignore},
-              lvis_mark{lvis_mark} {}
-        uint64_t id;
-        double score = 0.;
-        double area = 0.;
-        bool is_crowd = false;
-        bool ignore = false;
-        bool lvis_mark = false;
-};
-
-// Stores the match between a detected instance and a ground truth instance
-struct MatchedAnnotation {
-        MatchedAnnotation(uint64_t dt_id, uint64_t gt_id, double iou)
-            : dt_id{dt_id}, gt_id{gt_id}, iou{iou} {}
-        uint64_t dt_id;
-        uint64_t gt_id;
-        double iou;
-};
+// Forward declaration
+class LightweightDataset;
 
 // Stores intermediate results for evaluating detection results for a single
 // image that has D detected instances and G ground truth instances. This stores
@@ -85,10 +63,9 @@ std::vector<ImageEvaluation> EvaluateImages(
         &area_ranges,  // vector of 2-tuples
     int max_detections, const std::vector<double> &iou_thresholds,
     const ImageCategoryInstances<std::vector<double>> &image_category_ious,
-    const ImageCategoryInstances<InstanceAnnotation>
-        &image_category_ground_truth_instances,
-    const ImageCategoryInstances<InstanceAnnotation>
-        &image_category_detection_instances);
+    const LightweightDataset &gt_dataset, const LightweightDataset &dt_dataset,
+    const std::vector<double> &img_ids, const std::vector<double> &cat_ids,
+    bool useCats);
 
 // C++ implementation of COCOeval.accumulate(), which generates precision
 // recall curves for each set of category, IOU threshold, detection area range,
@@ -101,10 +78,9 @@ py::dict Accumulate(const py::object &params,
 py::dict EvaluateAccumulate(
     const py::object &params,
     const ImageCategoryInstances<std::vector<double>> &image_category_ious,
-    const ImageCategoryInstances<InstanceAnnotation>
-        &image_category_ground_truth_instances,
-    const ImageCategoryInstances<InstanceAnnotation>
-        &image_category_detection_instances);
+    const LightweightDataset &gt_dataset, const LightweightDataset &dt_dataset,
+    const std::vector<double> &img_ids, const std::vector<double> &cat_ids,
+    bool useCats);
 
 long double calc_auc(const std::vector<long double> &recall_list,
                      const std::vector<long double> &precision_list);

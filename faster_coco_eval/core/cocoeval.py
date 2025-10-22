@@ -31,9 +31,9 @@ class COCOeval:
         cocoDt: Optional[COCO] = None,
         iouType: iouTypeT = "segm",
         ranges: Optional[dict] = {
-            "small": [0, 32 ** 2],
-            "medium": [32 ** 2, 96 ** 2],
-            "large": [96 ** 2, 1e5 ** 2],
+            "small": [0, 32**2],
+            "medium": [32**2, 96**2],
+            "large": [96**2, 1e5**2],
         },
         print_function: Callable = logger.info,
         extra_calc: bool = False,
@@ -184,7 +184,7 @@ class COCOeval:
         )
 
         for gt in gts:
-            self.gt_dataset.append(gt["image_id"], gt["category_id"], gt)
+            self.gt_dataset.append_ref(gt["image_id"], gt["category_id"], gt)
 
         for dt in dts:
             img_id, cat_id = dt["image_id"], dt["category_id"]
@@ -209,7 +209,7 @@ class COCOeval:
 
         for dt in dts:
             if not dt.get("drop", False):
-                self.dt_dataset.append(dt["image_id"], dt["category_id"], dt)
+                self.dt_dataset.append_ref(dt["image_id"], dt["category_id"], dt)
 
     def _prepare_freq_group(self) -> list:
         """Prepare frequency group for LVIS evaluation.
@@ -338,10 +338,10 @@ class COCOeval:
                     dy = np.max((z, y0 - yd), axis=0) + np.max((z, yd - y1), axis=0)
 
                 if self.use_area:
-                    e = (dx ** 2 + dy ** 2) / vars / (gt["area"] + np.spacing(1)) / 2
+                    e = (dx**2 + dy**2) / vars / (gt["area"] + np.spacing(1)) / 2
                 else:
                     tmparea = gt["bbox"][3] * gt["bbox"][2] * 0.53
-                    e = (dx ** 2 + dy ** 2) / vars / (tmparea + np.spacing(1)) / 2
+                    e = (dx**2 + dy**2) / vars / (tmparea + np.spacing(1)) / 2
 
                 if k1 > 0:
                     e = e[vg > 0]
@@ -462,9 +462,10 @@ class COCOeval:
         return mean_s
 
     def summarize(self):
-        """Compute and display summary metrics for evaluation results.
-        After calling this method, self.all_stats will contain the **full results** including all metrics
-        while self.stats contains a subset of the most commonly used metrics.
+        """Compute and display summary metrics for evaluation results. After
+        calling this method, self.all_stats will contain the **full results**
+        including all metrics while self.stats contains a subset of the most
+        commonly used metrics.
 
         Note:
             This function can *only* be applied on the default parameter setting.
@@ -655,10 +656,10 @@ class Params:
         """Set parameters for detection evaluation."""
         self.maxDets = [1, 10, 100]
 
-        self.areaRng = [[0 ** 2, 1e5 ** 2]]
+        self.areaRng = [[0**2, 1e5**2]]
         self.areaRngLbl = ["all"]  # First range is always "all"
 
-        min_area = 1e5 ** 2
+        min_area = 1e5**2
         max_area = 0
         for key, val in ranges.items():
             self.areaRng.append(val)
@@ -671,41 +672,39 @@ class Params:
             if range_i[1] > max_area:
                 max_area = range_i[1]
 
-        if min_area > 0 or max_area < 1e5 ** 2:
+        if min_area > 0 or max_area < 1e5**2:
             logger.warning("Provided area ranges do not span full range from 0 to 1e5^2.")
 
     def setKpParams(self):
         """Set parameters for keypoint evaluation."""
         self.maxDets = [20]
         self.areaRng = [
-            [0 ** 2, 1e5 ** 2],
-            [32 ** 2, 96 ** 2],
-            [96 ** 2, 1e5 ** 2],
+            [0**2, 1e5**2],
+            [32**2, 96**2],
+            [96**2, 1e5**2],
         ]
         self.areaRngLbl = ["all", "medium", "large"]
 
         self.kpt_oks_sigmas = (
-            np.array(
-                [
-                    0.26,
-                    0.25,
-                    0.25,
-                    0.35,
-                    0.35,
-                    0.79,
-                    0.79,
-                    0.72,
-                    0.72,
-                    0.62,
-                    0.62,
-                    1.07,
-                    1.07,
-                    0.87,
-                    0.87,
-                    0.89,
-                    0.89,
-                ]
-            )
+            np.array([
+                0.26,
+                0.25,
+                0.25,
+                0.35,
+                0.35,
+                0.79,
+                0.79,
+                0.72,
+                0.72,
+                0.62,
+                0.62,
+                1.07,
+                1.07,
+                0.87,
+                0.87,
+                0.89,
+                0.89,
+            ])
             / 10.0
         )
 
@@ -714,9 +713,9 @@ class Params:
         iouType: iouTypeT = "segm",
         kpt_sigmas: Optional[List[float]] = None,
         ranges: Optional[dict] = {
-            "small": [0 ** 2, 32 ** 2],
-            "medium": [32 ** 2, 96 ** 2],
-            "large": [96 ** 2, 1e5 ** 2],
+            "small": [0**2, 32**2],
+            "medium": [32**2, 96**2],
+            "large": [96**2, 1e5**2],
         },
     ):
         """Initialize Params for COCO evaluation API.

@@ -14,96 +14,114 @@ using namespace pybind11::literals;
 namespace coco_eval {
 
 namespace COCOeval {
-// Appends an annotation to the dataset for a specific (img_id, cat_id) pair.
-// Uses emplace_back for efficient insertion. Accepts ann as const reference to
-// avoid unnecessary copying.
-void Dataset::append(double img_id, double cat_id, const py::dict &ann) {
-        // Use emplace_back to construct py::dict in-place for efficiency.
-        data[{static_cast<int64_t>(img_id), static_cast<int64_t>(cat_id)}]
-            .emplace_back(ann);
+
+// Store reference to annotation instead of copying data
+void LightweightDataset::append_ref(double img_id, double cat_id,
+                                    py::object ann_ref) {
+        const std::pair<int64_t, int64_t> key{static_cast<int64_t>(img_id),
+                                              static_cast<int64_t>(cat_id)};
+        annotation_refs[key].emplace_back(ann_ref);
 }
 
-// Removes all stored annotations and frees internal memory used by the data
-// container.
-void Dataset::clean() {
-        data.clear();
-        // Optionally reclaim memory by swapping with an empty map (C++17 idiom)
-        std::unordered_map<std::pair<int64_t, int64_t>, std::vector<py::dict>,
+// Remove all stored references and clear cache
+void LightweightDataset::clean() {
+        annotation_refs.clear();
+        cpp_cache.clear();
+
+        // Reclaim memory by swapping with empty containers
+        std::unordered_map<std::pair<int64_t, int64_t>, std::vector<py::object>,
                            hash_pair>()
-            .swap(data);
+            .swap(annotation_refs);
+        std::unordered_map<std::pair<int64_t, int64_t>,
+                           std::vector<InstanceAnnotation>, hash_pair>()
+            .swap(cpp_cache);
 }
 
-// Get dataset size (number of (img_id, cat_id) pairs with annotations).
-size_t Dataset::size() const { return data.size(); }
+// Get dataset size (number of (img_id, cat_id) pairs with annotations)
+size_t LightweightDataset::size() const { return annotation_refs.size(); }
 
-// Serializes the Dataset into a Python tuple for pickling support.
-// Stores the keys and values as two separate vectors for efficient transfer to
-// Python.
-py::tuple Dataset::make_tuple() const {
-        // Preallocate storage for better memory efficiency.
-        std::vector<std::pair<int64_t, int64_t>> keys;
-        std::vector<std::vector<py::dict>> values;
-        keys.reserve(data.size());
-        values.reserve(data.size());
+// Serialize dataset contents to a tuple for pickle support
+py::tuple LightweightDataset::make_tuple() const {
+        // Create a list of (img_id, cat_id, annotation_list) tuples
+        py::list serialized_data;
+        for (const auto &kv : annotation_refs) {
+                auto key = kv.first;
+                auto ann_list = kv.second;
 
-        // Iterate over all key-value pairs and collect them.
-        for (const auto &kv : data) {
-                keys.push_back(kv.first);
-                values.push_back(kv.second);
+                py::list py_ann_list;
+                for (const auto &ann : ann_list) {
+                        py_ann_list.append(ann);
+                }
+
+                serialized_data.append(py::make_tuple(
+                    static_cast<double>(key.first),
+                    static_cast<double>(key.second), py_ann_list));
         }
-        // Return as Python tuple (keys, values).
-        return py::make_tuple(keys, values);
+
+        return py::make_tuple(static_cast<int>(annotation_refs.size()),
+                              serialized_data);
 }
 
-// Loads the Dataset state from a Python tuple (typically for unpickling).
-// The tuple must contain two elements: a vector of keys and a vector of value
-// vectors. Throws a runtime error if the state is invalid.
-void Dataset::load_tuple(py::tuple pickle_data) {
+// Load dataset state from a Python tuple (for unpickling)
+void LightweightDataset::load_tuple(py::tuple pickle_data) {
         if (pickle_data.size() != 2)
                 throw std::runtime_error(
                     "Invalid state! Tuple must have 2 elements.");
 
-        // Cast Python objects to C++ vectors.
-        std::vector<std::pair<int64_t, int64_t>> keys =
-            pickle_data[0].cast<std::vector<std::pair<int64_t, int64_t>>>();
-        std::vector<std::vector<py::dict>> values =
-            pickle_data[1].cast<std::vector<std::vector<py::dict>>>();
+        // Get size and data from tuple
+        int expected_size = pickle_data[0].cast<int>();
+        py::list serialized_data = pickle_data[1].cast<py::list>();
 
-        if (keys.size() != values.size())
-                throw std::runtime_error(
-                    "Invalid state! Keys and values vectors must have the same "
-                    "size.");
+        // Clear existing data and reserve memory
+        annotation_refs.clear();
+        cpp_cache.clear();
+        annotation_refs.reserve(expected_size);
 
-        // Clear existing data and reserve memory for efficiency.
-        data.clear();
-        data.reserve(keys.size());
+        // Reconstruct data from serialized list
+        for (auto item : serialized_data) {
+                py::tuple entry = item.cast<py::tuple>();
+                if (entry.size() != 3) continue;
 
-        // Insert each key-value pair using move semantics for optimal
-        // performance.
-        for (size_t i = 0; i < keys.size(); ++i) {
-                data.emplace(std::move(keys[i]), std::move(values[i]));
+                double img_id = entry[0].cast<double>();
+                double cat_id = entry[1].cast<double>();
+                py::list ann_list = entry[2].cast<py::list>();
+
+                std::pair<int64_t, int64_t> key{static_cast<int64_t>(img_id),
+                                                static_cast<int64_t>(cat_id)};
+
+                std::vector<py::object> annotations;
+                for (auto ann : ann_list) {
+                        annotations.emplace_back(
+                            py::reinterpret_borrow<py::object>(ann));
+                }
+
+                annotation_refs[key] = std::move(annotations);
         }
 }
 
-// Returns a vector of Python dictionaries for a given (img_id, cat_id) pair.
-// If the pair is not found, returns an empty vector.
-// Uses find() to avoid unnecessary construction or lookup.
-std::vector<py::dict> Dataset::get(double img_id, double cat_id) {
+// Get all Python dict annotations for a given image/category pair
+std::vector<py::dict> LightweightDataset::get(double img_id, double cat_id) {
         const std::pair<int64_t, int64_t> key(static_cast<int64_t>(img_id),
                                               static_cast<int64_t>(cat_id));
-        auto it = data.find(key);
-        if (it != data.end()) {
-                return it->second;
+        auto it = annotation_refs.find(key);
+        if (it != annotation_refs.end()) {
+                std::vector<py::dict> result;
+                result.reserve(it->second.size());
+
+                for (const auto &py_ann : it->second) {
+                        // Convert py::object to py::dict
+                        result.emplace_back(py_ann.cast<py::dict>());
+                }
+
+                return result;
         } else {
-                // Return empty vector if key is not found.
                 return {};
         }
 }
 
-// Parses a py::dict annotation into an InstanceAnnotation object.
-// Extracts fields by name and casts to appropriate type.
-// Optimized for C++17: uses const references, avoids unnecessary string copies.
-InstanceAnnotation parseInstanceAnnotation(const py::dict &ann) {
+// Helper method to convert py::object to InstanceAnnotation
+InstanceAnnotation LightweightDataset::parse_py_annotation(
+    const py::object &ann) const {
         uint64_t id = 0;
         double score = 0.0;
         double area = 0.0;
@@ -111,54 +129,100 @@ InstanceAnnotation parseInstanceAnnotation(const py::dict &ann) {
         bool ignore = false;
         bool lvis_mark = false;
 
-        // Iterate using const reference for efficiency.
-        for (const auto &item : ann) {
-                const auto &key_obj = item.first;
-                const auto &val_obj = item.second;
+        // Extract values from Python dict with safe type handling
+        py::dict ann_dict = ann.cast<py::dict>();
 
-                std::string key = key_obj.cast<std::string>();
-
-                if (key == "id") {
-                        id = val_obj.cast<uint64_t>();
-                } else if (key == "score") {
-                        score = val_obj.cast<double>();
-                } else if (key == "area") {
-                        area = val_obj.cast<double>();
-                } else if (key == "is_crowd" || key == "iscrowd") {
-                        is_crowd = val_obj.cast<bool>();
-                } else if (key == "ignore") {
-                        ignore = val_obj.cast<bool>();
-                } else if (key == "lvis_mark") {
-                        lvis_mark = val_obj.cast<bool>();
+        try {
+                if (ann_dict.contains("id")) {
+                        id = ann_dict["id"].cast<uint64_t>();
                 }
+        } catch (const std::exception &) {
         }
+
+        try {
+                if (ann_dict.contains("score")) {
+                        score = ann_dict["score"].cast<double>();
+                }
+        } catch (const std::exception &) {
+        }
+
+        try {
+                if (ann_dict.contains("area")) {
+                        area = ann_dict["area"].cast<double>();
+                }
+        } catch (const std::exception &) {
+        }
+
+        try {
+                if (ann_dict.contains("is_crowd")) {
+                        is_crowd = ann_dict["is_crowd"].cast<bool>();
+                } else if (ann_dict.contains("iscrowd")) {
+                        is_crowd = ann_dict["iscrowd"].cast<bool>();
+                }
+        } catch (const std::exception &) {
+        }
+
+        try {
+                if (ann_dict.contains("ignore")) {
+                        ignore = ann_dict["ignore"].cast<bool>();
+                }
+        } catch (const std::exception &) {
+        }
+
+        try {
+                if (ann_dict.contains("lvis_mark")) {
+                        lvis_mark = ann_dict["lvis_mark"].cast<bool>();
+                }
+        } catch (const std::exception &) {
+        }
+
         // Construct and return the annotation.
         return InstanceAnnotation(id, score, area, is_crowd, ignore, lvis_mark);
 }
 
-// Returns a vector of InstanceAnnotation objects for a given (img_id, cat_id)
-// pair. Uses reserve() for performance and emplace_back for efficient
-// insertion.
-std::vector<InstanceAnnotation> Dataset::get_cpp_annotations(double img_id,
-                                                             double cat_id) {
-        std::vector<py::dict> anns = get(img_id, cat_id);
-        std::vector<InstanceAnnotation> result;
-        result.reserve(anns.size());  // Reserve space to avoid reallocations.
+// Get C++ annotation objects with caching for performance
+std::vector<InstanceAnnotation> LightweightDataset::get_cpp_annotations(
+    double img_id, double cat_id) const {
+        const std::pair<int64_t, int64_t> key(static_cast<int64_t>(img_id),
+                                              static_cast<int64_t>(cat_id));
 
-        // Convert each py::dict annotation to InstanceAnnotation.
-        for (const auto &ann : anns) {
-                result.emplace_back(parseInstanceAnnotation(ann));
+        // Check cache first
+        auto cache_it = cpp_cache.find(key);
+        if (cache_it != cpp_cache.end()) {
+                return cache_it->second;
         }
-        return result;
+
+        // If not in cache, get from annotation_refs and convert
+        auto it = annotation_refs.find(key);
+        if (it != annotation_refs.end()) {
+                std::vector<InstanceAnnotation> result;
+                result.reserve(it->second.size());
+
+                // Convert each Python annotation to InstanceAnnotation
+                for (const auto &py_ann : it->second) {
+                        result.emplace_back(parse_py_annotation(py_ann));
+                }
+
+                // Cache the result for future use
+                cpp_cache[key] = result;
+                return result;
+        } else {
+                return {};
+        }
 }
 
-// Returns all InstanceAnnotations for each combination of img_ids and cat_ids.
-// If useCats is false, all category results for an image are merged into a
-// single vector. Optimized for better memory management and clarity.
+// Clear cache entry for specific (img_id, cat_id) to free memory
+void LightweightDataset::clear_cache_entry(double img_id, double cat_id) const {
+        const std::pair<int64_t, int64_t> key(static_cast<int64_t>(img_id),
+                                              static_cast<int64_t>(cat_id));
+        cpp_cache.erase(key);
+}
+
+// Get all C++ annotation objects for provided img_ids and cat_ids
 std::vector<std::vector<std::vector<InstanceAnnotation>>>
-Dataset::get_cpp_instances(const std::vector<double> &img_ids,
-                           const std::vector<double> &cat_ids,
-                           const bool &useCats) {
+LightweightDataset::get_cpp_instances(const std::vector<double> &img_ids,
+                                      const std::vector<double> &cat_ids,
+                                      const bool &useCats) {
         std::vector<std::vector<std::vector<InstanceAnnotation>>> result;
         result.reserve(img_ids.size());  // Reserve space for image indices
 
@@ -197,12 +261,11 @@ Dataset::get_cpp_instances(const std::vector<double> &img_ids,
         return result;
 }
 
-// Returns all py::dict annotations for each combination of img_ids and cat_ids.
-// If useCats is false, all category results for an image are merged into a
-// single vector. Optimized for better memory management and clarity.
-std::vector<std::vector<std::vector<py::dict>>> Dataset::get_instances(
-    const std::vector<double> &img_ids, const std::vector<double> &cat_ids,
-    const bool &useCats) {
+// Get all Python dict annotations for provided img_ids and cat_ids
+std::vector<std::vector<std::vector<py::dict>>>
+LightweightDataset::get_instances(const std::vector<double> &img_ids,
+                                  const std::vector<double> &cat_ids,
+                                  const bool &useCats) {
         std::vector<std::vector<std::vector<py::dict>>> result;
         result.reserve(img_ids.size());  // Reserve space for images
 
