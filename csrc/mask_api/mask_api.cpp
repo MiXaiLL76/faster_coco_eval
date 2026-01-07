@@ -87,7 +87,7 @@ PYBIND11_MODULE(mask_api_new_cpp, m) {
                  py::call_guard<py::gil_scoped_release>())
             .def("toDict", &Mask::RLE::toDict)
             .def(py::pickle(
-                [](const Mask::RLE &p) {  // __getstate__
+                [](const Mask::RLE& p) {  // __getstate__
                         // Returns a tuple encoding all RLE fields.
                         return py::make_tuple(p.h, p.w, p.m, p.cnts);
                 },
@@ -158,11 +158,11 @@ PYBIND11_MODULE(mask_api_new_cpp, m) {
         // representations.
         m.def("toBbox", &Mask::toBbox, "Mask::toBbox");
         m.def("merge",
-              py::overload_cast<const std::vector<py::dict> &, const int &>(
+              py::overload_cast<const std::vector<py::dict>&, const int&>(
                   &Mask::merge),
               "Mask::merge");
         m.def("merge",
-              py::overload_cast<const std::vector<py::dict> &>(&Mask::merge),
+              py::overload_cast<const std::vector<py::dict>&>(&Mask::merge),
               "Mask::merge");
 
         // Computes the area (number of nonzero pixels) of a mask.

@@ -188,7 +188,7 @@ class COCO:
             if check_area:
                 anns = list(
                     filter(
-                        lambda ann: (ann["area"] > areaRng[0] and ann["area"] < areaRng[1]),
+                        lambda ann: ann["area"] > areaRng[0] and ann["area"] < areaRng[1],
                         anns,
                     )
                 )
@@ -196,7 +196,7 @@ class COCO:
             if check_crowd:
                 anns = list(
                     filter(
-                        lambda ann: (int(ann.get("iscrowd", 0)) == int(iscrowd)),
+                        lambda ann: int(ann.get("iscrowd", 0)) == int(iscrowd),
                         anns,
                     )
                 )
@@ -364,9 +364,9 @@ class COCO:
             anns = [ann for ann in anns if ann.get("score", 1) >= min_score]
 
         annsImgIds = [ann["image_id"] for ann in anns]
-        assert set(annsImgIds) == (
-            set(annsImgIds) & set(self.getImgIds())
-        ), "Results do not correspond to current coco set"
+        assert set(annsImgIds) == (set(annsImgIds) & set(self.getImgIds())), (
+            "Results do not correspond to current coco set"
+        )
         if "caption" in anns[0]:
             imgIds = set([img["id"] for img in res.dataset["images"]]) & set([ann["image_id"] for ann in anns])
             res.dataset["images"] = [img for img in res.dataset["images"] if img["id"] in imgIds]

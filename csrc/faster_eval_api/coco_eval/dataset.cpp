@@ -44,12 +44,12 @@ size_t LightweightDataset::size() const { return annotation_refs.size(); }
 py::tuple LightweightDataset::make_tuple() const {
         // Create a list of (img_id, cat_id, annotation_list) tuples
         py::list serialized_data;
-        for (const auto &kv : annotation_refs) {
+        for (const auto& kv : annotation_refs) {
                 auto key = kv.first;
                 auto ann_list = kv.second;
 
                 py::list py_ann_list;
-                for (const auto &ann : ann_list) {
+                for (const auto& ann : ann_list) {
                         py_ann_list.append(ann);
                 }
 
@@ -108,7 +108,7 @@ std::vector<py::dict> LightweightDataset::get(double img_id, double cat_id) {
                 std::vector<py::dict> result;
                 result.reserve(it->second.size());
 
-                for (const auto &py_ann : it->second) {
+                for (const auto& py_ann : it->second) {
                         // Convert py::object to py::dict
                         result.emplace_back(py_ann.cast<py::dict>());
                 }
@@ -121,7 +121,7 @@ std::vector<py::dict> LightweightDataset::get(double img_id, double cat_id) {
 
 // Helper method to convert py::object to InstanceAnnotation
 InstanceAnnotation LightweightDataset::parse_py_annotation(
-    const py::object &ann) const {
+    const py::object& ann) const {
         uint64_t id = 0;
         double score = 0.0;
         double area = 0.0;
@@ -136,21 +136,21 @@ InstanceAnnotation LightweightDataset::parse_py_annotation(
                 if (ann_dict.contains("id")) {
                         id = ann_dict["id"].cast<uint64_t>();
                 }
-        } catch (const std::exception &) {
+        } catch (const std::exception&) {
         }
 
         try {
                 if (ann_dict.contains("score")) {
                         score = ann_dict["score"].cast<double>();
                 }
-        } catch (const std::exception &) {
+        } catch (const std::exception&) {
         }
 
         try {
                 if (ann_dict.contains("area")) {
                         area = ann_dict["area"].cast<double>();
                 }
-        } catch (const std::exception &) {
+        } catch (const std::exception&) {
         }
 
         try {
@@ -159,21 +159,21 @@ InstanceAnnotation LightweightDataset::parse_py_annotation(
                 } else if (ann_dict.contains("iscrowd")) {
                         is_crowd = ann_dict["iscrowd"].cast<bool>();
                 }
-        } catch (const std::exception &) {
+        } catch (const std::exception&) {
         }
 
         try {
                 if (ann_dict.contains("ignore")) {
                         ignore = ann_dict["ignore"].cast<bool>();
                 }
-        } catch (const std::exception &) {
+        } catch (const std::exception&) {
         }
 
         try {
                 if (ann_dict.contains("lvis_mark")) {
                         lvis_mark = ann_dict["lvis_mark"].cast<bool>();
                 }
-        } catch (const std::exception &) {
+        } catch (const std::exception&) {
         }
 
         // Construct and return the annotation.
@@ -199,7 +199,7 @@ std::vector<InstanceAnnotation> LightweightDataset::get_cpp_annotations(
                 result.reserve(it->second.size());
 
                 // Convert each Python annotation to InstanceAnnotation
-                for (const auto &py_ann : it->second) {
+                for (const auto& py_ann : it->second) {
                         result.emplace_back(parse_py_annotation(py_ann));
                 }
 
@@ -220,9 +220,9 @@ void LightweightDataset::clear_cache_entry(double img_id, double cat_id) const {
 
 // Get all C++ annotation objects for provided img_ids and cat_ids
 std::vector<std::vector<std::vector<InstanceAnnotation>>>
-LightweightDataset::get_cpp_instances(const std::vector<double> &img_ids,
-                                      const std::vector<double> &cat_ids,
-                                      const bool &useCats) {
+LightweightDataset::get_cpp_instances(const std::vector<double>& img_ids,
+                                      const std::vector<double>& cat_ids,
+                                      const bool& useCats) {
         std::vector<std::vector<std::vector<InstanceAnnotation>>> result;
         result.reserve(img_ids.size());  // Reserve space for image indices
 
@@ -263,9 +263,9 @@ LightweightDataset::get_cpp_instances(const std::vector<double> &img_ids,
 
 // Get all Python dict annotations for provided img_ids and cat_ids
 std::vector<std::vector<std::vector<py::dict>>>
-LightweightDataset::get_instances(const std::vector<double> &img_ids,
-                                  const std::vector<double> &cat_ids,
-                                  const bool &useCats) {
+LightweightDataset::get_instances(const std::vector<double>& img_ids,
+                                  const std::vector<double>& cat_ids,
+                                  const bool& useCats) {
         std::vector<std::vector<std::vector<py::dict>>> result;
         result.reserve(img_ids.size());  // Reserve space for images
 

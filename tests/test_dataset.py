@@ -1,10 +1,9 @@
 #!/usr/bin/python3
 import unittest
 
+import faster_coco_eval.faster_eval_api_cpp as _C
 import numpy as np
 from parameterized import parameterized
-
-import faster_coco_eval.faster_eval_api_cpp as _C
 
 
 class TestBaseCoco(unittest.TestCase):

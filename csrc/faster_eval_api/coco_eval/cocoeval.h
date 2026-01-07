@@ -59,12 +59,12 @@ using ImageCategoryInstances = std::vector<std::vector<std::vector<T>>>;
 //   image_category_detection_instances[i][c] is a vector of detected
 //     instances in image image_ids[i] of category category_ids[c]
 std::vector<ImageEvaluation> EvaluateImages(
-    const std::vector<std::array<double, 2>>
-        &area_ranges,  // vector of 2-tuples
-    int max_detections, const std::vector<double> &iou_thresholds,
-    const ImageCategoryInstances<std::vector<double>> &image_category_ious,
-    const LightweightDataset &gt_dataset, const LightweightDataset &dt_dataset,
-    const std::vector<double> &img_ids, const std::vector<double> &cat_ids,
+    const std::vector<std::array<double, 2>>&
+        area_ranges,  // vector of 2-tuples
+    int max_detections, const std::vector<double>& iou_thresholds,
+    const ImageCategoryInstances<std::vector<double>>& image_category_ious,
+    const LightweightDataset& gt_dataset, const LightweightDataset& dt_dataset,
+    const std::vector<double>& img_ids, const std::vector<double>& cat_ids,
     bool useCats);
 
 // C++ implementation of COCOeval.accumulate(), which generates precision
@@ -72,17 +72,17 @@ std::vector<ImageEvaluation> EvaluateImages(
 // and max number of detections parameters.  It is assumed that the parameter
 // evaluations is the return value of the functon COCOeval::EvaluateImages(),
 // which was called with the same parameter settings params
-py::dict Accumulate(const py::object &params,
-                    const std::vector<ImageEvaluation> &evalutations);
+py::dict Accumulate(const py::object& params,
+                    const std::vector<ImageEvaluation>& evalutations);
 
 py::dict EvaluateAccumulate(
-    const py::object &params,
-    const ImageCategoryInstances<std::vector<double>> &image_category_ious,
-    const LightweightDataset &gt_dataset, const LightweightDataset &dt_dataset,
-    const std::vector<double> &img_ids, const std::vector<double> &cat_ids,
+    const py::object& params,
+    const ImageCategoryInstances<std::vector<double>>& image_category_ious,
+    const LightweightDataset& gt_dataset, const LightweightDataset& dt_dataset,
+    const std::vector<double>& img_ids, const std::vector<double>& cat_ids,
     bool useCats);
 
-long double calc_auc(const std::vector<long double> &recall_list,
-                     const std::vector<long double> &precision_list);
+long double calc_auc(const std::vector<long double>& recall_list,
+                     const std::vector<long double>& precision_list);
 }  // namespace COCOeval
 }  // namespace coco_eval

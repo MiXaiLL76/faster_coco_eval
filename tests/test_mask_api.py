@@ -2,11 +2,11 @@
 
 import unittest
 
+import faster_coco_eval.mask_api_new_cpp as _mask
 import numpy as np
 from parameterized import parameterized
 
 import faster_coco_eval.core.mask as mask_util
-import faster_coco_eval.mask_api_new_cpp as _mask
 from faster_coco_eval import COCO
 
 

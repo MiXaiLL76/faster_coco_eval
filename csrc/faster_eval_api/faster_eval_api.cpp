@@ -57,14 +57,14 @@ PYBIND11_MODULE(faster_eval_api_cpp, m) {
             .def(pybind11::init<>())
             .def(pybind11::pickle(
                 // __getstate__ for pickling
-                [](const COCOeval::ImageEvaluation &p) {
+                [](const COCOeval::ImageEvaluation& p) {
                         // Use reserve to avoid reallocations (performance
                         // optimization)
                         std::vector<std::tuple<uint64_t, uint64_t, double>>
                             matched_annotations;
                         matched_annotations.reserve(
                             p.matched_annotations.size());
-                        for (const auto &ann : p.matched_annotations) {
+                        for (const auto& ann : p.matched_annotations) {
                                 matched_annotations.emplace_back(
                                     ann.dt_id, ann.gt_id, ann.iou);
                         }
@@ -90,7 +90,7 @@ PYBIND11_MODULE(faster_eval_api_cpp, m) {
                                 std::tuple<uint64_t, uint64_t, double>>>();
                         p.matched_annotations.reserve(
                             matched_annotations.size());
-                        for (const auto &tup : matched_annotations) {
+                        for (const auto& tup : matched_annotations) {
                                 p.matched_annotations.emplace_back(
                                     std::get<0>(tup), std::get<1>(tup),
                                     std::get<2>(tup));
@@ -114,11 +114,11 @@ PYBIND11_MODULE(faster_eval_api_cpp, m) {
             .def("get_cpp_instances",
                  &COCOeval::LightweightDataset::get_cpp_instances)
             .def("__len__",
-                 [](const COCOeval::LightweightDataset &p) { return p.size(); })
+                 [](const COCOeval::LightweightDataset& p) { return p.size(); })
             .def("make_tuple", &COCOeval::LightweightDataset::make_tuple)
             .def("load_tuple", &COCOeval::LightweightDataset::load_tuple)
             .def(pybind11::pickle(
-                [](const COCOeval::LightweightDataset &p) {
+                [](const COCOeval::LightweightDataset& p) {
                         return p.make_tuple();
                 },
                 [](pybind11::tuple t) {

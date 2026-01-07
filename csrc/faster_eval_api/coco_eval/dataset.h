@@ -14,13 +14,13 @@ namespace coco_eval {
 
 namespace COCOeval {
 template <class T>
-inline void hash_combine(std::size_t &seed, const T &v) {
+inline void hash_combine(std::size_t& seed, const T& v) {
         std::hash<T> hasher;
         seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
 struct hash_pair {
-        std::size_t operator()(const std::pair<int64_t, int64_t> &p) const {
+        std::size_t operator()(const std::pair<int64_t, int64_t>& p) const {
                 std::size_t h = 0;
                 hash_combine(h, p.first);
                 hash_combine(h, p.second);
@@ -62,18 +62,18 @@ class LightweightDataset {
 
         // Get all C++ annotation objects for provided img_ids and cat_ids
         std::vector<std::vector<std::vector<InstanceAnnotation>>>
-        get_cpp_instances(const std::vector<double> &img_ids,
-                          const std::vector<double> &cat_ids,
-                          const bool &useCats);
+        get_cpp_instances(const std::vector<double>& img_ids,
+                          const std::vector<double>& cat_ids,
+                          const bool& useCats);
 
         // Get all Python dict annotations for provided img_ids and cat_ids
         std::vector<std::vector<std::vector<py::dict>>> get_instances(
-            const std::vector<double> &img_ids,
-            const std::vector<double> &cat_ids, const bool &useCats);
+            const std::vector<double>& img_ids,
+            const std::vector<double>& cat_ids, const bool& useCats);
 
         // Legacy compatibility - same as append_ref but with different
         // signature
-        void append(double img_id, double cat_id, const py::dict &ann) {
+        void append(double img_id, double cat_id, const py::dict& ann) {
                 append_ref(img_id, cat_id, py::cast<py::object>(ann));
         }
 
@@ -89,7 +89,7 @@ class LightweightDataset {
             cpp_cache;
 
         // Helper method to convert py::object to InstanceAnnotation
-        InstanceAnnotation parse_py_annotation(const py::object &ann) const;
+        InstanceAnnotation parse_py_annotation(const py::object& ann) const;
 };
 }  // namespace COCOeval
 }  // namespace coco_eval
