@@ -1,5 +1,9 @@
 # History
 
+## v1.7.1
+
+- [x] bug fix <https://github.com/MiXaiLL76/faster_coco_eval/pull/64>
+
 ## v1.7.0
 
 - [x] bug <https://github.com/MiXaiLL76/faster_coco_eval/issues/46>
@@ -54,7 +58,7 @@
 - [x] Create test files for all components.
 - [x] The math_matches function has been reworked, with an emphasis on using C++ code.
 - [x] Added more documentation of functions. Optimized existing ones.
-- [x] Added rleToBoundary func with 2 backend \["mask_api", "opencv"\]
+- [x] Added rleToBoundary func with 2 backend ["mask_api", "opencv"]
 - [x] IoU type [boundary](https://github.com/bowenc0221/boundary-iou-api/tree/master) support (further testing is needed)
 - [x] Create async rle and boundary comput [discussion](https://github.com/MiXaiLL76/faster_coco_eval/pull/31#issuecomment-2308369319)
 
@@ -106,7 +110,7 @@ cocoEval.params.maxDets = [300]
 
 - [x] append Auto-formatters
 - [x] append py36 support
-- [x] append pandas to requirements for plotly\[express\]
+- [x] append pandas to requirements for plotly[express]
 - [x] update mask api with pycootools
 
 ## v1.4.1

@@ -23,7 +23,7 @@ void prinf_vector(const std::vector<T> vec, const std::string s) {
         std::cout << "name: " << s << std::endl;
         std::cout << "size: " << vec.size() << std::endl;
 
-        for (const auto &v : vec) std::cout << "\t" << v << std::endl;
+        for (const auto& v : vec) std::cout << "\t" << v << std::endl;
 
         std::cout << std::endl;
 }
@@ -67,7 +67,7 @@ std::string RLE::toString() const {
 //   - w: mask width
 // Returns:
 //   - RLE object representing the mask
-RLE RLE::frString(const std::string &s, uint64_t h, uint64_t w) {
+RLE RLE::frString(const std::string& s, uint64_t h, uint64_t w) {
         std::vector<uint64_t> cnts;
         const std::size_t m = s.size();
         std::size_t i = 0;
@@ -167,7 +167,7 @@ std::vector<double> RLE::toBbox() const {
 //   - w: mask width
 // Returns:
 //   - RLE object representing the binary mask of the polygon
-RLE RLE::frPoly(const std::vector<double> &xy, uint64_t h, uint64_t w) {
+RLE RLE::frPoly(const std::vector<double>& xy, uint64_t h, uint64_t w) {
         uint64_t j = 0;
         std::size_t k = xy.size() / 2;
         double scale = 5.0;
@@ -300,7 +300,7 @@ RLE RLE::frPoly(const std::vector<double> &xy, uint64_t h, uint64_t w) {
 //   - w: mask width
 // Returns:
 //   - RLE object representing the binary mask of the bounding box
-RLE RLE::frBbox(const std::vector<double> &bb, uint64_t h, uint64_t w) {
+RLE RLE::frBbox(const std::vector<double>& bb, uint64_t h, uint64_t w) {
         // Calculate the four corners of the rectangle
         double xs = bb[0], xe = bb[0] + bb[2];
         double ys = bb[1], ye = bb[1] + bb[3];
@@ -471,7 +471,7 @@ RLE RLE::clear_duplicates() const {
 //   - intersect: 0 (union), 1 (intersection), 2 (xor)
 // Returns:
 //   - merged RLE mask, or empty RLE if incompatible input
-RLE RLE::merge(const std::vector<RLE> &R, int intersect) {
+RLE RLE::merge(const std::vector<RLE>& R, int intersect) {
         size_t n = R.size();
 
         if (n == 0) {
@@ -588,7 +588,7 @@ std::tuple<uint64_t, uint64_t, std::string> RLE::toTuple() const {
 
 // Constructs an RLE object from a tuple (height, width, rle_string)
 RLE RLE::frTuple(
-    const std::tuple<uint64_t, uint64_t, std::string> &w_h_rlestring) {
+    const std::tuple<uint64_t, uint64_t, std::string>& w_h_rlestring) {
         return RLE::frString(std::get<2>(w_h_rlestring),  // rle_string
                              std::get<0>(w_h_rlestring),  // height
                              std::get<1>(w_h_rlestring)   // width
@@ -596,7 +596,7 @@ RLE RLE::frTuple(
 }
 
 // Constructs an RLE object from an uncompressed RLE Python dictionary
-RLE RLE::frUncompressedRLE(const pybind11::dict &ucRle) {
+RLE RLE::frUncompressedRLE(const pybind11::dict& ucRle) {
         // Extract size as a pair (height, width)
         std::pair<uint64_t, uint64_t> size =
             ucRle["size"].cast<std::pair<uint64_t, uint64_t>>();
@@ -608,7 +608,7 @@ RLE RLE::frUncompressedRLE(const pybind11::dict &ucRle) {
 }
 
 // Constructs an RLE object from a segmentation input (polygon or RLE dict).
-RLE RLE::frSegm(const pybind11::object &pyobj, uint64_t w, uint64_t h) {
+RLE RLE::frSegm(const pybind11::object& pyobj, uint64_t w, uint64_t h) {
         namespace py = pybind11;
         std::string type = py::str(py::type::of(pyobj));
 
@@ -618,7 +618,7 @@ RLE RLE::frSegm(const pybind11::object &pyobj, uint64_t w, uint64_t h) {
                     pyobj.cast<std::vector<std::vector<double>>>();
                 std::vector<RLE> rles;
                 rles.reserve(poly.size());  // OPTIMIZATION: Pre-allocate memory
-                for (const auto &p : poly) {
+                for (const auto& p : poly) {
                         rles.emplace_back(RLE::frPoly(
                             p, h, w));  // OPTIMIZATION: emplace_back instead of
                                         // push_back
