@@ -235,7 +235,7 @@ class COCOeval_faster(COCOevalBase):
         iou_thrs, rec_thrs = self.params.iouThrs, self.params.recThrs
 
         # Indices for IoU=0.50, first area, and last max dets
-        iou50_idx, area_idx, maxdet_idx = (int(np.argwhere(np.isclose(iou_thrs, 0.50))), 0, -1)
+        iou50_idx, area_idx, maxdet_idx = (np.argwhere(np.isclose(iou_thrs, 0.50)).item(), 0, -1)
         P = self.eval["precision"]
         S = self.eval["scores"]
 
