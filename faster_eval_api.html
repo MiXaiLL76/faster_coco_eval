@@ -8,15 +8,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>COCOeval_faster &mdash; faster-coco-eval 1.7.1 1.7.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/custom_nbsphinx.css?v=ce1cc334" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=a77542ef"></script>
-      <script src="_static/doctools.js?v=9bcbadda"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -96,7 +96,7 @@
 <h1>COCOeval_faster<a class="headerlink" href="#cocoeval-faster" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="faster_coco_eval.core.COCOeval_faster">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">faster_coco_eval.core.</span></span><span class="sig-name descname"><span class="pre">COCOeval_faster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">cocoGt=None,</span> <span class="pre">cocoDt=None,</span> <span class="pre">iouType='segm',</span> <span class="pre">ranges={'large':</span> <span class="pre">[9216,</span> <span class="pre">10000000000.0],</span> <span class="pre">'medium':</span> <span class="pre">[1024,</span> <span class="pre">9216],</span> <span class="pre">'small':</span> <span class="pre">[0,</span> <span class="pre">1024]},</span> <span class="pre">print_function=&lt;bound</span> <span class="pre">method</span> <span class="pre">Logger.info</span> <span class="pre">of</span> <span class="pre">&lt;Logger</span> <span class="pre">faster_coco_eval.core.cocoeval</span> <span class="pre">(WARNING)&gt;&gt;,</span> <span class="pre">extra_calc=False,</span> <span class="pre">kpt_oks_sigmas=None,</span> <span class="pre">use_area=True,</span> <span class="pre">lvis_style=False,</span> <span class="pre">separate_eval=False,</span> <span class="pre">boundary_dilation_ratio=0.02,</span> <span class="pre">boundary_cpu_count=4</span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.core.COCOeval_faster" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">faster_coco_eval.core.</span></span><span class="sig-name descname"><span class="pre">COCOeval_faster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">cocoGt=None,</span> <span class="pre">cocoDt=None,</span> <span class="pre">iouType='segm',</span> <span class="pre">ranges={'large':</span> <span class="pre">[9216,</span> <span class="pre">10000000000.0],</span> <span class="pre">'medium':</span> <span class="pre">[1024,</span> <span class="pre">9216],</span> <span class="pre">'small':</span> <span class="pre">[0,</span> <span class="pre">1024]},</span> <span class="pre">print_function=&lt;bound</span> <span class="pre">method</span> <span class="pre">Logger.info</span> <span class="pre">of</span> <span class="pre">&lt;Logger</span> <span class="pre">faster_coco_eval.core.cocoeval</span> <span class="pre">(WARNING)&gt;&gt;,</span> <span class="pre">extra_calc=False,</span> <span class="pre">kpt_oks_sigmas=None,</span> <span class="pre">use_area=True,</span> <span class="pre">lvis_style=False,</span> <span class="pre">separate_eval=False,</span> <span class="pre">boundary_dilation_ratio=0.02,</span> <span class="pre">boundary_cpu_count=4</span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.core.COCOeval_faster" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="coco_eval.html#faster_coco_eval.core.cocoeval.COCOeval" title="faster_coco_eval.core.cocoeval.COCOeval"><code class="xref py py-class docutils literal notranslate"><span class="pre">COCOeval</span></code></a></p>
 <p>This is a slightly modified version of the original COCO API, where the
 functions evaluateImg() and accumulate() are implemented in C++ to speedup
@@ -112,7 +112,7 @@ self.evaluate()</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="faster_coco_eval.core.COCOeval_faster.calc_auc">
-<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_auc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recall_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'c++'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.core.COCOeval_faster.calc_auc" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">calc_auc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recall_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'c++'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.core.COCOeval_faster.calc_auc" title="Link to this definition"></a></dt>
 <dd><p>Calculate area under precision recall curve.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -172,7 +172,7 @@ computational bottleneck.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="faster_coco_eval.core.COCOeval_faster.extended_metrics">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">extended_metrics</span></span><a class="headerlink" href="#faster_coco_eval.core.COCOeval_faster.extended_metrics" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">extended_metrics</span></span><a class="headerlink" href="#faster_coco_eval.core.COCOeval_faster.extended_metrics" title="Link to this definition"></a></dt>
 <dd><p>Computes extended evaluation metrics for object detection results.</p>
 <p>Calculates per-class and overall (macro) metrics such as mean average precision (mAP) at IoU thresholds,
 precision, recall, and F1-score. Results are computed using evaluation results stored in the object.
@@ -239,7 +239,7 @@ detection and ground truth annotations in-place.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="faster_coco_eval.core.COCOeval_faster.stats_as_dict">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stats_as_dict</span></span><a class="headerlink" href="#faster_coco_eval.core.COCOeval_faster.stats_as_dict" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">stats_as_dict</span></span><a class="headerlink" href="#faster_coco_eval.core.COCOeval_faster.stats_as_dict" title="Link to this definition"></a></dt>
 <dd><p>Return the evaluation statistics as a dictionary with descriptive
 labels.</p>
 <dl class="field-list simple">
