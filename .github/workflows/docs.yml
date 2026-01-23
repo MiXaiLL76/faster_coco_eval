@@ -1,6 +1,8 @@
 name: Build and Deploy Sphinx Docs
 
 on:
+  push:
+    branches: [main]
   pull_request:
   workflow_call:
   workflow_dispatch:
