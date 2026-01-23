@@ -1,24 +1,26 @@
-name: Test PR
+name: Tests
 
 on:
-  - pull_request
-  - workflow_call
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
 
 jobs:
   test-pr:
-    name: Test on ${{ matrix.os }} with python${{ matrix.pythonv }}
+    name: Test on ${{ matrix.os }} with python${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: False
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-14, windows-latest]
-        pythonv: ["3.8", "3.13"]
+        python-version: ["3.8", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.pythonv }}
+          python-version: ${{ matrix.python-version }}
 
       - name: Install from sdist
         shell: bash
