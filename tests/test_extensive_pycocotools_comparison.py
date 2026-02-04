@@ -38,8 +38,6 @@ class TestExtensivePycocotoolsComparison(TestCase):
     - Various category distributions and object sizes
     - Different score distributions and confidence levels
     """
-    
-    maxDiff = None
 
     def setUp(self):
         self.tmp_dir = tempfile.TemporaryDirectory()
@@ -288,7 +286,10 @@ class TestExtensivePycocotoolsComparison(TestCase):
             tolerance: Tolerance for floating point comparison
         
         Returns:
-            Tuple of (faster_coco_eval stats, pycocotools stats, are_equal)
+            Tuple[np.ndarray, np.ndarray, bool]: A tuple containing:
+                - faster_coco_eval stats array
+                - pycocotools stats array
+                - boolean indicating if arrays are equal within tolerance
         """
         # Evaluate with faster_coco_eval
         coco_gt_fast = COCO(gt_file)
@@ -439,7 +440,14 @@ class TestExtensivePycocotoolsComparison(TestCase):
         )
 
     def test_edge_case_no_predictions(self):
-        """Test evaluation with no predictions."""
+        """Test evaluation with no predictions.
+        
+        Note: Both pycocotools and faster_coco_eval have issues with truly empty
+        prediction lists (loadRes() fails on empty lists when trying to inspect the
+        first element to determine annotation type). This is a known limitation in
+        the COCO API design. We use a very low-scoring prediction instead to test
+        the low-prediction scenario.
+        """
         if origCOCO is None:
             raise unittest.SkipTest("pycocotools not available")
         
@@ -454,14 +462,14 @@ class TestExtensivePycocotoolsComparison(TestCase):
         with open(gt_file, "w") as f:
             json.dump(coco_data, f)
         
-        # Empty predictions - Both implementations have issues with truly empty predictions
-        # so we use a very low score prediction instead
+        # Use a very low score prediction instead of empty list
+        # (Both APIs crash on truly empty prediction lists)
         predictions = [{
             "image_id": coco_data["images"][0]["id"],
             "category_id": 0,
             "bbox": [10.0, 10.0, 10.0, 10.0],
             "area": 100.0,
-            "score": 0.01,  # Very low score
+            "score": 0.01,  # Very low score to simulate near-empty results
         }]
         
         # Compare evaluators
