@@ -144,6 +144,31 @@ Faster-COCO-Eval goes beyond basic evaluation with these advanced capabilities:
 - **Comprehensive API documentation**
 - **Extensive test coverage and reliability**
 
+## ✅ Testing & Reliability
+
+Faster-COCO-Eval prioritizes **correctness and reliability** through extensive testing:
+
+### Comprehensive Test Suite
+
+- **90+ automated tests** covering all functionality
+- **Exact equality validation** against pycocotools across all metrics
+- **Continuous integration** on Python 3.9-3.13
+- **Edge case coverage** including boundary conditions and error handling
+
+### Extensive PyCocoTools Comparison
+
+New comprehensive tests validate **exact numerical equality** with pycocotools:
+
+- **Object Detection**: Tests with 10-100 images, hundreds to thousands of annotations
+- **Instance Segmentation**: RLE mask encoding and pixel-level IoU validation
+- **Keypoint Detection**: 17-keypoint pose estimation with varied visibility
+- **Multiple Scenarios**: Small/medium/large objects, various confidence distributions
+- **Edge Cases**: Perfect predictions, low-confidence detections, mixed object sizes
+
+All tests confirm **bit-for-bit identical results** between faster_coco_eval and pycocotools, giving you confidence to use this library as a drop-in replacement while gaining 3-4x performance improvements.
+
+See [tests/README.md](tests/README.md) for detailed test documentation.
+
 ## 📚 Comprehensive Documentation
 
 ### Usage Examples
