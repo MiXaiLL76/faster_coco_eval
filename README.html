@@ -265,6 +265,32 @@
 </ul>
 </section>
 </section>
+<section id="testing-reliability">
+<h2>✅ Testing &amp; Reliability<a class="headerlink" href="#testing-reliability" title="Link to this heading"></a></h2>
+<p>Faster-COCO-Eval prioritizes <strong>correctness and reliability</strong> through extensive testing:</p>
+<section id="comprehensive-test-suite">
+<h3>Comprehensive Test Suite<a class="headerlink" href="#comprehensive-test-suite" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>90+ automated tests</strong> covering all functionality</p></li>
+<li><p><strong>Exact equality validation</strong> against pycocotools across all metrics</p></li>
+<li><p><strong>Continuous integration</strong> on Python 3.9-3.13</p></li>
+<li><p><strong>Edge case coverage</strong> including boundary conditions and error handling</p></li>
+</ul>
+</section>
+<section id="extensive-pycocotools-comparison">
+<h3>Extensive PyCocoTools Comparison<a class="headerlink" href="#extensive-pycocotools-comparison" title="Link to this heading"></a></h3>
+<p>New comprehensive tests validate <strong>exact numerical equality</strong> with pycocotools:</p>
+<ul class="simple">
+<li><p><strong>Object Detection</strong>: Tests with 10-100 images, hundreds to thousands of annotations</p></li>
+<li><p><strong>Instance Segmentation</strong>: RLE mask encoding and pixel-level IoU validation</p></li>
+<li><p><strong>Keypoint Detection</strong>: 17-keypoint pose estimation with varied visibility</p></li>
+<li><p><strong>Multiple Scenarios</strong>: Small/medium/large objects, various confidence distributions</p></li>
+<li><p><strong>Edge Cases</strong>: Perfect predictions, low-confidence detections, mixed object sizes</p></li>
+</ul>
+<p>All tests confirm <strong>bit-for-bit identical results</strong> between faster_coco_eval and pycocotools, giving you confidence to use this library as a drop-in replacement while gaining 3-4x performance improvements.</p>
+<p>See <a class="reference internal" href="#tests/README.md"><span class="xref myst">tests/README.md</span></a> for detailed test documentation.</p>
+</section>
+</section>
 <section id="comprehensive-documentation">
 <h2>📚 Comprehensive Documentation<a class="headerlink" href="#comprehensive-documentation" title="Link to this heading"></a></h2>
 <section id="usage-examples">
