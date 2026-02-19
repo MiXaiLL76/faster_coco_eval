@@ -251,8 +251,8 @@ def _contained_box(gt_box, iou):
 
 
 @pytest.fixture
-def coco_eval_with_fp():
-    """COCOeval_faster with two categories:
+def coco_gt_dt_with_fp():
+    """COCO GT/DT pair with two categories:
     - cat1: 10 GTs, 10 TPs (conf 0.0–0.9), 0 FPs
     - cat2: 10 GTs, 10 TPs (conf 0.5–0.95), 10 FPs (conf 0.0–0.45)
     """
@@ -302,22 +302,22 @@ def coco_eval_with_fp():
     }
     coco_gt.createIndex()
     coco_dt = coco_gt.loadRes(dets)
-
-    coco_eval = COCOeval_faster(coco_gt, coco_dt, iouType="bbox")
-    coco_eval.evaluate()
-    coco_eval.accumulate()
-    coco_eval.summarize()
-    return coco_eval
+    return coco_gt, coco_dt
 
 
-def test_extended_metrics_precision_not_overestimated(coco_eval_with_fp):
+def test_extended_metrics_precision_not_overestimated(coco_gt_dt_with_fp):
     """Regression test: extended_metrics must not over-estimate precision.
 
     When cat2 has FPs at low confidence (below the recall ceiling), the
     interpolated PR-curve hides those FPs and reports precision=1.0.  The
     correct macro-precision at the F1-optimal confidence threshold is 0.75.
     """
-    m = coco_eval_with_fp.extended_metrics
+    coco_gt, coco_dt = coco_gt_dt_with_fp
+    coco_eval = COCOeval_faster(coco_gt, coco_dt, iouType="bbox")
+    coco_eval.evaluate()
+    coco_eval.accumulate()
+    coco_eval.summarize()
+    m = coco_eval.extended_metrics
 
     # At the F1-optimal global threshold both classes must reach recall=1.0.
     # cat1: P=1.0, R=1.0;  cat2: P=0.5, R=1.0  →  macro P=0.75, R=1.0
