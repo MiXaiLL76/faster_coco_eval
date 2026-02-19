@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import math
 import os
 import unittest
 
@@ -231,6 +232,129 @@ class TestBaseCoco(unittest.TestCase):
         self.assertListEqual(parsed_data["annotations"], orig_data["annotations"])
         self.assertListEqual(parsed_data["categories"], orig_data["categories"])
         self.assertListEqual(parsed_data["images"], orig_data["images"])
+
+
+class TestExtendedMetrics(unittest.TestCase):
+    """Tests for extended_metrics precision/recall/F1 computation."""
+
+    maxDiff = None
+
+    SIZE = 200
+    SPACING = 250
+    ROW = 260
+
+    @staticmethod
+    def _contained_box(gt_box, iou):
+        x, y, s, _ = gt_box
+        p = s * math.sqrt(iou)
+        off = (s - p) / 2
+        return [x + off, y + off, p, p]
+
+    def _build_eval(self):
+        """Build a COCOeval_faster with two categories:
+        - cat1: 10 GTs, 10 TPs (conf 0.0–0.9), 0 FPs
+        - cat2: 10 GTs, 10 TPs (conf 0.5–0.95), 10 FPs (conf 0.0–0.45)
+        """
+        image_id = 1
+        anns, dets = [], []
+        ann_id = 1
+
+        # cat1: perfect predictions
+        for i, conf in enumerate([0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0]):
+            gt = [float(i * self.SPACING), 0.0, float(self.SIZE), float(self.SIZE)]
+            anns.append({
+                "id": ann_id, "image_id": image_id, "category_id": 1,
+                "bbox": gt, "area": gt[2] * gt[3], "iscrowd": 0,
+            })
+            dets.append({
+                "image_id": image_id, "category_id": 1,
+                "bbox": self._contained_box(gt, 0.96), "score": conf,
+            })
+            ann_id += 1
+
+        # cat2: 10 TPs followed by 10 FPs at lower confidence
+        for i, conf in enumerate([0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60, 0.55, 0.50]):
+            gt = [float(i * self.SPACING), float(self.ROW), float(self.SIZE), float(self.SIZE)]
+            anns.append({
+                "id": ann_id, "image_id": image_id, "category_id": 2,
+                "bbox": gt, "area": gt[2] * gt[3], "iscrowd": 0,
+            })
+            dets.append({
+                "image_id": image_id, "category_id": 2,
+                "bbox": self._contained_box(gt, 0.96), "score": conf,
+            })
+            ann_id += 1
+
+        # cat2 FPs (no GT overlap)
+        for i, conf in enumerate([0.45, 0.40, 0.35, 0.30, 0.25, 0.20, 0.15, 0.10, 0.05, 0.00]):
+            dets.append({
+                "image_id": image_id, "category_id": 2,
+                "bbox": [float(i * self.SPACING), float(2 * self.ROW), float(self.SIZE), float(self.SIZE)],
+                "score": conf,
+            })
+
+        coco_gt = COCO()
+        coco_gt.dataset = {
+            "images": [{"id": image_id, "width": 10 * self.SPACING, "height": 3 * self.ROW}],
+            "annotations": anns,
+            "categories": [{"id": 1, "name": "cat1"}, {"id": 2, "name": "cat2"}],
+        }
+        coco_gt.createIndex()
+        coco_dt = coco_gt.loadRes(dets)
+
+        coco_eval = COCOeval_faster(coco_gt, coco_dt, iouType="bbox")
+        coco_eval.evaluate()
+        coco_eval.accumulate()
+        coco_eval.summarize()
+        return coco_eval
+
+    def test_extended_metrics_precision_not_overestimated(self):
+        """Regression test: extended_metrics must not over-estimate precision.
+
+        When cat2 has FPs at low confidence (below the recall ceiling), the
+        interpolated PR-curve hides those FPs and reports precision=1.0.  The
+        correct macro-precision at the F1-optimal confidence threshold is 0.75.
+        See: https://github.com/MiXaiLL76/faster_coco_eval/issues/XXX
+        """
+        coco_eval = self._build_eval()
+        m = coco_eval.extended_metrics
+
+        # At the F1-optimal global threshold both classes must reach recall=1.0.
+        # cat1: P=1.0, R=1.0;  cat2: P=0.5, R=1.0  →  macro P=0.75, R=1.0
+        self.assertAlmostEqual(m["precision"], 0.75, places=6,
+                               msg="Macro-precision must not use interpolated (overestimated) values")
+        self.assertAlmostEqual(m["recall"], 1.0, places=6,
+                               msg="Macro-recall should be 1.0 at the F1-optimal threshold")
+
+    def test_extended_metrics_perfect_predictions(self):
+        """All predictions are correct TPs: precision=recall=1.0."""
+        image_id = 1
+        anns, dets = [], []
+        ann_id = 1
+        for i, conf in enumerate([0.9, 0.8, 0.7, 0.6, 0.5]):
+            gt = [float(i * self.SPACING), 0.0, float(self.SIZE), float(self.SIZE)]
+            anns.append({"id": ann_id, "image_id": image_id, "category_id": 1,
+                         "bbox": gt, "area": gt[2] * gt[3], "iscrowd": 0})
+            dets.append({"image_id": image_id, "category_id": 1,
+                         "bbox": self._contained_box(gt, 0.96), "score": conf})
+            ann_id += 1
+
+        coco_gt = COCO()
+        coco_gt.dataset = {
+            "images": [{"id": image_id, "width": 10 * self.SPACING, "height": self.SIZE + 10}],
+            "annotations": anns,
+            "categories": [{"id": 1, "name": "cat1"}],
+        }
+        coco_gt.createIndex()
+        coco_dt = coco_gt.loadRes(dets)
+        coco_eval = COCOeval_faster(coco_gt, coco_dt, iouType="bbox")
+        coco_eval.evaluate()
+        coco_eval.accumulate()
+        coco_eval.summarize()
+
+        m = coco_eval.extended_metrics
+        self.assertAlmostEqual(m["precision"], 1.0, places=6)
+        self.assertAlmostEqual(m["recall"], 1.0, places=6)
 
 
 if __name__ == "__main__":
