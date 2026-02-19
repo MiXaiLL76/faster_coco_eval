@@ -254,11 +254,11 @@ class COCOeval_faster(COCOevalBase):
 
         # Per-class: build sorted (descending) score arrays and cumulative TP counts
         class_arrays = {}  # cat_id -> (scores_desc, cum_tp)
-        _class_items: dict = {}
+        class_items: dict = {}
         for dt_id, ann in self.cocoDt.anns.items():
             cat_id = ann["category_id"]
-            _class_items.setdefault(cat_id, []).append((float(ann["score"]), int(dt_id in tp_dt_ids)))
-        for cat_id, items in _class_items.items():
+            class_items.setdefault(cat_id, []).append((float(ann["score"]), int(dt_id in tp_dt_ids)))
+        for cat_id, items in class_items.items():
             items.sort(key=lambda x: -x[0])
             scores = np.array([s for s, _ in items])
             is_tp = np.array([t for _, t in items])
@@ -276,6 +276,9 @@ class COCOeval_faster(COCOevalBase):
         all_thresholds = sorted({float(ann["score"]) for ann in self.cocoDt.anns.values()})
 
         best_macro_f1 = -np.inf
+        # best_class_metrics is populated inside the loop when a better macro-F1 is found.
+        # If no threshold produces valid metrics (e.g., no detections at all), it stays
+        # empty and per-class precision/recall will be reported as NaN (and filtered out).
         best_class_metrics: dict = {}
         macro_precision = 0.0
         macro_recall = 0.0

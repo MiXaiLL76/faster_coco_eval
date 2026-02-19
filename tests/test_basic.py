@@ -314,7 +314,6 @@ class TestExtendedMetrics(unittest.TestCase):
         When cat2 has FPs at low confidence (below the recall ceiling), the
         interpolated PR-curve hides those FPs and reports precision=1.0.  The
         correct macro-precision at the F1-optimal confidence threshold is 0.75.
-        See: https://github.com/MiXaiLL76/faster_coco_eval/issues/XXX
         """
         coco_eval = self._build_eval()
         m = coco_eval.extended_metrics
