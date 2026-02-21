@@ -1,5 +1,17 @@
 # History
 
+## v1.7.2
+
+- [x] Fix type error in faster_eval_api <https://github.com/MiXaiLL76/faster_coco_eval/pull/65>; Thank you very much @matteomrz
+- [x] Updated C++ code formatting and removed macos13 <https://github.com/MiXaiLL76/faster_coco_eval/pull/66>
+- [x] Chore GitHub workflows: refine triggers, align naming, and improve matrices <https://github.com/MiXaiLL76/faster_coco_eval/pull/67>; Thank you very much @Borda
+- [x] Fix indentation in unittest.yml for branch specification <https://github.com/MiXaiLL76/faster_coco_eval/pull/68>; Thank you very much @Borda
+- [x] Enhanced README with detailed benefits, installation options, performance benchmarks, and feature highlights <https://github.com/MiXaiLL76/faster_coco_eval/pull/69>; Thank you very much @Borda
+- [x] Add extensive pycocotools comparison tests with large synthetic datasets <https://github.com/MiXaiLL76/faster_coco_eval/pull/71>; Thank you very much @Borda
+- [x] Fix: extended_metrics <https://github.com/MiXaiLL76/faster_coco_eval/pull/74> <https://github.com/MiXaiLL76/faster_coco_eval/pull/75>; Thank you very much @Borda
+
+> The best contribution to the library in the last six months from @Borda
+
 ## v1.7.1
 
 - [x] bug fix <https://github.com/MiXaiLL76/faster_coco_eval/pull/64>
