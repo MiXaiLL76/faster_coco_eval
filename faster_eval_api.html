@@ -208,7 +208,9 @@ For each class, if categories are used, metrics are reported separately and for 
 <ul class="simple">
 <li><p>Uses COCO-style evaluation results (precision and scores arrays).</p></li>
 <li><p>Filters out classes with NaN results in any metric.</p></li>
-<li><p>The best F1-score across recall thresholds is used to select macro precision and recall.</p></li>
+<li><p>The best F1-score across confidence thresholds is used to select macro precision and recall.</p></li>
+<li><p>Precision and recall are computed from actual (non-interpolated) detection data to avoid
+over-estimating precision when false positives exist below the recall ceiling.</p></li>
 </ul>
 </dd></dl>
 
