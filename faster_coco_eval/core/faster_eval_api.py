@@ -229,10 +229,12 @@ class COCOeval_faster(COCOevalBase):
         Notes:
             - Uses COCO-style evaluation results (precision and scores arrays).
             - Filters out classes with NaN results in any metric.
-            - The best F1-score across recall thresholds is used to select macro precision and recall.
+            - The best F1-score across confidence thresholds is used to select macro precision and recall.
+            - Precision and recall are computed from actual (non-interpolated) detection data to avoid
+              over-estimating precision when false positives exist below the recall ceiling.
         """
-        # Extract IoU and recall thresholds from parameters
-        iou_thrs, rec_thrs = self.params.iouThrs, self.params.recThrs
+        # Extract IoU thresholds from parameters
+        iou_thrs = self.params.iouThrs
 
         # Indices for IoU=0.50, first area, and last max dets
         _iou50_hits = np.where(np.isclose(iou_thrs, 0.50))[0]
@@ -243,25 +245,83 @@ class COCOeval_faster(COCOevalBase):
             )
         iou50_idx, area_idx, maxdet_idx = (int(_iou50_hits[0]), 0, -1)
         P = self.eval["precision"]
-        S = self.eval["scores"]
 
-        # Get precision for IoU=0.50, area, and max dets
-        prec_raw = P[iou50_idx, :, :, area_idx, maxdet_idx]
-        prec = prec_raw.copy().astype(float)
-        prec[prec < 0] = np.nan
+        # --- Compute actual (non-interpolated) precision/recall by sweeping confidence thresholds ---
+        # Build set of TP detection IDs: detections matched to a GT with actual IoU >= 0.50
+        tp_dt_ids = {
+            int(k.split("_")[0])
+            for k, iou in self.eval["matched"].items()
+            if iou >= 0.5
+        }
 
-        # Compute F1 score for each class and recall threshold
-        f1_cls = 2 * prec * rec_thrs[:, None] / (prec + rec_thrs[:, None])
-        f1_macro = np.nanmean(f1_cls, axis=1)
-        best_j = int(f1_macro.argmax())
+        cat_ids_eval = self.params.catIds if self.params.useCats else list(
+            {ann["category_id"] for ann in self.cocoDt.anns.values()}
+        )
 
-        # Macro precision and recall at the best F1 score
-        macro_precision = float(np.nanmean(prec[best_j]))
-        macro_recall = float(rec_thrs[best_j])
+        # Per-class: build sorted (descending) score arrays and cumulative TP counts
+        class_arrays = {}  # cat_id -> (scores_desc, cum_tp)
+        class_items: dict = {}
+        for dt_id, ann in self.cocoDt.anns.items():
+            cat_id = ann["category_id"]
+            class_items.setdefault(cat_id, []).append((float(ann["score"]), int(dt_id in tp_dt_ids)))
+        for cat_id, items in class_items.items():
+            items.sort(key=lambda x: -x[0])
+            scores = np.array([s for s, _ in items])
+            is_tp = np.array([t for _, t in items])
+            class_arrays[cat_id] = (scores, np.cumsum(is_tp))
 
-        # Score vector for the best recall threshold
-        score_vec = S[iou50_idx, best_j, :, area_idx, maxdet_idx].astype(float)
-        score_vec[prec_raw[best_j] < 0] = np.nan
+        # Total non-crowd GTs per class
+        total_gts: dict = {}
+        for ann in self.cocoGt.anns.values():
+            if not ann.get("iscrowd", 0):
+                total_gts[ann["category_id"]] = total_gts.get(ann["category_id"], 0) + 1
+
+        # Candidate thresholds: all unique detection scores, ascending
+        # Iterating ascending ensures the FIRST threshold reaching the maximum macro-F1
+        # is the most inclusive one (lowest confidence → highest recall).
+        all_thresholds = sorted({float(ann["score"]) for ann in self.cocoDt.anns.values()})
+
+        best_macro_f1 = -np.inf
+        # best_class_metrics is populated inside the loop when a better macro-F1 is found.
+        # If no threshold produces valid metrics (e.g., no detections at all), it stays
+        # empty and per-class precision/recall will be reported as NaN (and filtered out).
+        best_class_metrics: dict = {}
+        macro_precision = 0.0
+        macro_recall = 0.0
+
+        for threshold in all_thresholds:
+            cat_precs, cat_recs, cat_f1s, cat_ids_valid = [], [], [], []
+            for cat_id in cat_ids_eval:
+                n_gt = total_gts.get(cat_id, 0)
+                if n_gt == 0:
+                    continue
+                if cat_id in class_arrays:
+                    scores, cum_tp = class_arrays[cat_id]
+                    # Count detections with score >= threshold using binary search
+                    n_above = int(np.searchsorted(-scores, -threshold, side="right"))
+                    tp = int(cum_tp[n_above - 1]) if n_above > 0 else 0
+                    prec = tp / n_above if n_above > 0 else 0.0
+                    rec = tp / n_gt
+                else:
+                    prec, rec = 0.0, 0.0
+                f1 = 2.0 * prec * rec / (prec + rec) if (prec + rec) > 0.0 else 0.0
+                cat_precs.append(prec)
+                cat_recs.append(rec)
+                cat_f1s.append(f1)
+                cat_ids_valid.append(cat_id)
+
+            if not cat_f1s:
+                continue
+
+            macro_f1 = float(np.mean(cat_f1s))
+            if macro_f1 > best_macro_f1:
+                best_macro_f1 = macro_f1
+                macro_precision = float(np.mean(cat_precs))
+                macro_recall = float(np.mean(cat_recs))
+                best_class_metrics = {
+                    cid: {"precision": p, "recall": r}
+                    for cid, p, r in zip(cat_ids_valid, cat_precs, cat_recs)
+                }
 
         per_class = []
         if self.params.useCats:
@@ -269,7 +329,7 @@ class COCOeval_faster(COCOevalBase):
             cat_ids = self.params.catIds
             cat_id_to_name = {c["id"]: c["name"] for c in self.cocoGt.loadCats(cat_ids)}
             for k, cid in enumerate(cat_ids):
-                # Precision per category
+                # AP per category (unchanged: uses interpolated P for mAP, which is correct)
                 p_slice = P[:, :, k, area_idx, maxdet_idx]
                 valid = p_slice > -1
                 ap_50_95 = float(p_slice[valid].mean()) if valid.any() else float("nan")
@@ -279,8 +339,9 @@ class COCOeval_faster(COCOevalBase):
                     else float("nan")
                 )
 
-                pc = float(prec[best_j, k]) if prec_raw[best_j, k] > -1 else float("nan")
-                rc = macro_recall
+                class_m = best_class_metrics.get(int(cid), {})
+                pc = class_m.get("precision", float("nan"))
+                rc = class_m.get("recall", float("nan"))
 
                 # Filter out dataset class if any metric is NaN
                 if np.isnan(ap_50_95) or np.isnan(ap_50) or np.isnan(pc) or np.isnan(rc):
