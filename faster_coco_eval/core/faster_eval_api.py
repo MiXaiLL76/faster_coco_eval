@@ -235,7 +235,13 @@ class COCOeval_faster(COCOevalBase):
         iou_thrs, rec_thrs = self.params.iouThrs, self.params.recThrs
 
         # Indices for IoU=0.50, first area, and last max dets
-        iou50_idx, area_idx, maxdet_idx = (np.argwhere(np.isclose(iou_thrs, 0.50)).item(), 0, -1)
+        _iou50_hits = np.where(np.isclose(iou_thrs, 0.50))[0]
+        if len(_iou50_hits) == 0:
+            raise ValueError(
+                "extended_metrics requires IoU threshold 0.50, "
+                f"but it is not present in params.iouThrs={iou_thrs.tolist()}."
+            )
+        iou50_idx, area_idx, maxdet_idx = (int(_iou50_hits[0]), 0, -1)
         P = self.eval["precision"]
         S = self.eval["scores"]
 

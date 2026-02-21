@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pytest
 
+from faster_coco_eval import COCO, COCOeval_faster
 from faster_coco_eval.extra.extra import ExtraEval
 
 
@@ -165,3 +166,59 @@ def test_fn_image_ann_map_with_fns():
         assert len(fn_map) == 2
         assert fn_map[1] == {1, 2}
         assert fn_map[2] == {4}
+
+
+def _make_coco_eval(iou_thrs=None):
+    """Helper: build a minimal COCOeval_faster with optional custom iouThrs."""
+    image_id = 1
+    SIZE = 200
+    bbox = [0.0, 0.0, float(SIZE), float(SIZE)]
+
+    coco_gt = COCO()
+    coco_gt.dataset = {
+        "images": [{"id": image_id, "width": 1000, "height": 1000}],
+        "annotations": [
+            {
+                "id": 1,
+                "image_id": image_id,
+                "category_id": 1,
+                "bbox": bbox,
+                "area": SIZE * SIZE,
+                "iscrowd": 0,
+            }
+        ],
+        "categories": [{"id": 1, "name": "cat1"}],
+    }
+    coco_gt.createIndex()
+
+    pred_bbox = [10.0, 10.0, float(SIZE - 20), float(SIZE - 20)]
+    coco_dt = coco_gt.loadRes([
+        {"image_id": image_id, "category_id": 1, "bbox": pred_bbox, "score": 0.9}
+    ])
+
+    coco_eval = COCOeval_faster(coco_gt, coco_dt, iouType="bbox")
+    if iou_thrs is not None:
+        coco_eval.params.iouThrs = np.array(iou_thrs)
+    coco_eval.evaluate()
+    coco_eval.accumulate()
+    coco_eval.summarize()
+    return coco_eval
+
+
+def test_extended_metrics_raises_when_iou50_missing():
+    """extended_metrics must raise ValueError when 0.50 is absent from iouThrs."""
+    coco_eval = _make_coco_eval(iou_thrs=[0.55, 0.65, 0.75, 0.85, 0.95])
+    with pytest.raises(ValueError, match="0.50"):
+        _ = coco_eval.extended_metrics
+
+
+def test_extended_metrics_works_with_iou50():
+    """extended_metrics must succeed when 0.50 is present in iouThrs."""
+    # Default iouThrs includes 0.50
+    coco_eval = _make_coco_eval()
+
+    result = coco_eval.extended_metrics
+    assert "map" in result
+    assert "precision" in result
+    assert "recall" in result
+    assert "class_map" in result
