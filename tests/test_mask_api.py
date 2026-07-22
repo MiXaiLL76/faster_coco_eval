@@ -188,6 +188,27 @@ class TestMaskApi(unittest.TestCase):
         result_poly_iou = module.iou(self.poly_rles[:3], self.poly_rles[:3], [0, 0, 0]).round(4)
         self.assertEqual(poly_iou.tolist(), result_poly_iou.tolist())
 
+    def test_iou_size_mismatch_writes_sentinel_to_pair(self):
+        """Return -1 in each pair's output cell when RLE sizes differ."""
+        dt = _mask.frBbox([[0, 0, 2, 2]], 4, 4) * 2
+        gt = [
+            _mask.frBbox([[0, 0, 2, 2]], 4, 4)[0],
+            _mask.frBbox([[0, 0, 2, 2]], 5, 5)[0],
+        ]
+
+        result = _mask.iou(dt, gt, [0, 0])
+
+        np.testing.assert_array_equal(result, [[1.0, -1.0], [1.0, -1.0]])
+
+    def test_iou_size_mismatch_rectangular_output_stays_in_bounds(self):
+        """Return one sentinel per mismatched pair for a rectangular result."""
+        dt = _mask.frBbox([[0, 0, 2, 2]], 4, 4)
+        gt = _mask.frBbox([[0, 0, 2, 2]] * 5, 5, 5)
+
+        result = _mask.iou(dt, gt, [0] * 5)
+
+        np.testing.assert_array_equal(result, np.full((1, 5), -1.0))
+
     def testToBboxFullImage(self):
         mask = np.array([[0, 1], [1, 1]])
         bbox = mask_util.toBbox(_encode(mask))

@@ -27,6 +27,9 @@ faster_coco_eval/*.so
 
 # AI assistant files
 .cache/
+.junie/
 .claude/
+.developments/
 .plans/
+.reports/
 .temp/

@@ -458,7 +458,7 @@ std::vector<double> rleIou(const std::vector<RLE>& dt,
                         if (o[d * n + g] > 0) {
                                 crowd = _iscrowd && iscrowd[g];
                                 if (dt[d].h != gt[g].h || dt[d].w != gt[g].w) {
-                                        o[g * n + d] = -1;
+                                        o[d * n + g] = -1;
                                         continue;
                                 }
                                 uint64_t ka, kb, a, b, c, ca, cb, ct, i, u;
