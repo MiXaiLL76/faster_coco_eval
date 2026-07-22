@@ -119,15 +119,8 @@ class COCO:
                     anns[ann["id"]] = ann
 
             if 0 in anns:
-                warnings.warn(
-                    "Found annotation id 0. Annotation ids are used as match "
-                    "markers during evaluation, where 0 also means 'unmatched' — "
-                    "an annotation with id 0 cannot be distinguished from an "
-                    "unmatched one, silently skewing precision/recall. Consider "
-                    "using 1-indexed annotation ids.",
                     UserWarning,
-                    stacklevel=2,
-                )
+                    stacklevel=3,
 
         if "categories" in self.dataset:
             for cat in self.dataset["categories"]:
