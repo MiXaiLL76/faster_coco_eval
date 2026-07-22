@@ -13,7 +13,6 @@ examples/comparison/ultralytics/runs/*
 examples/comparison/ultralytics/*.pt
 *.whl
 *.pyd
-tests/.coverage
 .coverage
 docs/source/examples/*.ipynb
 .ruff_cache
@@ -25,3 +24,9 @@ faster_coco_eval/*.so
 
 # JetBrains IDEs
 .idea/
+
+# AI assistant files
+.cache/
+.claude/
+.plans/
+.temp/
