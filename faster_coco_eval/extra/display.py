@@ -88,9 +88,12 @@ class PreviewResults(ExtraEval):
         """
         if image_ids == ["all"]:
             image_ids = list(self.cocoGt.imgs.keys())
+        else:
+            # Normalize image_ids to int to avoid KeyError from type mismatch
+            image_ids = [int(i) for i in image_ids]
 
         for image_id in image_ids:
-            if self.cocoGt.imgs.get(image_id) is None:
+            if image_id not in self.cocoGt.imgs:
                 logger.warning(f"Image {image_id} not found")
                 continue
 
