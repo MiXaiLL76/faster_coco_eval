@@ -22,3 +22,6 @@ htmlcov
 examples/comparison/ultralytics/datasets/*
 examples/profile/baseline.prof
 faster_coco_eval/*.so
+
+# JetBrains IDEs
+.idea/

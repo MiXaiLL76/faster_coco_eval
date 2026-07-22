@@ -35,7 +35,7 @@ repos:
         args: ["--number"]
         additional_dependencies:
           - mdformat-gfm
-          - mdformat-black
+          - mdformat-ruff
           - mdformat_frontmatter
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
