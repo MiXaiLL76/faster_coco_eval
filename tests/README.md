@@ -5,25 +5,30 @@ This directory contains the test suite for `faster_coco_eval`, which validates t
 ## Test Organization
 
 ### Core Functionality Tests
+
 - **test_basic.py** - Basic COCO evaluation functionality
 - **test_coco_metric.py** - COCO metrics with pycocotools comparison (small examples)
 - **test_keypoints.py** - Keypoint evaluation
 - **test_cocoapi_fake_data.py** - Tests with synthetic data
 
 ### Extensive Comparison Tests
+
 - **test_extensive_pycocotools_comparison.py** - **NEW**: Comprehensive validation against pycocotools with large synthetic datasets
 
 ### Dataset-Specific Tests
+
 - **test_lvis_metric.py** - LVIS dataset support
 - **test_crowdpose.py** - CrowdPose keypoints dataset
 
 ### API and Integration Tests
+
 - **test_init_pycocotools.py** - Drop-in replacement compatibility
 - **test_torchmetrics.py** - PyTorch integration (if available)
 - **test_mask_api.py** - Mask utilities
 - **test_boundary.py** - Boundary evaluation
 
 ### Visualization and Utilities
+
 - **test_extra_draw.py**, **test_extra_utils.py**, **test_simple_extra.py** - Visualization features
 - **test_ranges.py**, **test_dataset.py** - Utility functions
 
@@ -34,18 +39,23 @@ The `test_extensive_pycocotools_comparison.py` module provides comprehensive val
 ### Test Coverage
 
 #### Object Detection (BBox) Tests
+
 Tests bounding box detection with datasets of varying sizes:
+
 - **Small dataset**: 10 images, 5 categories, ~50 annotations
-- **Medium dataset**: 50 images, 10 categories, ~500 annotations  
+- **Medium dataset**: 50 images, 10 categories, ~500 annotations
 - **Large dataset**: 100 images, 20 categories, ~1500 annotations
 
 Each test validates that both libraries produce identical mAP, mAP@50, mAP@75, and size-specific metrics (small/medium/large objects).
 
 #### Instance Segmentation Tests
+
 Tests segmentation masks with the same dataset size variations as bbox tests. Validates pixel-level mask IoU calculations match exactly between implementations.
 
 #### Keypoint Detection Tests
+
 Tests keypoint pose estimation with datasets containing:
+
 - **Small dataset**: 10 images with 17 keypoints per person
 - **Medium dataset**: 50 images with multiple people per image
 - **Large dataset**: 100 images with varied keypoint visibility
@@ -53,6 +63,7 @@ Tests keypoint pose estimation with datasets containing:
 Validates that OKS (Object Keypoint Similarity) calculations are identical.
 
 #### Edge Cases
+
 - **Perfect predictions**: All predictions match ground truth exactly (IoU=1.0)
 - **Low confidence predictions**: Tests with very low-scoring detections
 - **Mixed object sizes**: Validates correct assignment to small/medium/large categories
@@ -62,7 +73,7 @@ Validates that OKS (Object Keypoint Similarity) calculations are identical.
 The tests use **synthetic but realistic** COCO-formatted datasets that mimic actual model predictions:
 
 - **Varied image sizes**: Random dimensions between 400x400 and 800x800 pixels
-- **Realistic bounding boxes**: Objects categorized as small (<32²), medium (32²-96²), or large (>96²)
+- **Realistic bounding boxes**: Objects categorized as small (\<32²), medium (32²-96²), or large (>96²)
 - **Segmentation masks**: RLE-encoded binary masks matching bbox regions
 - **Keypoint annotations**: 17 keypoints per instance with realistic visibility flags
 - **Prediction noise**: Simulated detection errors with bbox jitter and confidence scores
@@ -71,12 +82,14 @@ The tests use **synthetic but realistic** COCO-formatted datasets that mimic act
 ### Running the Tests
 
 Run all extensive comparison tests:
+
 ```bash
 cd tests/
 pytest test_extensive_pycocotools_comparison.py -v
 ```
 
 Run specific test categories:
+
 ```bash
 # Only bbox tests
 pytest test_extensive_pycocotools_comparison.py -k "bbox" -v
@@ -94,6 +107,7 @@ pytest test_extensive_pycocotools_comparison.py -k "large" -v
 ### Test Success Criteria
 
 Tests pass if and only if:
+
 1. All metrics (mAP, mAP@50, mAP@75, mAP_small, mAP_medium, mAP_large, etc.) are **numerically identical** between `faster_coco_eval` and `pycocotools`
 2. Floating-point comparison uses tolerance of `1e-10` (essentially exact)
 3. All intermediate calculations (IoU, OKS) produce identical results
@@ -111,12 +125,14 @@ These extensive tests address the requirement for **confidence in correctness** 
 ## Running All Tests
 
 Run the complete test suite:
+
 ```bash
 cd tests/
 pytest --cov=faster_coco_eval .
 ```
 
 Run tests for a specific Python version (CI/CD runs Python 3.9-3.13):
+
 ```bash
 pytest --cov=faster_coco_eval . -v
 ```
@@ -124,17 +140,20 @@ pytest --cov=faster_coco_eval . -v
 ## Test Requirements
 
 Install test dependencies:
+
 ```bash
 pip install "faster-coco-eval[tests]"
 ```
 
 Or from source:
+
 ```bash
 cd /path/to/faster_coco_eval
 pip install -e ".[tests]"
 ```
 
 Required packages:
+
 - `pytest` - Test framework
 - `pytest-cov` - Coverage reporting
 - `parameterized` - Parameterized test cases
