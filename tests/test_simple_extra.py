@@ -192,9 +192,7 @@ def _make_coco_eval(iou_thrs=None):
     coco_gt.createIndex()
 
     pred_bbox = [10.0, 10.0, float(SIZE - 20), float(SIZE - 20)]
-    coco_dt = coco_gt.loadRes([
-        {"image_id": image_id, "category_id": 1, "bbox": pred_bbox, "score": 0.9}
-    ])
+    coco_dt = coco_gt.loadRes([{"image_id": image_id, "category_id": 1, "bbox": pred_bbox, "score": 0.9}])
 
     coco_eval = COCOeval_faster(coco_gt, coco_dt, iouType="bbox")
     if iou_thrs is not None:
@@ -206,7 +204,8 @@ def _make_coco_eval(iou_thrs=None):
 
 
 def test_extended_metrics_raises_when_iou50_missing():
-    """extended_metrics must raise ValueError when 0.50 is absent from iouThrs."""
+    """extended_metrics must raise ValueError when 0.50 is absent from
+    iouThrs."""
     coco_eval = _make_coco_eval(iou_thrs=[0.55, 0.65, 0.75, 0.85, 0.95])
     with pytest.raises(ValueError, match="0.50"):
         _ = coco_eval.extended_metrics

@@ -248,14 +248,12 @@ class COCOeval_faster(COCOevalBase):
 
         # --- Compute actual (non-interpolated) precision/recall by sweeping confidence thresholds ---
         # Build set of TP detection IDs: detections matched to a GT with actual IoU >= 0.50
-        tp_dt_ids = {
-            int(k.split("_")[0])
-            for k, iou in self.eval["matched"].items()
-            if iou >= 0.5
-        }
+        tp_dt_ids = {int(k.split("_")[0]) for k, iou in self.eval["matched"].items() if iou >= 0.5}
 
-        cat_ids_eval = self.params.catIds if self.params.useCats else list(
-            {ann["category_id"] for ann in self.cocoDt.anns.values()}
+        cat_ids_eval = (
+            self.params.catIds
+            if self.params.useCats
+            else list({ann["category_id"] for ann in self.cocoDt.anns.values()})
         )
 
         # Per-class: build sorted (descending) score arrays and cumulative TP counts
@@ -319,8 +317,7 @@ class COCOeval_faster(COCOevalBase):
                 macro_precision = float(np.mean(cat_precs))
                 macro_recall = float(np.mean(cat_recs))
                 best_class_metrics = {
-                    cid: {"precision": p, "recall": r}
-                    for cid, p, r in zip(cat_ids_valid, cat_precs, cat_recs)
+                    cid: {"precision": p, "recall": r} for cid, p, r in zip(cat_ids_valid, cat_precs, cat_recs)
                 }
 
         per_class = []

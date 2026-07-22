@@ -253,6 +253,7 @@ def _contained_box(gt_box, iou):
 @pytest.fixture
 def coco_gt_dt_with_fp():
     """COCO GT/DT pair with two categories:
+
     - cat1: 10 GTs, 10 TPs (conf 0.0–0.9), 0 FPs
     - cat2: 10 GTs, 10 TPs (conf 0.5–0.95), 10 FPs (conf 0.0–0.45)
     """
@@ -264,12 +265,18 @@ def coco_gt_dt_with_fp():
     for i, conf in enumerate([0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0]):
         gt = [float(i * _SPACING), 0.0, float(_SIZE), float(_SIZE)]
         anns.append({
-            "id": ann_id, "image_id": image_id, "category_id": 1,
-            "bbox": gt, "area": gt[2] * gt[3], "iscrowd": 0,
+            "id": ann_id,
+            "image_id": image_id,
+            "category_id": 1,
+            "bbox": gt,
+            "area": gt[2] * gt[3],
+            "iscrowd": 0,
         })
         dets.append({
-            "image_id": image_id, "category_id": 1,
-            "bbox": _contained_box(gt, 0.96), "score": conf,
+            "image_id": image_id,
+            "category_id": 1,
+            "bbox": _contained_box(gt, 0.96),
+            "score": conf,
         })
         ann_id += 1
 
@@ -277,19 +284,26 @@ def coco_gt_dt_with_fp():
     for i, conf in enumerate([0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60, 0.55, 0.50]):
         gt = [float(i * _SPACING), float(_ROW), float(_SIZE), float(_SIZE)]
         anns.append({
-            "id": ann_id, "image_id": image_id, "category_id": 2,
-            "bbox": gt, "area": gt[2] * gt[3], "iscrowd": 0,
+            "id": ann_id,
+            "image_id": image_id,
+            "category_id": 2,
+            "bbox": gt,
+            "area": gt[2] * gt[3],
+            "iscrowd": 0,
         })
         dets.append({
-            "image_id": image_id, "category_id": 2,
-            "bbox": _contained_box(gt, 0.96), "score": conf,
+            "image_id": image_id,
+            "category_id": 2,
+            "bbox": _contained_box(gt, 0.96),
+            "score": conf,
         })
         ann_id += 1
 
     # cat2 FPs (no GT overlap)
     for i, conf in enumerate([0.45, 0.40, 0.35, 0.30, 0.25, 0.20, 0.15, 0.10, 0.05, 0.00]):
         dets.append({
-            "image_id": image_id, "category_id": 2,
+            "image_id": image_id,
+            "category_id": 2,
             "bbox": [float(i * _SPACING), float(2 * _ROW), float(_SIZE), float(_SIZE)],
             "score": conf,
         })
@@ -324,9 +338,7 @@ def test_extended_metrics_precision_not_overestimated(coco_gt_dt_with_fp):
     assert m["precision"] == pytest.approx(0.75, abs=1e-6), (
         "Macro-precision must not use interpolated (overestimated) values"
     )
-    assert m["recall"] == pytest.approx(1.0, abs=1e-6), (
-        "Macro-recall should be 1.0 at the F1-optimal threshold"
-    )
+    assert m["recall"] == pytest.approx(1.0, abs=1e-6), "Macro-recall should be 1.0 at the F1-optimal threshold"
 
 
 def test_extended_metrics_perfect_predictions():
@@ -336,10 +348,15 @@ def test_extended_metrics_perfect_predictions():
     ann_id = 1
     for i, conf in enumerate([0.9, 0.8, 0.7, 0.6, 0.5]):
         gt = [float(i * _SPACING), 0.0, float(_SIZE), float(_SIZE)]
-        anns.append({"id": ann_id, "image_id": image_id, "category_id": 1,
-                     "bbox": gt, "area": gt[2] * gt[3], "iscrowd": 0})
-        dets.append({"image_id": image_id, "category_id": 1,
-                     "bbox": _contained_box(gt, 0.96), "score": conf})
+        anns.append({
+            "id": ann_id,
+            "image_id": image_id,
+            "category_id": 1,
+            "bbox": gt,
+            "area": gt[2] * gt[3],
+            "iscrowd": 0,
+        })
+        dets.append({"image_id": image_id, "category_id": 1, "bbox": _contained_box(gt, 0.96), "score": conf})
         ann_id += 1
 
     coco_gt = COCO()

@@ -18,18 +18,18 @@
 | **Transparency & Reliability** | Lacks comprehensive testing, making updates risky and results less predictable.             | Emphasizes extensive test coverage and code quality, ensuring trustworthy and reliable results.                                                                                           |
 | **Performance**                | Significantly slower, especially on large datasets or distributed workloads.                | **3-4x faster** due to C++ optimizations and modern algorithms.                                                                                                                           |
 | **Functionality**              | Limited to basic COCO format evaluation.                                                    | Offers extended metrics, support for new IoU types, compatibility with more datasets (e.g., CrowdPose, LVIS), advanced visualizations, and seamless integration with PyTorch/TorchVision. |
-| **Ease of Use**                | Requires manual installation, often with compilation issues.                                 | Simple `pip install`, no compilation required, and drop-in replacement API.                                                                                                               |
-| **Visualization**              | Basic plotting capabilities.                                                                 | Advanced error visualization, annotation display, and comprehensive metric analysis tools.                                                                                               |
+| **Ease of Use**                | Requires manual installation, often with compilation issues.                                | Simple `pip install`, no compilation required, and drop-in replacement API.                                                                                                               |
+| **Visualization**              | Basic plotting capabilities.                                                                | Advanced error visualization, annotation display, and comprehensive metric analysis tools.                                                                                                |
 
----
+______________________________________________________________________
 
 **Key Benefits of Faster-COCO-Eval:**
 
-✅ **Blazing Fast Performance** - Evaluate large datasets in minutes instead of hours  
-✅ **Reliable & Trusted** - Extensive test coverage ensures consistent, reproducible results  
-✅ **Modern Features** - Support for latest CV tasks, IoU types, and dataset formats  
-✅ **Easy to Use** - Drop-in replacement for pycocotools with enhanced API  
-✅ **Comprehensive Visualization** - Understand your model's performance with beautiful, informative plots  
+✅ **Blazing Fast Performance** - Evaluate large datasets in minutes instead of hours
+✅ **Reliable & Trusted** - Extensive test coverage ensures consistent, reproducible results
+✅ **Modern Features** - Support for latest CV tasks, IoU types, and dataset formats
+✅ **Easy to Use** - Drop-in replacement for pycocotools with enhanced API
+✅ **Comprehensive Visualization** - Understand your model's performance with beautiful, informative plots
 
 **Join thousands of computer vision researchers and engineers who have already switched to Faster-COCO-Eval!**
 
@@ -100,8 +100,8 @@ Faster-COCO-Eval is built on top of a highly optimized C++ implementation, provi
 
 Tested on 5000 images from the COCO validation dataset using mmdetection framework:
 
-| Evaluation Type | Faster-COCO-Eval (sec) | pycocotools (sec) | Speedup |
-|-----------------|------------------------|-------------------|---------|
+| Evaluation Type | Faster-COCO-Eval (sec) | pycocotools (sec) | Speedup  |
+| --------------- | ---------------------- | ----------------- | -------- |
 | Bounding Boxes  | 5.812                  | 22.72             | **3.9x** |
 | Segmentation    | 7.413                  | 24.434            | **3.3x** |
 
@@ -119,6 +119,7 @@ See the performance in action:
 Faster-COCO-Eval goes beyond basic evaluation with these advanced capabilities:
 
 ### Core Evaluation
+
 - **Drop-in pycocotools replacement** - No code changes needed
 - **Support for all COCO metric types**: bbox, segm, keypoints
 - **LVIS (Large Vocabulary Instance Segmentation) evaluation**
@@ -126,6 +127,7 @@ Faster-COCO-Eval goes beyond basic evaluation with these advanced capabilities:
 - **Multiple IoU types**: standard, rotated, and custom IoU definitions
 
 ### Advanced Visualization
+
 - **Error visualization**: See where your model is making mistakes
 - **Annotation display**: Visualize ground truth and predictions together
 - **Metric curves**: Precision-recall curves, class-wise performance
@@ -133,12 +135,14 @@ Faster-COCO-Eval goes beyond basic evaluation with these advanced capabilities:
 - **Interactive Jupyter notebook examples**
 
 ### Modern Integrations
+
 - **PyTorch/TorchVision compatibility**
 - **Seamless integration with mmdetection, Detectron2, and YOLO frameworks**
 - **Distributed evaluation support**
 - **Memory optimized for large datasets**
 
 ### Additional Tools
+
 - **Boundary evaluation for segmentation tasks**
 - **Custom dataset support**
 - **Comprehensive API documentation**
