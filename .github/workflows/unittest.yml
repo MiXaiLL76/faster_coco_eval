@@ -52,13 +52,13 @@ jobs:
           python -m pip install torchmetrics lightning-utilities
           python -m pip check
 
-      - name: Assert optional test collection
+      - name: Assert optional test modules import (no SkipTest)
         shell: bash
         working-directory: ./tests
         run: |
           set -euo pipefail
           for test_file in test_torchmetrics.py test_world_evalutor.py test_extra_draw.py; do
-            python -m pytest --collect-only -q "$test_file"
+            python -c "import runpy; runpy.run_path('${test_file}')"
           done
 
       - name: Run optional dependency tests
