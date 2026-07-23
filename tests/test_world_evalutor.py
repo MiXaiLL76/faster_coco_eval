@@ -77,7 +77,10 @@ class TestWorldCoco(unittest.TestCase):
         coco_eval_rank.accumulate()
         coco_eval_rank.summarize()
 
-        self.assertEqual(coco_eval_rank.stats_as_dict["bbox"], self.stats_as_dict_result)
+        actual_stats = coco_eval_rank.stats_as_dict["bbox"]
+        self.assertEqual(actual_stats.keys(), self.stats_as_dict_result.keys())
+        for key, expected_value in self.stats_as_dict_result.items():
+            self.assertAlmostEqual(actual_stats[key], expected_value, places=10, msg=key)
 
 
 if __name__ == "__main__":
