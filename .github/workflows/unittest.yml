@@ -32,3 +32,36 @@ jobs:
         working-directory: ./tests
         run: |
           pytest --cov=faster_coco_eval .
+
+  optional-dependency-tests:
+    name: Optional dependency tests (ubuntu-latest, Python 3.11)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install optional test dependencies from sdist
+        shell: bash
+        run: |
+          pipx run build --sdist .
+          source_file=$(python -c "import glob,sys; files=glob.glob('dist/*.tar.gz'); (len(files)==1) or sys.exit(f'Expected 1 sdist in dist/, found {len(files)}: {files}'); print(files[0])")
+          python -m pip install "${source_file}[tests,extra]"
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install torchmetrics lightning-utilities
+          python -m pip check
+
+      - name: Assert optional test modules import (no SkipTest)
+        shell: bash
+        working-directory: ./tests
+        run: |
+          set -euo pipefail
+          for test_file in test_torchmetrics.py test_world_evalutor.py test_extra_draw.py; do
+            python -c "import runpy; runpy.run_path('${test_file}')"
+          done
+
+      - name: Run optional dependency tests
+        working-directory: ./tests
+        run: |
+          python -m pytest -q test_torchmetrics.py test_world_evalutor.py test_extra_draw.py
