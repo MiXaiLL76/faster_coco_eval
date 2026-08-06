@@ -273,6 +273,13 @@ py::array_t<uint8_t, py::array::f_style> rleDecode(const std::vector<RLE>& R) {
                         }
                         v = !v;
                 }
+                if (c != pixels_per_mask) {
+                        std::stringstream ss;
+                        ss << "Invalid RLE mask representation; decoded " << c
+                           << " pixels but expected " << pixels_per_mask
+                           << " (h=" << h << ", w=" << w << ")";
+                        throw std::range_error(ss.str());
+                }
         }
         return M;
 }
