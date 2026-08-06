@@ -335,7 +335,8 @@ def display_matrix(
     Args:
         conf_matrix (np.ndarray): Confusion matrix (shape: [n_classes, n_classes + 2]).
         labels (list): List of class labels.
-        normalize (bool, optional): If True, normalize the confusion matrix to percentage. Default is False.
+        normalize (bool, optional): If True, normalize each row, including the appended fp and fn columns, to
+            percentages. Rows with a zero total remain zero. Default is False.
         return_fig (bool, optional): If True, return the figure object. Default is False.
 
     Returns:
@@ -346,8 +347,10 @@ def display_matrix(
     _labels = labels + ["fp", "fn"]
 
     if normalize:
-        conf_matrix /= conf_matrix.sum(axis=1).reshape(-1, 1)
-        conf_matrix *= 100
+        conf_matrix = conf_matrix.astype(float, copy=True)
+        row_totals = conf_matrix.sum(axis=1, keepdims=True)
+        row_totals[row_totals == 0] = 1
+        conf_matrix = conf_matrix / row_totals * 100
 
     hovertemplate = "Real: %{y}<br>Predict: %{x}<br>"
 
