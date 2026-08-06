@@ -1,5 +1,9 @@
 # History
 
+## Unreleased
+
+- [x] **breaking change**: Support Python 3.10 and later only.
+
 ## v1.7.2
 
 - [x] Fix type error in faster_eval_api <https://github.com/MiXaiLL76/faster_coco_eval/pull/65>; Thank you very much @matteomrz
