@@ -241,7 +241,7 @@ py::array_t<uint8_t, py::array::f_style> rleDecode(const std::vector<RLE>& R) {
         uint64_t h = R[0].h;
         uint64_t w = R[0].w;
         size_t n = R.size();
-        uint64_t s = h * w * n;
+        uint64_t pixels_per_mask = h * w;
 
         py::array_t<uint8_t, py::array::f_style> M(
             {static_cast<size_t>(h), static_cast<size_t>(w), n});
@@ -253,7 +253,7 @@ py::array_t<uint8_t, py::array::f_style> rleDecode(const std::vector<RLE>& R) {
 
                 for (uint64_t j = 0; j < R[i].m; ++j) {
                         for (uint64_t k = 0; k < R[i].cnts[j]; ++k) {
-                                if (c >= s) {
+                                if (c >= pixels_per_mask) {
                                         std::stringstream ss;
                                         ss << "Invalid RLE mask "
                                               "representation; out of range "

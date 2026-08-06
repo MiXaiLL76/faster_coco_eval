@@ -115,6 +115,16 @@ class TestMaskApi(unittest.TestCase):
     def test_rles(self):
         self.assertTrue(np.all([_mask.encode(_mask.decode([rle])) == [rle] for rle in self.rleObjs]))
 
+    def test_decode_rejects_count_larger_than_each_mask(self):
+        """Reject a second RLE whose runs exceed its own mask dimensions."""
+        valid, oversized = _mask.frUncompressedRLE([
+            {"size": [2, 2], "counts": [0, 4]},
+            {"size": [2, 2], "counts": [0, 5]},
+        ])
+
+        with self.assertRaises(ValueError):
+            _mask.decode([valid, oversized])
+
     def test_frBbox(self):
         self.assertEqual(self.bbox_rles, _mask.frBbox(self.bboxes, 20, 20))
 
