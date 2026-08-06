@@ -15,10 +15,9 @@ class FakeHeatmap:
 class FakeFigure:
     """Provide the Plotly figure methods used by the display helper."""
 
-    def __init__(self, data, layout):
+    def __init__(self, data=None, layout=None, **kwargs):
         self.data = data
         self.layout = layout
-
     def update_traces(self, **kwargs):
         self.trace_updates = kwargs
 
