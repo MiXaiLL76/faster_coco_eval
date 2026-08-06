@@ -9,7 +9,7 @@ All kinds of contributions are welcome, including but not limited to the followi
 ### Workflow
 
 1. fork and pull the latest repository
-2. checkout a new branch (do not use main branch for PRs)
+2. checkout a new branch (do not commit changes directly to the main branch)
 3. commit your changes
 4. create a PR
 
