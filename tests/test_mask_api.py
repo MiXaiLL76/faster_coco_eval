@@ -125,6 +125,16 @@ class TestMaskApi(unittest.TestCase):
         with self.assertRaises(ValueError):
             _mask.decode([valid, oversized])
 
+    def test_decode_rejects_count_smaller_than_mask(self):
+        """Reject a second RLE whose runs sum to fewer pixels than h*w."""
+        valid, undersized = _mask.frUncompressedRLE([
+            {"size": [2, 2], "counts": [0, 4]},
+            {"size": [2, 2], "counts": [0, 3]},
+        ])
+
+        with self.assertRaises(ValueError):
+            _mask.decode([valid, undersized])
+
     def test_frBbox(self):
         self.assertEqual(self.bbox_rles, _mask.frBbox(self.bboxes, 20, 20))
 
