@@ -11,6 +11,8 @@ Modules
    coco_eval
    faster_eval_api
    mask
+   extra
+   utils_pytorch
    examples
    history
 
