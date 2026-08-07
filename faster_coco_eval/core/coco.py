@@ -158,7 +158,7 @@ class COCO:
         imgIds: list[int] | None = None,
         catIds: list[int] | None = None,
         areaRng: list[float] | None = None,
-        iscrowd: bool = None,
+        iscrowd: bool | None = None,
     ) -> list[int]:
         """Get ann ids that satisfy given filter conditions.
 
@@ -611,7 +611,7 @@ class COCO:
         img_ids: list[int] | None = None,
         cat_ids: list[int] | None = None,
         area_rng: list[float] | None = None,
-        iscrowd: bool = None,
+        iscrowd: bool | None = None,
     ) -> list[int]:
         """Get ann ids that satisfy given filter conditions.
 
