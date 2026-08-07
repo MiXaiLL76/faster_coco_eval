@@ -1,5 +1,5 @@
 numpy
-pycocotools
+pycocotools ; python_version < "3.13"
 pytest
 pytest-cov
 parameterized
