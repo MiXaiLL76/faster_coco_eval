@@ -156,7 +156,7 @@ Faster-COCO-Eval prioritizes **correctness and reliability** through extensive t
 
 - **90+ automated tests** covering all functionality
 - **Exact equality validation** against pycocotools across all metrics
-- **Continuous integration** on Python 3.9-3.13
+- **Continuous integration** on Python 3.10-3.13
 - **Edge case coverage** including boundary conditions and error handling
 
 ### Extensive PyCocoTools Comparison
