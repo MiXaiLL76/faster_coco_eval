@@ -258,19 +258,19 @@ RLE RLE::frPoly(const std::vector<double>& xy, uint64_t h, uint64_t w) {
         }
 
         // Compute RLE encoding given y-boundary points
-        std::vector<uint32_t> a;
+        std::vector<uint64_t> a;
         a.reserve(x.size() + 1);  // OPTIMIZATION: Pre-allocate memory
 
         for (std::size_t j = 0; j < x.size(); ++j)
-                a.emplace_back(
-                    static_cast<uint32_t>(x[j] * static_cast<int>(h) + y[j]));
-        a.emplace_back(static_cast<uint32_t>(h * w));
+                a.emplace_back(static_cast<uint64_t>(x[j]) * h +
+                               static_cast<uint64_t>(y[j]));
+        a.emplace_back(h * w);
 
         std::stable_sort(a.begin(), a.end());
 
-        uint32_t p = 0;
+        uint64_t p = 0;
         for (std::size_t j = 0; j < a.size(); ++j) {
-                uint32_t t = a[j];
+                uint64_t t = a[j];
                 a[j] -= p;
                 p = t;
         }

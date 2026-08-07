@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <numeric>
+#include <stdexcept>
 
 // clang-format off
 #include "cocoeval.h"
@@ -195,6 +196,72 @@ std::vector<ImageEvaluation> EvaluateImages(
         const int num_area_ranges = (const int)area_ranges.size();
         const int num_images = (const int)img_ids.size();
         const int num_categories = useCats ? (const int)cat_ids.size() : 1;
+
+        if (image_category_ious.size() != img_ids.size()) {
+                throw std::runtime_error(
+                    "image_category_ious must contain one entry per image.");
+        }
+
+        const auto count_instances = [&](const LightweightDataset& dataset,
+                                         std::size_t image_index,
+                                         std::size_t category_index) {
+                if (useCats) {
+                        return dataset
+                            .get_cpp_annotations(img_ids[image_index],
+                                                 cat_ids[category_index])
+                            .size();
+                }
+
+                std::size_t count = 0;
+                for (const double cat_id : cat_ids) {
+                        count += dataset
+                                     .get_cpp_annotations(img_ids[image_index],
+                                                          cat_id)
+                                     .size();
+                }
+                return count;
+        };
+
+        // Validate all Python-provided IoU rows before matching can index them.
+        for (std::size_t i = 0; i < img_ids.size(); ++i) {
+                if (image_category_ious[i].size() !=
+                    static_cast<std::size_t>(num_categories)) {
+                        throw std::runtime_error(
+                            "image_category_ious must contain one entry per "
+                            "evaluated category.");
+                }
+
+                for (std::size_t c = 0; c < image_category_ious[i].size();
+                     ++c) {
+                        const std::size_t ground_truth_count =
+                            count_instances(gt_dataset, i, c);
+                        const std::size_t detection_count =
+                            count_instances(dt_dataset, i, c);
+
+                        const std::size_t expected_detections =
+                            ground_truth_count == 0 || detection_count == 0
+                                ? 0
+                                : std::min(
+                                      detection_count,
+                                      static_cast<std::size_t>(max_detections));
+                        const auto& category_ious = image_category_ious[i][c];
+                        if (category_ious.size() != expected_detections) {
+                                throw std::runtime_error(
+                                    "image_category_ious detection dimension "
+                                    "does not match the dataset.");
+                        }
+                        for (const auto& detection_ious : category_ious) {
+                                if (detection_ious.size() !=
+                                    ground_truth_count) {
+                                        throw std::runtime_error(
+                                            "image_category_ious ground-truth "
+                                            "dimension does not match the "
+                                            "dataset.");
+                                }
+                        }
+                }
+        }
+
         std::vector<uint64_t> detection_sorted_indices;
         std::vector<uint64_t> ground_truth_sorted_indices;
         std::vector<bool> ignores;
