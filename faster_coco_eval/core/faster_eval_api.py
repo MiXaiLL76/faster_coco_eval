@@ -127,6 +127,13 @@ class COCOeval_faster(COCOevalBase):
         Returns:
             None
         """
+        # The annotation dictionaries are shared across evaluations, so derived
+        # match flags must be removed before classifying the current result.
+        for anns in (self.cocoDt.anns.values(), self.cocoGt.anns.values()):
+            for ann in anns:
+                for key in ("tp", "fp", "fn", "gt_id", "dt_id", "iou"):
+                    ann.pop(key, None)
+
         for dt_gt, iou in self.eval["matched"].items():
             dt_id, gt_id = dt_gt.split("_")
 
@@ -375,14 +382,26 @@ class COCOeval_faster(COCOevalBase):
 
         Returns:
             dict[str, float]: Dictionary mapping metric names to their values.
+
+        Custom maximum-detection counts use ``AR_<maxDets>`` labels. The
+        historical default and LVIS labels remain unchanged for compatibility.
         """
         if self.params.iouType in set(["segm", "bbox", "boundary"]):
             p = self.params
             AP_labels = [f"AP_{label}" for label in p.areaRngLbl if label != "all"]
             AR_labels = [f"AR_{label}" for label in p.areaRngLbl if label != "all"]
+            if self.lvis_style:
+                # LVIS has a legacy three-slot AR layout independent of maxDets.
+                ar_max_labels = ["AR_all", "AR_second", "AR_third"]
+                if len(p.maxDets) > len(ar_max_labels):
+                    ar_max_labels += [f"AR_{max_dets}" for max_dets in p.maxDets[3:]]
+            elif p.maxDets == [1, 10, 100]:
+                ar_max_labels = ["AR_all", "AR_second", "AR_third"]
+            else:
+                ar_max_labels = [f"AR_{max_dets}" for max_dets in p.maxDets]
             labels = ["AP_all", "AP_50", "AP_75"]
             labels += AP_labels
-            labels += ["AR_all", "AR_second", "AR_third"]
+            labels += ar_max_labels
             labels += AR_labels
             labels += [
                 "AR_50",
@@ -418,7 +437,7 @@ class COCOeval_faster(COCOevalBase):
                 "AP_hard",
             ]
         else:
-            ValueError(f"iouType must be bbox, segm, boundary or keypoints. Get {self.params.iouType}")
+            raise ValueError(f"iouType must be bbox, segm, boundary or keypoints. Get {self.params.iouType}")
 
         if self.matched:
             labels += [
