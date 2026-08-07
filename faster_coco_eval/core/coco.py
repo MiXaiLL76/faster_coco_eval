@@ -100,23 +100,20 @@ class COCO:
         anns, cats, imgs = {}, {}, {}
         imgToAnns, catToImgs = defaultdict(list), defaultdict(list)
 
-        annsImgIds_dict = set()
         if "images" in self.dataset:
             for img in self.dataset["images"]:
                 if type(img["id"]) is not int:
                     img["id"] = int(img["id"])
 
                 imgs[img["id"]] = img
-                annsImgIds_dict.add(img["id"])
 
         if "annotations" in self.dataset:
             for ann in self.dataset["annotations"]:
                 if type(ann["image_id"]) is not int:
                     ann["image_id"] = int(ann["image_id"])
 
-                if ann["image_id"] in annsImgIds_dict:
-                    imgToAnns[ann["image_id"]].append(ann)
-                    anns[ann["id"]] = ann
+                imgToAnns[ann["image_id"]].append(ann)
+                anns[ann["id"]] = ann
 
             if 0 in anns:
                 warnings.warn(
