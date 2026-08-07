@@ -22,12 +22,9 @@ namespace mask_api {
 namespace Mask {
 
 class RLE {
-       public:
-        RLE() : h{0}, w{0}, m{0} {}
-
-        RLE(uint64_t h, uint64_t w, uint64_t m, std::vector<uint64_t> cnts)
-            : h{h}, w{w}, m{m}, cnts{std::move(cnts)} {
-                if (m != this->cnts.size()) {
+       private:
+        void validate() const {
+                if (m != cnts.size()) {
                         throw std::range_error(
                             "RLE run count does not match cnts.size().");
                 }
@@ -38,7 +35,7 @@ class RLE {
 
                 const uint64_t max_pixels = h * w;
                 uint64_t total = 0;
-                for (const uint64_t count : this->cnts) {
+                for (const uint64_t count : cnts) {
                         if (count > max_pixels - total) {
                                 throw std::range_error(
                                     "RLE counts exceed the mask dimensions.");
@@ -47,8 +44,19 @@ class RLE {
                 }
         }
 
+       public:
+        RLE() : h{0}, w{0}, m{0} {}
+
+        RLE(uint64_t h, uint64_t w, uint64_t m, std::vector<uint64_t> cnts)
+            : h{h}, w{w}, m{m}, cnts{std::move(cnts)} {
+                validate();
+        }
+
         RLE(uint64_t h, uint64_t w, std::vector<uint64_t> cnts)
-            : RLE(h, w, cnts.size(), std::move(cnts)) {}
+            : h{h}, w{w}, m{0}, cnts{std::move(cnts)} {
+                m = this->cnts.size();
+                validate();
+        }
 
         uint64_t h;
         uint64_t w;
