@@ -1,7 +1,9 @@
 import copy
 import os
+import tempfile
 import unittest
 from collections import defaultdict
+from unittest import mock
 
 from faster_coco_eval import COCO
 
@@ -20,8 +22,13 @@ class TestWorldCoco(unittest.TestCase):
     maxDiff = None
 
     def setUp(self):
+        """Prepare evaluation fixtures and an isolated Gloo rendezvous path."""
         self.gt_lvis_file = os.path.join("lvis_dataset", "lvis_val_100.json")
         self.dt_lvis_file = os.path.join("lvis_dataset", "lvis_results_100.json")
+        self._rendezvous_dir = tempfile.TemporaryDirectory()
+        self._rendezvous_path = os.path.join(self._rendezvous_dir.name, "gloo-rendezvous")
+        # Only a process group initialized by this test may be destroyed here.
+        self._owns_process_group = False
 
         if not os.path.exists(self.gt_lvis_file):
             self.gt_lvis_file = os.path.join(os.path.dirname(__file__), self.gt_lvis_file)
@@ -47,7 +54,33 @@ class TestWorldCoco(unittest.TestCase):
             "APf": 0.3875839974389359,
         }
 
+    def tearDown(self):
+        """Release distributed resources and the isolated rendezvous directory."""
+        try:
+            if self._owns_process_group and dist.is_initialized():
+                dist.destroy_process_group()
+        finally:
+            self._rendezvous_dir.cleanup()
+
+    def test_tear_down_destroys_initialized_process_group(self):
+        """Destroy the default process group after a distributed test."""
+        self._owns_process_group = True
+        with mock.patch.object(dist, "destroy_process_group") as destroy_process_group:
+            with mock.patch.object(dist, "is_initialized", return_value=True):
+                self.tearDown()
+
+        destroy_process_group.assert_called_once_with()
+
+    def test_tear_down_preserves_unowned_process_group(self):
+        """Avoid destroying a process group created outside this test case."""
+        with mock.patch.object(dist, "destroy_process_group") as destroy_process_group:
+            with mock.patch.object(dist, "is_initialized", return_value=True):
+                self.tearDown()
+
+        destroy_process_group.assert_not_called()
+
     def test_world_lvis(self):
+        """Evaluate LVIS predictions through an isolated single-process group."""
         coco_gt = COCO(self.gt_lvis_file)
         coco_eval_rank = FasterCocoEvaluator(coco_gt, iou_types=["bbox"], lvis_style=True)
         coco_eval_rank.coco_eval["bbox"].params.maxDets = [300]
@@ -68,7 +101,9 @@ class TestWorldCoco(unittest.TestCase):
             }
 
         world_size = 1
-        dist.init_process_group("gloo", rank=0, world_size=world_size, init_method="tcp://127.0.0.1:1234")
+        # File rendezvous avoids sharing a TCP port with parallel test workers.
+        dist.init_process_group("gloo", rank=0, world_size=world_size, init_method=f"file:///{self._rendezvous_path.lstrip('/')}" )
+        self._owns_process_group = True
 
         for image_id, data in predictions.items():
             coco_eval_rank.update({image_id: data})
