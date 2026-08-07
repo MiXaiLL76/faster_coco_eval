@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <numeric>
+#include <sstream>
 #include <stdexcept>
 
 // clang-format off
@@ -198,68 +199,11 @@ std::vector<ImageEvaluation> EvaluateImages(
         const int num_categories = useCats ? (const int)cat_ids.size() : 1;
 
         if (image_category_ious.size() != img_ids.size()) {
-                throw std::runtime_error(
-                    "image_category_ious must contain one entry per image.");
-        }
-
-        const auto count_instances = [&](const LightweightDataset& dataset,
-                                         std::size_t image_index,
-                                         std::size_t category_index) {
-                if (useCats) {
-                        return dataset
-                            .get_cpp_annotations(img_ids[image_index],
-                                                 cat_ids[category_index])
-                            .size();
-                }
-
-                std::size_t count = 0;
-                for (const double cat_id : cat_ids) {
-                        count += dataset
-                                     .get_cpp_annotations(img_ids[image_index],
-                                                          cat_id)
-                                     .size();
-                }
-                return count;
-        };
-
-        // Validate all Python-provided IoU rows before matching can index them.
-        for (std::size_t i = 0; i < img_ids.size(); ++i) {
-                if (image_category_ious[i].size() !=
-                    static_cast<std::size_t>(num_categories)) {
-                        throw std::runtime_error(
-                            "image_category_ious must contain one entry per "
-                            "evaluated category.");
-                }
-
-                for (std::size_t c = 0; c < image_category_ious[i].size();
-                     ++c) {
-                        const std::size_t ground_truth_count =
-                            count_instances(gt_dataset, i, c);
-                        const std::size_t detection_count =
-                            count_instances(dt_dataset, i, c);
-
-                        const std::size_t expected_detections =
-                            ground_truth_count == 0 || detection_count == 0
-                                ? 0
-                                : std::min(
-                                      detection_count,
-                                      static_cast<std::size_t>(max_detections));
-                        const auto& category_ious = image_category_ious[i][c];
-                        if (category_ious.size() != expected_detections) {
-                                throw std::runtime_error(
-                                    "image_category_ious detection dimension "
-                                    "does not match the dataset.");
-                        }
-                        for (const auto& detection_ious : category_ious) {
-                                if (detection_ious.size() !=
-                                    ground_truth_count) {
-                                        throw std::runtime_error(
-                                            "image_category_ious ground-truth "
-                                            "dimension does not match the "
-                                            "dataset.");
-                                }
-                        }
-                }
+                std::ostringstream error;
+                error << "image_category_ious must contain one entry per image; "
+                      << "expected " << img_ids.size() << ", got "
+                      << image_category_ious.size() << ".";
+                throw std::runtime_error(error.str());
         }
 
         std::vector<uint64_t> detection_sorted_indices;
@@ -272,6 +216,18 @@ std::vector<ImageEvaluation> EvaluateImages(
         // Results for each IOU threshold are packed into the same
         // ImageEvaluation object
         for (auto i = 0; i < num_images; ++i) {
+                if (image_category_ious[i].size() !=
+                    static_cast<std::size_t>(num_categories)) {
+                        std::ostringstream error;
+                        error << "image_category_ious[" << i << "] for image id "
+                              << img_ids[i]
+                              << " must contain one entry per evaluated "
+                                 "category; expected "
+                              << num_categories << ", got "
+                              << image_category_ious[i].size() << ".";
+                        throw std::runtime_error(error.str());
+                }
+
                 for (auto c = 0; c < num_categories; ++c) {
                         // Read annotations on-demand from datasets
                         double img_id = img_ids[i];
@@ -323,6 +279,58 @@ std::vector<ImageEvaluation> EvaluateImages(
                                 detection_sorted_indices.resize(max_detections);
                         }
 
+                        const auto& category_ious = image_category_ious[i][c];
+                        const std::size_t expected_ground_truth =
+                            ground_truth_instances.size();
+                        const std::size_t expected_detections =
+                            expected_ground_truth == 0 ||
+                                    detection_sorted_indices.empty()
+                                ? 0
+                                : detection_sorted_indices.size();
+
+                        if (category_ious.size() != expected_detections) {
+                                std::ostringstream error;
+                                error << "image_category_ious[" << i << "]["
+                                      << c << "] for image id " << img_id;
+                                if (useCats) {
+                                        error << " and category id "
+                                              << cat_ids[c];
+                                } else {
+                                        error << " with merged categories";
+                                }
+                                error
+                                    << " has an invalid detection dimension; "
+                                       "expected "
+                                    << expected_detections << ", got "
+                                    << category_ious.size() << ".";
+                                throw std::runtime_error(error.str());
+                        }
+
+                        for (std::size_t d = 0; d < category_ious.size(); ++d) {
+                                if (category_ious[d].size() !=
+                                    expected_ground_truth) {
+                                        std::ostringstream error;
+                                        error
+                                            << "image_category_ious[" << i
+                                            << "][" << c << "][" << d
+                                            << "] for image id " << img_id;
+                                        if (useCats) {
+                                                error << " and category id "
+                                                      << cat_ids[c];
+                                        } else {
+                                                error
+                                                    << " with merged "
+                                                       "categories";
+                                        }
+                                        error
+                                            << " has an invalid ground-truth "
+                                               "dimension; expected "
+                                            << expected_ground_truth << ", got "
+                                            << category_ious[d].size() << ".";
+                                        throw std::runtime_error(error.str());
+                                }
+                        }
+
                         for (size_t a = 0; a < area_ranges.size(); ++a) {
                                 SortInstancesByIgnore(
                                     area_ranges[a], ground_truth_instances,
@@ -333,10 +341,9 @@ std::vector<ImageEvaluation> EvaluateImages(
                                     detection_sorted_indices,
                                     ground_truth_instances,
                                     ground_truth_sorted_indices, ignores,
-                                    image_category_ious[i][c], iou_thresholds,
-                                    area_ranges[a],
+                                    category_ious, iou_thresholds, area_ranges[a],
                                     &results_all[c * num_area_ranges *
-                                                     num_images +
+                                                    num_images +
                                                  a * num_images + i]);
                         }
 

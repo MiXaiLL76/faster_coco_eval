@@ -10,6 +10,7 @@
 #include <cmath>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace py = pybind11;
@@ -25,7 +26,7 @@ class RLE {
         RLE() : h{0}, w{0}, m{0} {}
 
         RLE(uint64_t h, uint64_t w, uint64_t m, std::vector<uint64_t> cnts)
-            : h{h}, w{w}, m{m}, cnts{cnts} {
+            : h{h}, w{w}, m{m}, cnts{std::move(cnts)} {
                 if (m != this->cnts.size()) {
                         throw std::range_error(
                             "RLE run count does not match cnts.size().");
@@ -47,7 +48,7 @@ class RLE {
         }
 
         RLE(uint64_t h, uint64_t w, std::vector<uint64_t> cnts)
-            : h{h}, w{w}, m{1}, cnts{cnts} {}
+            : h{h}, w{w}, m{1}, cnts{std::move(cnts)} {}
 
         uint64_t h;
         uint64_t w;
