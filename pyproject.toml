@@ -4,9 +4,8 @@ requires = [
     "wheel",
     "build",
     # Force numpy higher than 2.0rc1, so that built wheels are compatible
-    # with both numpy 1 and 2
-    "numpy>=2.0.0rc1 ; python_version >= \"3.9\"",
-    "oldest-supported-numpy ; python_version < \"3.9\"",
+    # with both numpy 1 and 2.
+    "numpy>=2.0.0rc1",
     "Cython",
     "pybind11>=2.12.0, <3",
 ]
@@ -15,7 +14,7 @@ build-backend = "setuptools.build_meta"
 
 
 [tool.ruff]
-target-version = "py37"
+target-version = "py310"
 line-length = 120
 
 #[tool.ruff.pycodestyle]
