@@ -5,8 +5,8 @@ https://github.com/pytorch/vision/blob/edfd5a7701310589927d2f83bed11cfeb06965a1/
 The difference is that pycocotools is replaced by a faster library faster-coco-eval
 """
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional, Union
 
 import torchvision
 
@@ -32,11 +32,11 @@ class FasterCocoDetection(torchvision.datasets.CocoDetection):
 
     def __init__(
         self,
-        root: Union[str, Path],
+        root: str | Path,
         annFile: str,
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
-        transforms: Optional[Callable] = None,
+        transform: Callable | None = None,
+        target_transform: Callable | None = None,
+        transforms: Callable | None = None,
     ) -> None:
         """Initializes the FasterCocoDetection dataset.
 

@@ -1,5 +1,4 @@
 import logging
-from typing import Dict, List, Optional, Union
 
 import numpy as np
 
@@ -18,10 +17,10 @@ class PreviewResults(ExtraEval):
         display_tp: bool = True,
         display_gt: bool = True,
         show_false_only: bool = False,
-        data_folder: Optional[str] = None,
-        categories: Optional[list] = None,
-        gt_ann_ids: Optional[set] = None,
-        dt_ann_ids: Optional[set] = None,
+        data_folder: str | None = None,
+        categories: list | None = None,
+        gt_ann_ids: set | None = None,
+        dt_ann_ids: set | None = None,
         return_fig: bool = False,
     ):
         """Display the image with the results.
@@ -61,14 +60,14 @@ class PreviewResults(ExtraEval):
 
     def display_tp_fp_fn(
         self,
-        image_ids: Union[List[int], List[str]] = ["all"],
+        image_ids: list[int] | list[str] = ["all"],
         display_fp: bool = True,
         display_fn: bool = True,
         display_tp: bool = True,
         display_gt: bool = False,
         show_false_only: bool = False,
-        data_folder: Optional[str] = None,
-        categories: Optional[list] = None,
+        data_folder: str | None = None,
+        categories: list | None = None,
     ):
         """Display true positives, false positives, and false negatives for
         given images.
@@ -107,10 +106,10 @@ class PreviewResults(ExtraEval):
 
     def _compute_confusion_matrix(
         self,
-        y_true: List[int],
-        y_pred: List[int],
-        fp: Dict[int, int] = {},
-        fn: Dict[int, int] = {},
+        y_true: list[int],
+        y_pred: list[int],
+        fp: dict[int, int] = {},
+        fn: dict[int, int] = {},
     ) -> np.ndarray:
         """Compute the confusion matrix.
 
@@ -182,7 +181,7 @@ class PreviewResults(ExtraEval):
     def display_matrix(
         self,
         normalize: bool = False,
-        conf_matrix: Optional[np.ndarray] = None,
+        conf_matrix: np.ndarray | None = None,
         return_fig: bool = False,
     ):
         """Display the confusion matrix.

@@ -9,7 +9,7 @@ import pathlib
 import time
 import warnings
 from collections import defaultdict
-from typing import Callable, List, Optional, Union
+from collections.abc import Callable
 
 import numpy as np
 
@@ -34,7 +34,7 @@ def _isArrayLike(obj):
 class COCO:
     def __init__(
         self,
-        annotation_file: Optional[Union[str, dict, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath]] = None,
+        annotation_file: str | dict | os.PathLike | pathlib.PosixPath | pathlib.WindowsPath | None = None,
         use_deepcopy: bool = False,
         print_function: Callable = logger.debug,
     ):
@@ -155,11 +155,11 @@ class COCO:
 
     def getAnnIds(
         self,
-        imgIds: List[int] = [],
-        catIds: List[int] = [],
-        areaRng: List[float] = [],
+        imgIds: list[int] = [],
+        catIds: list[int] = [],
+        areaRng: list[float] = [],
         iscrowd: bool = None,
-    ) -> List[int]:
+    ) -> list[int]:
         """Get ann ids that satisfy given filter conditions.
 
         Args:
@@ -214,10 +214,10 @@ class COCO:
 
     def getCatIds(
         self,
-        catNms: List[str] = [],
-        supNms: List[str] = [],
-        catIds: List[int] = [],
-    ) -> List[int]:
+        catNms: list[str] = [],
+        supNms: list[str] = [],
+        catIds: list[int] = [],
+    ) -> list[int]:
         """Get category ids that satisfy given filter conditions.
 
         Args:
@@ -249,7 +249,7 @@ class COCO:
         ids = [cat["id"] for cat in cats]
         return ids
 
-    def getImgIds(self, imgIds: List[int] = [], catIds: List[int] = []) -> List[int]:
+    def getImgIds(self, imgIds: list[int] = [], catIds: list[int] = []) -> list[int]:
         """Get image ids that satisfy given filter conditions.
 
         Args:
@@ -273,7 +273,7 @@ class COCO:
                     ids &= set(self.catToImgs[catId])
         return list(ids)
 
-    def loadAnns(self, ids: Union[List[int], int] = []) -> List[dict]:
+    def loadAnns(self, ids: list[int] | int = []) -> list[dict]:
         """Load annotations with the specified ids.
 
         Args:
@@ -287,7 +287,7 @@ class COCO:
         elif type(ids) is int:
             return [self.anns[ids]]
 
-    def loadCats(self, ids: Union[List[int], int] = []) -> List[dict]:
+    def loadCats(self, ids: list[int] | int = []) -> list[dict]:
         """Load categories with the specified ids.
 
         Args:
@@ -301,7 +301,7 @@ class COCO:
         elif type(ids) is int:
             return [self.cats[ids]]
 
-    def loadImgs(self, ids: Union[List[int], int] = []) -> List[dict]:
+    def loadImgs(self, ids: list[int] | int = []) -> list[dict]:
         """Load images with the specified ids.
 
         Args:
@@ -317,8 +317,8 @@ class COCO:
 
     @staticmethod
     def load_json(
-        json_file: Union[str, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath, dict, list],
-        use_deepcopy: Optional[bool] = False,
+        json_file: str | os.PathLike | pathlib.PosixPath | pathlib.WindowsPath | dict | list,
+        use_deepcopy: bool | None = False,
     ) -> dict:
         """Load a json file.
 
@@ -341,7 +341,7 @@ class COCO:
 
     def loadRes(
         self,
-        resFile: Union[str, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath, dict, list, np.ndarray],
+        resFile: str | os.PathLike | pathlib.PosixPath | pathlib.WindowsPath | dict | list | np.ndarray,
         min_score: float = 0.0,
     ) -> "COCO":
         """Load result file and return a result api object.
@@ -415,7 +415,7 @@ class COCO:
         res.createIndex()
         return res
 
-    def showAnns(self, anns: List[dict], draw_bbox: Optional[bool] = False):
+    def showAnns(self, anns: list[dict], draw_bbox: bool | None = False):
         """Display the specified annotations.
 
         Args:
@@ -520,7 +520,7 @@ class COCO:
         """
         warnings.warn("download deprecated in 1.3.0", DeprecationWarning)
 
-    def loadNumpyAnnotations(self, data: np.ndarray) -> List[dict]:
+    def loadNumpyAnnotations(self, data: np.ndarray) -> list[dict]:
         """Convert result data from array to anns.
 
         Args:
@@ -589,11 +589,11 @@ class COCO:
 
     def get_ann_ids(
         self,
-        img_ids: List[int] = [],
-        cat_ids: List[int] = [],
-        area_rng: List[float] = [],
+        img_ids: list[int] = [],
+        cat_ids: list[int] = [],
+        area_rng: list[float] = [],
         iscrowd: bool = None,
-    ) -> List[int]:
+    ) -> list[int]:
         """Get ann ids that satisfy given filter conditions.
 
         Args:
@@ -609,10 +609,10 @@ class COCO:
 
     def get_cat_ids(
         self,
-        cat_names: List[str] = [],
-        sup_names: List[str] = [],
-        cat_ids: List[int] = [],
-    ) -> List[int]:
+        cat_names: list[str] = [],
+        sup_names: list[str] = [],
+        cat_ids: list[int] = [],
+    ) -> list[int]:
         """Get cat ids that satisfy given filter conditions.
 
         Args:
@@ -625,7 +625,7 @@ class COCO:
         """
         return self.getCatIds(cat_names, sup_names, cat_ids)
 
-    def get_img_ids(self, img_ids: List[int] = [], cat_ids: List[int] = []) -> List[int]:
+    def get_img_ids(self, img_ids: list[int] = [], cat_ids: list[int] = []) -> list[int]:
         """Get img ids that satisfy given filter conditions.
 
         Args:
@@ -637,7 +637,7 @@ class COCO:
         """
         return self.getImgIds(img_ids, cat_ids)
 
-    def load_anns(self, ids: List[int]) -> List[dict]:
+    def load_anns(self, ids: list[int]) -> list[dict]:
         """Load anns with the specified ids.
 
         Args:
@@ -648,7 +648,7 @@ class COCO:
         """
         return self.loadAnns(ids)
 
-    def load_cats(self, ids: List[int]) -> List[dict]:
+    def load_cats(self, ids: list[int]) -> list[dict]:
         """Load cats with the specified ids.
 
         Args:
@@ -659,7 +659,7 @@ class COCO:
         """
         return self.loadCats(ids)
 
-    def load_imgs(self, ids: List[int]) -> List[dict]:
+    def load_imgs(self, ids: list[int]) -> list[dict]:
         """Load imgs with the specified ids.
 
         Args:
@@ -764,7 +764,7 @@ class COCO:
         for key, val in self.to_dict().items():  # noqa: UP028
             yield key, val
 
-    def dump(self, output_file: Union[str, os.PathLike]):
+    def dump(self, output_file: str | os.PathLike):
         """Dump annotations to a json file.
 
         Args:

@@ -1,7 +1,5 @@
 # Original work Copyright (c) Piotr Dollar and Tsung-Yi Lin, 2014.
 # Modified work Copyright (c) 2024 MiXaiLL76
-from typing import Dict, List, Union
-
 import numpy as np
 
 import faster_coco_eval.mask_api_new_cpp as _mask
@@ -23,10 +21,10 @@ def _check_opencv():
         raise ImportError(message)
 
 
-ValidRleType = Union[List[np.ndarray], List[List[float]], np.ndarray, List[dict]]
+ValidRleType = list[np.ndarray] | list[list[float]] | np.ndarray | list[dict]
 
 
-def segmToRle(segm: Union[List[float], List[int], dict], w: int, h: int):
+def segmToRle(segm: list[float] | list[int] | dict, w: int, h: int):
     """Convert segm array to run-length encoding.
 
     Args:
@@ -97,8 +95,8 @@ def rleToBoundary(
 
 
 def calculateRleForAllAnnotations(
-    anns: List[dict],
-    img_sizes: Dict[int, tuple],
+    anns: list[dict],
+    img_sizes: dict[int, tuple],
     compute_rle: bool,
     compute_boundary: bool,
     boundary_dilation_ratio: float,
@@ -130,8 +128,8 @@ def calculateRleForAllAnnotations(
 def iou(
     dt: ValidRleType,
     gt: ValidRleType,
-    iscrowd: List[int],
-) -> Union[list, np.ndarray]:
+    iscrowd: list[int],
+) -> list | np.ndarray:
     """Compute intersection over union (IoU) between two sets of run-length
     encoded masks.
 
@@ -146,7 +144,7 @@ def iou(
     return _mask.iou(dt, gt, iscrowd)
 
 
-def merge(rleObjs: List[dict], intersect: int = 0):
+def merge(rleObjs: list[dict], intersect: int = 0):
     """Merge a list of run-length encoded objects.
 
     Args:
@@ -160,15 +158,10 @@ def merge(rleObjs: List[dict], intersect: int = 0):
 
 
 def frPyObjects(
-    objs: Union[
-        ValidRleType,
-        np.ndarray,
-        List[float],
-        dict,
-    ],
+    objs: ValidRleType | np.ndarray | list[float] | dict,
     h: int,
     w: int,
-) -> Union[dict, List[dict]]:
+) -> dict | list[dict]:
     """Convert a list of objects to RLE format suitable for use in mask API.
 
     Args:
@@ -198,7 +191,7 @@ def encode(bimask: np.ndarray) -> dict:
         return _mask.encode(bimask.reshape((h, w, 1), order="F"))[0]
 
 
-def decode(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
+def decode(rleObjs: dict | list[dict]) -> np.ndarray:
     """Decode binary masks encoded via RLE.
 
     Args:
@@ -213,7 +206,7 @@ def decode(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
         return _mask.decode([rleObjs])[:, :, 0]
 
 
-def area(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
+def area(rleObjs: dict | list[dict]) -> np.ndarray:
     """Compute area of encoded masks.
 
     Args:
@@ -228,7 +221,7 @@ def area(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
         return _mask.area([rleObjs])[0]
 
 
-def toBbox(rleObjs: Union[dict, List[dict]]) -> np.ndarray:
+def toBbox(rleObjs: dict | list[dict]) -> np.ndarray:
     """Get bounding boxes surrounding encoded masks.
 
     Args:

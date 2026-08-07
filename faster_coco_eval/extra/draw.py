@@ -1,14 +1,6 @@
 import logging
 import os.path as osp
-import sys
-from typing import List, Optional
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-
-    showAnnsiouTypeT = Literal["segm", "bbox"]
-else:
-    showAnnsiouTypeT = str
+from typing import Literal, Optional
 
 import numpy as np
 
@@ -32,6 +24,8 @@ except ImportError:
 
 from ..core import COCO
 from .utils import convert_ann_rle_to_poly
+
+showAnnsiouTypeT = Literal["segm", "bbox"]
 
 
 def _check_dependencies(*deps):
@@ -62,9 +56,9 @@ def generate_ann_polygon(
     ann: dict,
     color: tuple,
     iouType: str = "bbox",
-    text: Optional[str] = None,
-    legendgroup: Optional[str] = None,
-    category_id_to_skeleton: Optional[dict] = None,
+    text: str | None = None,
+    legendgroup: str | None = None,
+    category_id_to_skeleton: dict | None = None,
 ) -> "go.Scatter":
     """Generate annotation polygon for plotly.
 
@@ -137,18 +131,18 @@ def generate_ann_polygon(
 
 def display_image(
     cocoGt: COCO,
-    cocoDt: Optional[COCO] = None,
+    cocoDt: COCO | None = None,
     image_id: int = 1,
-    iouType: Optional[str] = "bbox",
+    iouType: str | None = "bbox",
     display_fp: bool = True,
     display_fn: bool = True,
     display_tp: bool = True,
     display_gt: bool = True,
     show_false_only: bool = False,
-    data_folder: Optional[str] = None,
-    categories: Optional[list] = None,
-    gt_ann_ids: Optional[set] = None,
-    dt_ann_ids: Optional[set] = None,
+    data_folder: str | None = None,
+    categories: list | None = None,
+    gt_ann_ids: set | None = None,
+    dt_ann_ids: set | None = None,
     return_fig: bool = False,
 ) -> Optional["go.Figure"]:
     """Display the image with the results.
@@ -648,9 +642,9 @@ def plot_ced_metric(curves, normalize: bool = False, return_fig: bool = False):
 def show_anns(
     cocoGt: COCO,
     image_id: int,
-    ann_ids: Optional[List[int]] = None,
+    ann_ids: list[int] | None = None,
     iouType: showAnnsiouTypeT = "bbox",
-    data_folder: Optional[str] = None,
+    data_folder: str | None = None,
     return_fig: bool = False,
 ):
     """Show ground truth annotations on an image.

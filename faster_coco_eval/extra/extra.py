@@ -1,7 +1,6 @@
 import copy
 import logging
 from collections import defaultdict
-from typing import Dict, Set
 
 import numpy as np
 
@@ -127,7 +126,7 @@ class ExtraEval:
                     del self.cocoDt.anns[ann_id]
 
     @property
-    def fp_image_ann_map(self) -> Dict[int, Set[int]]:
+    def fp_image_ann_map(self) -> dict[int, set[int]]:
         """Gets a mapping from image IDs to sets of annotation IDs for false
         positives.
 
@@ -141,7 +140,7 @@ class ExtraEval:
         return image_ann_map
 
     @property
-    def fn_image_ann_map(self) -> Dict[int, Set[int]]:
+    def fn_image_ann_map(self) -> dict[int, set[int]]:
         """Gets a mapping from image IDs to sets of annotation IDs for false
         negatives.
 

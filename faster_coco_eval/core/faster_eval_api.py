@@ -5,7 +5,6 @@ import copy
 import itertools
 import logging
 import time
-from typing import List, Union
 
 import numpy as np
 
@@ -430,8 +429,8 @@ class COCOeval_faster(COCOevalBase):
 
     @staticmethod
     def calc_auc(
-        recall_list: Union[List[float], np.ndarray],
-        precision_list: Union[List[float], np.ndarray],
+        recall_list: list[float] | np.ndarray,
+        precision_list: list[float] | np.ndarray,
         method: str = "c++",
     ):
         """Calculate area under precision recall curve.

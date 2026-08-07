@@ -3,16 +3,9 @@
 
 import logging
 import os
-import sys
 from collections import defaultdict
-from typing import Callable, List, Optional, Union
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-
-    iouTypeT = Literal["segm", "bbox", "keypoints", "keypoints_crowd", "boundary"]
-else:
-    iouTypeT = str
+from collections.abc import Callable
+from typing import Literal
 
 import numpy as np
 
@@ -21,24 +14,26 @@ from faster_coco_eval.core import mask as maskUtils
 from faster_coco_eval.core.coco import COCO
 from faster_coco_eval.version import __author__, __version__
 
+iouTypeT = Literal["segm", "bbox", "keypoints", "keypoints_crowd", "boundary"]
+
 logger = logging.getLogger(__name__)
 
 
 class COCOeval:
     def __init__(
         self,
-        cocoGt: Optional[COCO] = None,
-        cocoDt: Optional[COCO] = None,
+        cocoGt: COCO | None = None,
+        cocoDt: COCO | None = None,
         iouType: iouTypeT = "segm",
-        ranges: Optional[dict] = {
+        ranges: dict | None = {
             "small": [0, 32**2],
             "medium": [32**2, 96**2],
             "large": [96**2, 1e5**2],
         },
         print_function: Callable = logger.info,
         extra_calc: bool = False,
-        kpt_oks_sigmas: Optional[List[float]] = None,
-        use_area: Optional[bool] = True,
+        kpt_oks_sigmas: list[float] | None = None,
+        use_area: bool | None = True,
         lvis_style: bool = False,
         separate_eval: bool = False,
         boundary_dilation_ratio: float = 0.02,
@@ -225,7 +220,7 @@ class COCOeval:
             freq_groups[p.img_count_lbl.index(frequency)].append(idx)
         return freq_groups
 
-    def computeIoU(self, imgId: int, catId: int) -> Union[List[float], np.ndarray]:
+    def computeIoU(self, imgId: int, catId: int) -> list[float] | np.ndarray:
         """Compute IoU between ground truth and detection for a given image and
         category.
 
@@ -711,8 +706,8 @@ class Params:
     def __init__(
         self,
         iouType: iouTypeT = "segm",
-        kpt_sigmas: Optional[List[float]] = None,
-        ranges: Optional[dict] = {
+        kpt_sigmas: list[float] | None = None,
+        ranges: dict | None = {
             "small": [0**2, 32**2],
             "medium": [32**2, 96**2],
             "large": [96**2, 1e5**2],

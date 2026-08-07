@@ -1,5 +1,4 @@
 import logging
-from typing import List, Optional
 
 import numpy as np
 
@@ -11,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class Curves(ExtraEval):
-    def build_curve(self, label: str) -> List[dict]:
+    def build_curve(self, label: str) -> list[dict]:
         """Build the curve for a given label.
 
         Args:
@@ -59,9 +58,9 @@ class Curves(ExtraEval):
 
     def plot_pre_rec(
         self,
-        curves: Optional[List[dict]] = None,
-        label: Optional[str] = "category_id",
-        return_fig: Optional[bool] = False,
+        curves: list[dict] | None = None,
+        label: str | None = "category_id",
+        return_fig: bool | None = False,
     ):
         """Plot the precision-recall curve.
 
@@ -81,9 +80,9 @@ class Curves(ExtraEval):
 
     def plot_f1_confidence(
         self,
-        curves: Optional[List[dict]] = None,
-        label: Optional[str] = "category_id",
-        return_fig: Optional[bool] = False,
+        curves: list[dict] | None = None,
+        label: str | None = "category_id",
+        return_fig: bool | None = False,
     ):
         """Plot the F1 confidence curve.
 
@@ -101,7 +100,7 @@ class Curves(ExtraEval):
 
         return plot_f1_confidence(curves, return_fig=return_fig)
 
-    def build_ced_curve(self, mae_count: int = 1000) -> List[dict]:
+    def build_ced_curve(self, mae_count: int = 1000) -> list[dict]:
         """Build the CED (Cumulative Error Distribution) curve for all
         categories.
 
@@ -198,9 +197,9 @@ class Curves(ExtraEval):
 
     def plot_ced_metric(
         self,
-        curves: Optional[List[dict]] = None,
-        normalize: Optional[bool] = True,
-        return_fig: Optional[bool] = False,
+        curves: list[dict] | None = None,
+        normalize: bool | None = True,
+        return_fig: bool | None = False,
     ):
         """Plot the CED metric curve.
 
