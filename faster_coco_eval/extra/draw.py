@@ -93,7 +93,7 @@ def generate_ann_polygon(
 
         for poly in ann["segmentation"]:
             if len(poly) > 3:
-                closed = list(poly) + poly[:2]
+                closed = list(poly) + list(poly[:2])
                 points = np.array(closed).reshape(-1, 2)
                 all_x += points[:, 0].tolist() + [None]
                 all_y += points[:, 1].tolist() + [None]

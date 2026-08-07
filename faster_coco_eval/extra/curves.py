@@ -30,7 +30,10 @@ class Curves(ExtraEval):
 
         if self.useCats:
             cat_ids = list(range(self.eval["precision"].shape[2]))
-            real_category_ids = list(self.cocoGt.cats)
+            if hasattr(self, "params") and self.params is not None and self.params.catIds:
+                real_category_ids = list(self.params.catIds)
+            else:
+                real_category_ids = sorted(self.cocoGt.cats.keys())
         else:
             cat_ids = [0]
             real_category_ids = []
