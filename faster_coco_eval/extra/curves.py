@@ -30,17 +30,32 @@ class Curves(ExtraEval):
 
         if self.useCats:
             cat_ids = list(range(self.eval["precision"].shape[2]))
+            real_category_ids = list(self.cocoGt.cats)
         else:
             cat_ids = [0]
+            real_category_ids = []
 
-        for category_id in cat_ids:
+        for category_index in cat_ids:
+            category_id = real_category_ids[category_index] if self.useCats else category_index
             _label = f"[{label}={category_id}] "
             if len(cat_ids) == 1:
                 _label = ""
 
-            precision_list = self.eval["precision"][:, :, category_id, :, :].ravel()
-            recall_list = self.recThrs
-            scores = self.eval["scores"][:, :, category_id, :, :].ravel()
+            precision_list = self.eval["precision"][:, :, category_index, :, :].ravel()
+            recall_list = np.asarray(self.recThrs).ravel()
+            scores = self.eval["scores"][:, :, category_index, :, :].ravel()
+            point_count = min(len(recall_list), len(precision_list), len(scores))
+            recall_list = recall_list[:point_count]
+            precision_list = precision_list[:point_count]
+            scores = scores[:point_count]
+            valid = precision_list > -1
+            if not np.any(valid):
+                logger.warning("Skipping category %s: precision contains no valid values", category_id)
+                continue
+
+            recall_list = recall_list[valid]
+            precision_list = precision_list[valid]
+            scores = scores[valid]
             auc = round(COCOeval_faster.calc_auc(recall_list, precision_list), 4)
 
             curve.append(

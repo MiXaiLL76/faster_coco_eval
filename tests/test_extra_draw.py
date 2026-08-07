@@ -1,5 +1,6 @@
 import os
 import unittest
+from copy import deepcopy
 
 import numpy as np
 
@@ -58,12 +59,17 @@ class TestExtraDraw(unittest.TestCase):
     def test_generate_ann_polygon_segm(self):
         ann = {"bbox": [10, 10, 20, 20], "segmentation": [[10, 10, 30, 10, 30, 30, 10, 30]], "category_id": 1}
         color = (255, 0, 0, 0.5)
+        original_segmentation = deepcopy(ann["segmentation"])
         # convert_ann_rle_to_poly just returns ann for this case (see import)
         result = generate_ann_polygon(ann, color, iouType="segm")
+        repeated_result = generate_ann_polygon(ann, color, iouType="segm")
         self.assertIsInstance(result, go.Scatter)
         # Check that coordinates start with 10, 10
         self.assertTrue(result.x[0] == 10)
         self.assertTrue(result.y[0] == 10)
+        self.assertEqual(ann["segmentation"], original_segmentation)
+        self.assertEqual(list(result.x), list(repeated_result.x))
+        self.assertEqual(list(result.y), list(repeated_result.y))
         self.assertEqual(result.line["color"], "rgb(255, 0, 0)")
         self.assertEqual(result.fillcolor, "rgba(255, 0, 0, 0.5)")
 
@@ -142,6 +148,25 @@ class TestExtraDraw(unittest.TestCase):
         self.assertEqual(fig.data[0].name, "curve1")
         # Check that F1 is calculated correctly (for first point F1==0, for second 2*0.8*0.5/(0.8+0.5)=0.615...)
         self.assertAlmostEqual(fig.data[0].y[1], 2 * 0.8 * 0.5 / (0.8 + 0.5), places=4)
+
+    def test_plot_curves_ignore_invalid_precision(self):
+        curves = [
+            {
+                "recall_list": np.array([0.0, 0.5, 1.0]),
+                "precision_list": np.array([1.0, -1.0, 0.5]),
+                "scores": np.array([0.9, 0.4, 0.1]),
+                "label": "curve1",
+            }
+        ]
+
+        precision_recall = plot_pre_rec(curves, return_fig=True)
+        f1_confidence = plot_f1_confidence(curves, return_fig=True)
+
+        np.testing.assert_array_equal(precision_recall.data[0].x, [0.0, 1.0])
+        np.testing.assert_array_equal(precision_recall.data[0].y, [1.0, 0.5])
+        np.testing.assert_array_equal(precision_recall.data[0].text, [0.9, 0.1])
+        np.testing.assert_allclose(f1_confidence.data[0].x, [0.9, 0.1])
+        np.testing.assert_allclose(f1_confidence.data[0].y, [0.0, 2 * 0.5 / 1.5])
 
     def test_plot_ced_metric(self):
         curves = [

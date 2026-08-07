@@ -129,6 +129,8 @@ class PreviewResults(ExtraEval):
 
         cm = np.zeros((K, K + 2), dtype=np.float32)
         for a, p in zip(y_true, y_pred):
+            if a not in categories_enum_ids or p not in categories_enum_ids:
+                continue
             cm[categories_enum_ids[a]][categories_enum_ids[p]] += 1
 
         for enum_id, category_id in enumerate(categories_real_ids):
