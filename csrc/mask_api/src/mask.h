@@ -48,7 +48,7 @@ class RLE {
         }
 
         RLE(uint64_t h, uint64_t w, std::vector<uint64_t> cnts)
-            : h{h}, w{w}, m{1}, cnts{std::move(cnts)} {}
+            : RLE(h, w, cnts.size(), std::move(cnts)) {}
 
         uint64_t h;
         uint64_t w;
