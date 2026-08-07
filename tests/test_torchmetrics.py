@@ -254,7 +254,7 @@ class TestTorchmetricsLib(TestCase):
         self.assertIsInstance(result, dict)
         torch.testing.assert_close(result["map"], torch.tensor(-1.0))
         torch.testing.assert_close(result["mar_100"], torch.tensor(-1.0))
-        self.assertTrue(torch.equal(result["classes"], torch.tensor([4], dtype=torch.int32)))
+        self.assertTrue(torch.equal(result["classes"].reshape(-1), torch.tensor([4], dtype=torch.int32)))
 
     @parameterized.expand([
         (backend, class_metrics) for backend in _AVAILABLE_BACKENDS for class_metrics in (False, True)
