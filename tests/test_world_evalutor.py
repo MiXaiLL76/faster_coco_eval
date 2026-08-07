@@ -34,6 +34,8 @@ class TestWorldCoco(unittest.TestCase):
             self.gt_lvis_file = os.path.join(os.path.dirname(__file__), self.gt_lvis_file)
             self.dt_lvis_file = os.path.join(os.path.dirname(__file__), self.dt_lvis_file)
 
+        # Regression pin, recorded 2026-07-22 against faster_coco_eval 1.7.2.
+        # Cross-check with the official LVIS API using scripts/derive_lvis_golden.py.
         self.stats_as_dict_result = {
             "AP_all": 0.3676645003471999,
             "AP_50": 0.626197183778713,
@@ -55,7 +57,8 @@ class TestWorldCoco(unittest.TestCase):
         }
 
     def tearDown(self):
-        """Release distributed resources and the isolated rendezvous directory."""
+        """Release distributed resources and the isolated rendezvous
+        directory."""
         try:
             if self._owns_process_group and dist.is_initialized():
                 dist.destroy_process_group()
@@ -80,7 +83,8 @@ class TestWorldCoco(unittest.TestCase):
         destroy_process_group.assert_not_called()
 
     def test_world_lvis(self):
-        """Evaluate LVIS predictions through an isolated single-process group."""
+        """Evaluate LVIS predictions through an isolated single-process
+        group."""
         coco_gt = COCO(self.gt_lvis_file)
         coco_eval_rank = FasterCocoEvaluator(coco_gt, iou_types=["bbox"], lvis_style=True)
         coco_eval_rank.coco_eval["bbox"].params.maxDets = [300]
@@ -102,7 +106,9 @@ class TestWorldCoco(unittest.TestCase):
 
         world_size = 1
         # File rendezvous avoids sharing a TCP port with parallel test workers.
-        dist.init_process_group("gloo", rank=0, world_size=world_size, init_method=f"file:///{self._rendezvous_path.lstrip('/')}" )
+        dist.init_process_group(
+            "gloo", rank=0, world_size=world_size, init_method=f"file:///{self._rendezvous_path.lstrip('/')}"
+        )
         self._owns_process_group = True
 
         for image_id, data in predictions.items():

@@ -95,6 +95,9 @@ class TestBoundary(unittest.TestCase):
         self.assertTrue(np.array_equal(opencv_rle_mask, self.mini_mask_boundry))
 
     def test_boundary_eval(self):
+        """Keep the boundary-evaluation regression metrics within numeric
+        tolerance."""
+        # Regression pin, recorded 2026-07-22 against faster_coco_eval 1.7.2.
         stats_as_dict = {
             # the following values (except for mIoU and mAUC_50) have been
             # obtained by running the original boundary_iou_api on
@@ -123,7 +126,8 @@ class TestBoundary(unittest.TestCase):
         cocoEval.accumulate()
         cocoEval.summarize()
 
-        self.assertAlmostEqual(cocoEval.stats_as_dict, stats_as_dict, places=10)
+        for key, expected_value in stats_as_dict.items():
+            self.assertAlmostEqual(cocoEval.stats_as_dict[key], expected_value, places=10, msg=key)
 
 
 if __name__ == "__main__":
