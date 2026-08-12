@@ -6,7 +6,8 @@ from faster_coco_eval.extra.curves import Curves
 
 
 def test_build_curve_uses_real_category_ids_and_masks_sentinel_values(caplog):
-    """Build curves with real ids and omit categories with only invalid precision."""
+    """Build curves with real ids and omit categories with only invalid
+    precision."""
     curves = Curves.__new__(Curves)
     curves.cocoGt = SimpleNamespace(cats={1: {"name": "cat"}, 17: {"name": "dog"}})
     curves.eval = {

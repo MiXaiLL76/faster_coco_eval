@@ -101,7 +101,8 @@ def test_drop_cocodt_by_score_zero():
 
 
 def test_evaluate_uses_detection_count_for_max_dets():
-    """Score all detections even when the ground truth has fewer annotations."""
+    """Score all detections even when the ground truth has fewer
+    annotations."""
     mock_gt = Mock()
     mock_gt.anns = {1: {"id": 1}}
     mock_dt = Mock()

@@ -200,9 +200,10 @@ std::vector<ImageEvaluation> EvaluateImages(
 
         if (image_category_ious.size() != img_ids.size()) {
                 std::ostringstream error;
-                error << "image_category_ious must contain one entry per image; "
-                      << "expected " << img_ids.size() << ", got "
-                      << image_category_ious.size() << ".";
+                error
+                    << "image_category_ious must contain one entry per image; "
+                    << "expected " << img_ids.size() << ", got "
+                    << image_category_ious.size() << ".";
                 throw std::runtime_error(error.str());
         }
 
@@ -219,8 +220,8 @@ std::vector<ImageEvaluation> EvaluateImages(
                 if (image_category_ious[i].size() !=
                     static_cast<std::size_t>(num_categories)) {
                         std::ostringstream error;
-                        error << "image_category_ious[" << i << "] for image id "
-                              << img_ids[i]
+                        error << "image_category_ious[" << i
+                              << "] for image id " << img_ids[i]
                               << " must contain one entry per evaluated "
                                  "category; expected "
                               << num_categories << ", got "
@@ -298,11 +299,10 @@ std::vector<ImageEvaluation> EvaluateImages(
                                 } else {
                                         error << " with merged categories";
                                 }
-                                error
-                                    << " has an invalid detection dimension; "
-                                       "expected "
-                                    << expected_detections << ", got "
-                                    << category_ious.size() << ".";
+                                error << " has an invalid detection dimension; "
+                                         "expected "
+                                      << expected_detections << ", got "
+                                      << category_ious.size() << ".";
                                 throw std::runtime_error(error.str());
                         }
 
@@ -310,23 +310,21 @@ std::vector<ImageEvaluation> EvaluateImages(
                                 if (category_ious[d].size() !=
                                     expected_ground_truth) {
                                         std::ostringstream error;
-                                        error
-                                            << "image_category_ious[" << i
-                                            << "][" << c << "][" << d
-                                            << "] for image id " << img_id;
+                                        error << "image_category_ious[" << i
+                                              << "][" << c << "][" << d
+                                              << "] for image id " << img_id;
                                         if (useCats) {
                                                 error << " and category id "
                                                       << cat_ids[c];
                                         } else {
-                                                error
-                                                    << " with merged "
-                                                       "categories";
+                                                error << " with merged "
+                                                         "categories";
                                         }
-                                        error
-                                            << " has an invalid ground-truth "
-                                               "dimension; expected "
-                                            << expected_ground_truth << ", got "
-                                            << category_ious[d].size() << ".";
+                                        error << " has an invalid ground-truth "
+                                                 "dimension; expected "
+                                              << expected_ground_truth
+                                              << ", got "
+                                              << category_ious[d].size() << ".";
                                         throw std::runtime_error(error.str());
                                 }
                         }
@@ -341,9 +339,10 @@ std::vector<ImageEvaluation> EvaluateImages(
                                     detection_sorted_indices,
                                     ground_truth_instances,
                                     ground_truth_sorted_indices, ignores,
-                                    category_ious, iou_thresholds, area_ranges[a],
+                                    category_ious, iou_thresholds,
+                                    area_ranges[a],
                                     &results_all[c * num_area_ranges *
-                                                    num_images +
+                                                     num_images +
                                                  a * num_images + i]);
                         }
 
