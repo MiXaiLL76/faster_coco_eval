@@ -334,10 +334,15 @@ std::vector<ImageEvaluation> EvaluateImages(
         {
                 py::gil_scoped_release release;
                 if (worker_count == 1) {
-                        try {
-                                evaluate_image_category(0);
-                        } catch (...) {
-                                first_exception = std::current_exception();
+                        for (std::size_t task_index = 0; task_index < num_tasks;
+                             ++task_index) {
+                                try {
+                                        evaluate_image_category(task_index);
+                                } catch (...) {
+                                        first_exception =
+                                            std::current_exception();
+                                        break;
+                                }
                         }
                 } else {
                         std::atomic<std::size_t> next_task{0};
