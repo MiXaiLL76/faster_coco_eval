@@ -1,9 +1,11 @@
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
 
 from faster_coco_eval import COCO, COCOeval_faster
+from faster_coco_eval.extra.display import PreviewResults
 from faster_coco_eval.extra.extra import ExtraEval
 
 
@@ -43,6 +45,16 @@ def test_extra_eval_non_keypoints():
 
         assert extra_eval.useCats is True
         assert extra_eval.kpt_oks_sigmas is None
+
+
+def test_confusion_matrix_ignores_detection_category_outside_ground_truth():
+    """Ignore unmatched category ids instead of indexing outside the matrix."""
+    preview = PreviewResults.__new__(PreviewResults)
+    preview.cocoGt = SimpleNamespace(cats={1: {"id": 1}})
+
+    result = preview._compute_confusion_matrix([1], [99])
+
+    np.testing.assert_array_equal(result, np.zeros((1, 3), dtype=np.float32))
 
 
 def test_evaluate_assertion():
@@ -86,6 +98,58 @@ def test_drop_cocodt_by_score_zero():
         # Should not modify anything when min_score is 0
         extra_eval.drop_cocodt_by_score(0.0)
         assert len(mock_dt.anns) == 1
+
+
+def test_evaluate_uses_detection_count_for_max_dets():
+    """Score all detections even when the ground truth has fewer annotations."""
+    mock_gt = Mock()
+    mock_gt.anns = {1: {"id": 1}}
+    mock_dt = Mock()
+    mock_dt.anns = {index: {"id": index} for index in range(1, 1202)}
+
+    with patch.object(ExtraEval, "evaluate"):
+        extra_eval = ExtraEval(cocoGt=mock_gt, cocoDt=None)
+    extra_eval.cocoDt = mock_dt
+
+    fake_eval = Mock()
+    fake_eval.params = SimpleNamespace()
+    fake_eval.eval = {}
+    with patch("faster_coco_eval.extra.extra.COCOeval_faster", return_value=fake_eval):
+        extra_eval.evaluate()
+
+    assert fake_eval.params.maxDets == [1201]
+
+
+def test_drop_cocodt_by_score_rebuilds_all_indexes():
+    """Remove low-score detections from the dataset and every derived index."""
+    ground_truth = COCO()
+    ground_truth.dataset = {
+        "images": [{"id": 1}],
+        "annotations": [],
+        "categories": [{"id": 1}],
+    }
+    ground_truth.createIndex()
+
+    detections = COCO()
+    detections.dataset = {
+        "images": [{"id": 1}],
+        "annotations": [
+            {"id": 1, "image_id": 1, "category_id": 1, "score": 0.1},
+            {"id": 2, "image_id": 1, "category_id": 1, "score": 0.9},
+        ],
+        "categories": [{"id": 1}],
+    }
+    detections.createIndex()
+
+    with patch.object(ExtraEval, "evaluate"):
+        extra_eval = ExtraEval(cocoGt=ground_truth, cocoDt=detections)
+
+    extra_eval.drop_cocodt_by_score(0.5)
+
+    assert [ann["id"] for ann in extra_eval.cocoDt.dataset["annotations"]] == [2]
+    assert list(extra_eval.cocoDt.anns) == [2]
+    assert [ann["id"] for ann in extra_eval.cocoDt.imgToAnns[1]] == [2]
+    assert extra_eval.cocoDt.catToImgs[1] == [1]
 
 
 def test_fp_image_ann_map_empty():

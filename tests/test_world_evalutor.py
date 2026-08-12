@@ -34,6 +34,8 @@ class TestWorldCoco(unittest.TestCase):
             self.gt_lvis_file = os.path.join(os.path.dirname(__file__), self.gt_lvis_file)
             self.dt_lvis_file = os.path.join(os.path.dirname(__file__), self.dt_lvis_file)
 
+        # Regression pin, recorded 2026-07-22 against faster_coco_eval 1.7.2.
+        # Cross-check with the official LVIS API using scripts/derive_lvis_golden.py.
         self.stats_as_dict_result = {
             "AP_all": 0.3676645003471999,
             "AP_50": 0.626197183778713,

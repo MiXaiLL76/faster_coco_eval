@@ -74,7 +74,9 @@ class ExtraEval:
             extra_calc=True,
             kpt_oks_sigmas=self.kpt_oks_sigmas,
         )
-        cocoEval.params.maxDets = [len(self.cocoGt.anns)]
+        if not self.cocoGt.anns:
+            logger.warning("Ground-truth annotations are empty; detections will be scored as false positives")
+        cocoEval.params.maxDets = [max(1000, len(self.cocoDt.anns))]
 
         self.recThrs = np.linspace(0, 1, self.recall_count + 1, endpoint=True)
         cocoEval.params.recThrs = self.recThrs
@@ -105,25 +107,17 @@ class ExtraEval:
         assert self.cocoDt is not None, "cocoDt is empty"
 
         if min_score > 0:
-            bad_keys = {}
-            bad_images_keys = []
+            bad_ann_ids = set()
 
-            for key, ann in self.cocoDt.anns.items():
+            for ann_id, ann in self.cocoDt.anns.items():
                 if ann["score"] < min_score:
-                    if bad_keys.get(ann["image_id"]) is None:
-                        bad_keys[ann["image_id"]] = {}
+                    bad_ann_ids.add(ann_id)
 
-                    bad_keys[ann["image_id"]][key] = True
-
-                    bad_images_keys.append(ann["image_id"])
-
-            for image_id in set(bad_images_keys):
-                self.cocoDt.imgToAnns[image_id] = [
-                    ann for ann in self.cocoDt.imgToAnns[image_id] if bad_keys.get(image_id, {}).get(ann["id"]) is None
+            if bad_ann_ids:
+                self.cocoDt.dataset["annotations"] = [
+                    ann for ann in self.cocoDt.dataset["annotations"] if ann["id"] not in bad_ann_ids
                 ]
-
-                for ann_id in bad_keys.get(image_id, {}).keys():
-                    del self.cocoDt.anns[ann_id]
+                self.cocoDt.createIndex()
 
     @property
     def fp_image_ann_map(self) -> dict[int, set[int]]:

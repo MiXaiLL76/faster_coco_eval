@@ -13,6 +13,7 @@ import unittest
 from unittest import TestCase
 
 import numpy as np
+import pytest
 from parameterized import parameterized
 
 try:
@@ -26,6 +27,7 @@ import faster_coco_eval.core.mask as mask_util
 from faster_coco_eval import COCO, COCOeval_faster
 
 
+@pytest.mark.slow
 class TestExtensivePycocotoolsComparison(TestCase):
     """Extensive test suite comparing faster_coco_eval with pycocotools.
 
@@ -50,6 +52,7 @@ class TestExtensivePycocotoolsComparison(TestCase):
         annotations_per_image=10,
         include_segmentation=False,
         include_keypoints=False,
+        crowd_fraction=0.0,
     ):
         """Create a synthetic COCO dataset with configurable parameters.
 
@@ -59,11 +62,15 @@ class TestExtensivePycocotoolsComparison(TestCase):
             annotations_per_image: Average number of annotations per image
             include_segmentation: Whether to include segmentation masks
             include_keypoints: Whether to include keypoint annotations
+            crowd_fraction: Fraction of ground-truth annotations marked as crowds.
 
         Returns:
             Dictionary containing COCO-formatted annotations
         """
-        np.random.seed(42)  # For reproducibility
+        if not 0.0 <= crowd_fraction <= 1.0:
+            raise ValueError("crowd_fraction must be between 0 and 1")
+
+        rng = np.random.default_rng(42)
 
         images = []
         annotations = []
@@ -86,8 +93,8 @@ class TestExtensivePycocotoolsComparison(TestCase):
         ann_id = 0
         for img_id in range(num_images):
             # Image dimensions vary
-            img_width = np.random.randint(400, 800)
-            img_height = np.random.randint(400, 800)
+            img_width = int(rng.integers(400, 800))
+            img_height = int(rng.integers(400, 800))
 
             images.append({
                 "id": img_id,
@@ -97,27 +104,27 @@ class TestExtensivePycocotoolsComparison(TestCase):
             })
 
             # Variable number of annotations per image
-            num_anns = np.random.randint(max(1, annotations_per_image - 5), annotations_per_image + 5)
+            num_anns = int(rng.integers(max(1, annotations_per_image - 5), annotations_per_image + 5))
 
             for _ in range(num_anns):
                 # Random category
-                cat_id = np.random.randint(0, num_categories)
+                cat_id = int(rng.integers(0, num_categories))
 
                 # Random bbox with various sizes
                 # Create small, medium, and large objects (COCO size categories)
-                size_type = np.random.choice(["small", "medium", "large"])
+                size_type = rng.choice(["small", "medium", "large"])
                 if size_type == "small":
-                    w = np.random.randint(10, 32)
-                    h = np.random.randint(10, 32)
+                    w = int(rng.integers(10, 32))
+                    h = int(rng.integers(10, 32))
                 elif size_type == "medium":
-                    w = np.random.randint(32, 96)
-                    h = np.random.randint(32, 96)
+                    w = int(rng.integers(32, 96))
+                    h = int(rng.integers(32, 96))
                 else:
-                    w = np.random.randint(96, min(200, img_width // 2))
-                    h = np.random.randint(96, min(200, img_height // 2))
+                    w = int(rng.integers(96, min(200, img_width // 2)))
+                    h = int(rng.integers(96, min(200, img_height // 2)))
 
-                x = np.random.randint(0, max(1, img_width - w))
-                y = np.random.randint(0, max(1, img_height - h))
+                x = int(rng.integers(0, max(1, img_width - w)))
+                y = int(rng.integers(0, max(1, img_height - h)))
 
                 area = w * h
 
@@ -127,7 +134,7 @@ class TestExtensivePycocotoolsComparison(TestCase):
                     "category_id": cat_id,
                     "bbox": [float(x), float(y), float(w), float(h)],
                     "area": float(area),
-                    "iscrowd": 0,
+                    "iscrowd": int(crowd_fraction > 0 and rng.random() < crowd_fraction),
                 }
 
                 if include_segmentation:
@@ -146,10 +153,10 @@ class TestExtensivePycocotoolsComparison(TestCase):
                     num_visible = 0
                     for i in range(num_keypoints):
                         # Some keypoints are visible (v=2), some occluded (v=1), some not labeled (v=0)
-                        visibility = int(np.random.choice([0, 1, 2], p=[0.1, 0.2, 0.7]))
+                        visibility = int(rng.choice([0, 1, 2], p=[0.1, 0.2, 0.7]))
                         if visibility > 0:
-                            kp_x = x + np.random.randint(0, max(1, w))
-                            kp_y = y + np.random.randint(0, max(1, h))
+                            kp_x = x + rng.integers(0, max(1, w))
+                            kp_y = y + rng.integers(0, max(1, h))
                         else:
                             kp_x = kp_y = 0
                         keypoints.extend([float(kp_x), float(kp_y), visibility])
@@ -181,13 +188,13 @@ class TestExtensivePycocotoolsComparison(TestCase):
         Returns:
             List of prediction dictionaries
         """
-        np.random.seed(123)  # Different seed for predictions
+        rng = np.random.default_rng(123)
 
         predictions = []
 
         for ann in coco_gt["annotations"]:
             # Only detect a fraction of objects
-            if np.random.random() > detection_rate:
+            if rng.random() > detection_rate:
                 continue
 
             pred = {
@@ -196,16 +203,16 @@ class TestExtensivePycocotoolsComparison(TestCase):
             }
 
             # Add score with some variation
-            base_score = np.random.uniform(0.5, 0.99)
+            base_score = rng.uniform(0.5, 0.99)
             pred["score"] = float(base_score)
 
             if iou_type in ["bbox", "segm"]:
                 # Add some noise to bbox
                 x, y, w, h = ann["bbox"]
-                noise_factor = np.random.uniform(0.9, 1.1)
+                noise_factor = rng.uniform(0.9, 1.1)
                 pred["bbox"] = [
-                    float(x + np.random.uniform(-2, 2)),
-                    float(y + np.random.uniform(-2, 2)),
+                    float(x + rng.uniform(-2, 2)),
+                    float(y + rng.uniform(-2, 2)),
                     float(w * noise_factor),
                     float(h * noise_factor),
                 ]
@@ -221,8 +228,8 @@ class TestExtensivePycocotoolsComparison(TestCase):
                 for i in range(0, len(ann["keypoints"]), 3):
                     kp_x, kp_y, v = ann["keypoints"][i : i + 3]
                     if v > 0:
-                        kp_x += np.random.uniform(-3, 3)
-                        kp_y += np.random.uniform(-3, 3)
+                        kp_x += rng.uniform(-3, 3)
+                        kp_y += rng.uniform(-3, 3)
                     keypoints.extend([float(kp_x), float(kp_y), v])
                 pred["keypoints"] = keypoints
 
@@ -233,15 +240,15 @@ class TestExtensivePycocotoolsComparison(TestCase):
         for img in coco_gt["images"][:num_false_positives]:
             pred = {
                 "image_id": img["id"],
-                "category_id": np.random.randint(0, len(coco_gt["categories"])),
-                "score": float(np.random.uniform(0.3, 0.7)),
+                "category_id": int(rng.integers(0, len(coco_gt["categories"]))),
+                "score": float(rng.uniform(0.3, 0.7)),
             }
 
             if iou_type in ["bbox", "segm"]:
-                w = np.random.randint(20, 100)
-                h = np.random.randint(20, 100)
-                x = np.random.randint(0, max(1, img["width"] - w))
-                y = np.random.randint(0, max(1, img["height"] - h))
+                w = int(rng.integers(20, 100))
+                h = int(rng.integers(20, 100))
+                x = int(rng.integers(0, max(1, img["width"] - w)))
+                y = int(rng.integers(0, max(1, img["height"] - h)))
                 pred["bbox"] = [float(x), float(y), float(w), float(h)]
                 pred["area"] = float(w * h)
 
@@ -258,8 +265,8 @@ class TestExtensivePycocotoolsComparison(TestCase):
                 keypoints = []
                 for i in range(17):
                     keypoints.extend([
-                        float(np.random.randint(0, img["width"])),
-                        float(np.random.randint(0, img["height"])),
+                        float(rng.integers(0, img["width"])),
+                        float(rng.integers(0, img["height"])),
                         2,
                     ])
                 pred["keypoints"] = keypoints
@@ -425,14 +432,47 @@ class TestExtensivePycocotoolsComparison(TestCase):
             f"Difference: {fast_stats - orig_stats}",
         )
 
+    @parameterized.expand([("bbox", False), ("segm", True)])
+    def test_crowd_annotations_extensive(self, iou_type, include_segmentation):
+        """Compare bbox and RLE-segmentation evaluation with crowd ground
+        truths."""
+        if origCOCO is None:
+            raise unittest.SkipTest("pycocotools not available")
+
+        coco_data = self._create_coco_annotations(
+            num_images=10,
+            num_categories=5,
+            annotations_per_image=5,
+            include_segmentation=include_segmentation,
+            crowd_fraction=0.15,
+        )
+        crowd_annotations = [ann for ann in coco_data["annotations"] if ann["iscrowd"]]
+        self.assertGreater(len(crowd_annotations), 0)
+        self.assertLess(len(crowd_annotations), len(coco_data["annotations"]))
+        if include_segmentation:
+            self.assertTrue(all(isinstance(ann["segmentation"], dict) for ann in crowd_annotations))
+
+        gt_file = osp.join(self.tmp_dir.name, f"gt_crowd_{iou_type}.json")
+        with open(gt_file, "w") as f:
+            json.dump(coco_data, f)
+
+        predictions = self._create_predictions(coco_data, iou_type=iou_type)
+        fast_stats, orig_stats, are_equal = self._compare_evaluators(gt_file, predictions, iou_type)
+
+        self.assertTrue(
+            are_equal,
+            f"\nfaster_coco_eval stats: {fast_stats}\n"
+            f"pycocotools stats:      {orig_stats}\n"
+            f"Difference: {fast_stats - orig_stats}",
+        )
+
     def test_edge_case_no_predictions(self):
         """Test evaluation with no predictions.
 
-        Note: Both pycocotools and faster_coco_eval have issues with truly empty
-        prediction lists (loadRes() fails on empty lists when trying to inspect the
-        first element to determine annotation type). This is a known limitation in
-        the COCO API design. We use a very low-scoring prediction instead to test
-        the low-prediction scenario.
+        Note: pycocotools still rejects truly empty prediction lists when it
+        inspects the first element to determine annotation type. The parity
+        comparison therefore uses a very low-scoring prediction; faster_coco_eval
+        separately accepts empty results.
         """
         if origCOCO is None:
             raise unittest.SkipTest("pycocotools not available")
@@ -448,8 +488,8 @@ class TestExtensivePycocotoolsComparison(TestCase):
         with open(gt_file, "w") as f:
             json.dump(coco_data, f)
 
-        # Use a very low score prediction instead of empty list
-        # (Both APIs crash on truly empty prediction lists)
+        # Use a very low score prediction so this comparison remains compatible
+        # with pycocotools.
         predictions = [
             {
                 "image_id": coco_data["images"][0]["id"],

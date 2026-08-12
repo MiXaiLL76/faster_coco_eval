@@ -87,6 +87,8 @@ class TestBaseCoco(unittest.TestCase):
             COCOeval_faster(cocoGt, cocoDt, "iouType")
 
     def test_ignore_coco_eval(self):
+        """Keep the ignore-case regression metrics within numeric tolerance."""
+        # Regression pin, recorded 2026-07-22 against faster_coco_eval 1.7.2.
         stats_as_dict = {
             "AP_all": 0.7099009900990099,
             "AP_50": 1.0,
@@ -126,6 +128,9 @@ class TestBaseCoco(unittest.TestCase):
             self.assertAlmostEqual(cocoEval.stats_as_dict[key], stats_as_dict[key], places=10, msg=key)
 
     def test_coco_eval(self):
+        """Keep the standard evaluation regression metrics within numeric
+        tolerance."""
+        # Regression pin, recorded 2026-07-22 against faster_coco_eval 1.7.2.
         stats_as_dict = {
             "AP_all": 0.6947194719471946,
             "AP_50": 0.6947194719471946,
@@ -158,7 +163,8 @@ class TestBaseCoco(unittest.TestCase):
         cocoEval.summarize()
 
         self.assertEqual(cocoEval.matched, True)
-        self.assertAlmostEqual(cocoEval.stats_as_dict, stats_as_dict, places=10)
+        for key, expected_value in stats_as_dict.items():
+            self.assertAlmostEqual(cocoEval.stats_as_dict[key], expected_value, places=10, msg=key)
 
     def test_confusion_matrix(self):
         prepared_result = [

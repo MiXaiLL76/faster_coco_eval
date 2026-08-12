@@ -116,14 +116,12 @@ class TestMaskApi(unittest.TestCase):
         self.assertTrue(np.all([_mask.encode(_mask.decode([rle])) == [rle] for rle in self.rleObjs]))
 
     def test_decode_rejects_count_larger_than_each_mask(self):
-        """Reject a second RLE whose runs exceed its own mask dimensions."""
-        valid, oversized = _mask.frUncompressedRLE([
-            {"size": [2, 2], "counts": [0, 4]},
-            {"size": [2, 2], "counts": [0, 5]},
-        ])
-
+        """Reject oversized uncompressed RLE counts at construction time."""
         with self.assertRaises(ValueError):
-            _mask.decode([valid, oversized])
+            _mask.frUncompressedRLE([
+                {"size": [2, 2], "counts": [0, 4]},
+                {"size": [2, 2], "counts": [0, 5]},
+            ])
 
     def test_decode_rejects_count_smaller_than_mask(self):
         """Reject a second RLE whose runs sum to fewer pixels than h*w."""
@@ -134,6 +132,31 @@ class TestMaskApi(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             _mask.decode([valid, undersized])
+
+    def test_rejects_oversized_rle_before_mask_operations(self):
+        """Reject malformed RLE counts at every dense-mask entry point."""
+        oversized = {"size": [2, 2], "counts": b"05"}
+
+        with self.assertRaises(ValueError):
+            _mask.decode([oversized])
+        with self.assertRaises(ValueError):
+            _mask.merge([oversized, oversized])
+        with self.assertRaises(ValueError):
+            _mask.erode_3x3([oversized], 1)
+
+    def test_rle_rejects_count_length_mismatch(self):
+        """Reject an explicit run count length that disagrees with the data."""
+        with self.assertRaises(ValueError):
+            _mask.RLE(2, 2, 3, [0, 4])
+
+    def test_fr_poly_preserves_64_bit_pixel_offsets(self):
+        """Keep polygon RLE offsets above the uint32 range intact."""
+        height = 2**32 + 1
+        rle = _mask.frPoly([[0.0, 0.0, 0.0, 1.0]], height, 1)[0]
+
+        uncompressed = _mask.toUncompressedRLE([rle])[0]
+
+        self.assertEqual(sum(uncompressed["counts"]), height)
 
     def test_frBbox(self):
         self.assertEqual(self.bbox_rles, _mask.frBbox(self.bboxes, 20, 20))
