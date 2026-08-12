@@ -293,6 +293,48 @@ class TestBaseCoco(unittest.TestCase):
 
         self.assertEqual(len(evaluations), 1)
 
+    def test_evaluate_images_stably_partitions_ignored_ground_truth(self):
+        """Preserve ground-truth order within non-ignored and ignored
+        buckets."""
+        gt_dataset = _C.Dataset()
+        dt_dataset = _C.Dataset()
+        for annotation in [
+            {"id": 11, "area": 100.0, "ignore": False, "is_crowd": False},
+            {"id": 12, "area": 1.0, "ignore": False, "is_crowd": False},
+            {"id": 13, "area": 100.0, "ignore": True, "is_crowd": False},
+            {"id": 14, "area": 100.0, "ignore": False, "is_crowd": False},
+        ]:
+            gt_dataset.append(1, 1, annotation)
+        for annotation in [
+            {"id": 21, "score": 0.9, "area": 100.0, "ignore": False, "is_crowd": False},
+            {"id": 22, "score": 0.8, "area": 100.0, "ignore": False, "is_crowd": False},
+        ]:
+            dt_dataset.append(1, 1, annotation)
+
+        evaluation = _C.COCOevalEvaluateImages(
+            [[10.0, 200.0]],
+            100,
+            [0.5],
+            [[[[0.9] * 4, [0.9] * 4]]],
+            gt_dataset,
+            dt_dataset,
+            [1],
+            [1],
+            True,
+        )[0]
+
+        self.assertEqual(
+            evaluation.__getstate__(),
+            (
+                [14, 11],
+                [22, 21, 0, 0],
+                [0.9, 0.8],
+                [False, False, True, True],
+                [False, False],
+                [(21, 14, 0.9), (22, 11, 0.9)],
+            ),
+        )
+
     def test_evaluate_images_validates_merged_category_iou_shape(self):
         """Validate IoU dimensions after categories are merged."""
         gt_dataset = _C.Dataset()
