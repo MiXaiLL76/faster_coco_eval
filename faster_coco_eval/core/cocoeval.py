@@ -722,7 +722,7 @@ class Params:
     def __init__(
         self,
         iouType: iouTypeT = "segm",
-        kpt_sigmas: Optional[List[float]] = None,
+        kpt_sigmas: list[float] | None = None,
         ranges: dict | None = None,
     ):
         """Initialize Params for COCO evaluation API.

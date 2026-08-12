@@ -2,10 +2,10 @@ all: clean format sdist wheel
 	ls -lah dist
 
 wheel:
-	pipx run build --wheel .
+	pipx run --spec build pyproject-build --wheel .
 
 sdist:
-	pipx run build --sdist .
+	pipx run --spec build pyproject-build --sdist .
 
 whl_file = $(shell ls dist/*.whl)
 
