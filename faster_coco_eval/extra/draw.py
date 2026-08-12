@@ -93,10 +93,10 @@ def generate_ann_polygon(
 
         for poly in ann["segmentation"]:
             if len(poly) > 3:
-                poly += poly[:2]
-                poly = np.array(poly).reshape(-1, 2)
-                all_x += poly[:, 0].tolist() + [None]
-                all_y += poly[:, 1].tolist() + [None]
+                closed = list(poly) + list(poly[:2])
+                points = np.array(closed).reshape(-1, 2)
+                all_x += points[:, 0].tolist() + [None]
+                all_y += points[:, 1].tolist() + [None]
     elif iouType == "keypoints":
         skeleton = category_id_to_skeleton.get(ann.get("category_id"))
         keypoints = ann.get("keypoints")
@@ -414,9 +414,17 @@ def plot_pre_rec(curves, return_fig: bool = False):
     fig = go.Figure()
 
     for _curve in curves:
-        recall_list = _curve["recall_list"]
-        precision_list = _curve["precision_list"]
-        scores = _curve["scores"]
+        recall_list = np.asarray(_curve["recall_list"])
+        precision_list = np.asarray(_curve["precision_list"])
+        scores = np.asarray(_curve["scores"])
+        point_count = min(len(recall_list), len(precision_list), len(scores))
+        recall_list = recall_list[:point_count]
+        precision_list = precision_list[:point_count]
+        scores = scores[:point_count]
+        valid = precision_list > -1
+        recall_list = recall_list[valid]
+        precision_list = precision_list[valid]
+        scores = scores[valid]
 
         if "name" in _curve and len(_curve["name"]) > 0:
             name = _curve["name"]
@@ -477,9 +485,17 @@ def plot_f1_confidence(curves, return_fig: bool = False):
     fig = go.Figure()
     eps = 1e-16
     for _curve in curves:
-        recall_list = _curve["recall_list"]
-        precision_list = _curve["precision_list"][: len(recall_list)]
-        scores = _curve["scores"]
+        recall_list = np.asarray(_curve["recall_list"])
+        precision_list = np.asarray(_curve["precision_list"])
+        scores = np.asarray(_curve["scores"])
+        point_count = min(len(recall_list), len(precision_list), len(scores))
+        recall_list = recall_list[:point_count]
+        precision_list = precision_list[:point_count]
+        scores = scores[:point_count]
+        valid = precision_list > -1
+        recall_list = recall_list[valid]
+        precision_list = precision_list[valid]
+        scores = scores[valid]
         f1_curve = 2 * precision_list * recall_list / (precision_list + recall_list + eps)
 
         if "name" in _curve and len(_curve["name"]) > 0:

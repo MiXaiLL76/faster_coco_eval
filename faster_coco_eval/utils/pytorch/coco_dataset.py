@@ -11,9 +11,6 @@ from typing import Callable, Optional, Union
 import torchvision
 
 import faster_coco_eval
-from faster_coco_eval import COCO
-
-faster_coco_eval.init_as_pycocotools()
 
 
 class FasterCocoDetection(torchvision.datasets.CocoDetection):
@@ -53,6 +50,6 @@ class FasterCocoDetection(torchvision.datasets.CocoDetection):
         Returns:
             None
         """
-        super().__init__(root, transforms, transform, target_transform)
-        self.coco = COCO(annFile)
+        faster_coco_eval.init_as_pycocotools()
+        super().__init__(root, annFile, transform, target_transform, transforms)
         self.ids = list(sorted(self.coco.imgs.keys()))
