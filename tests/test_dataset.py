@@ -315,7 +315,7 @@ class TestBaseCoco(unittest.TestCase):
             [[10.0, 200.0]],
             100,
             [0.5],
-            [[[[0.9] * 4, [0.9] * 4]]],
+            [[[[0.9] * 4, [0.1, 0.9, 0.9, 0.9]]]],
             gt_dataset,
             dt_dataset,
             [1],
@@ -326,12 +326,12 @@ class TestBaseCoco(unittest.TestCase):
         self.assertEqual(
             evaluation.__getstate__(),
             (
-                [14, 11],
-                [22, 21, 0, 0],
+                [14, 13],
+                [0, 21, 0, 22],
                 [0.9, 0.8],
                 [False, False, True, True],
-                [False, False],
-                [(21, 14, 0.9), (22, 11, 0.9)],
+                [False, True],
+                [(21, 14, 0.9), (22, 13, 0.9)],
             ),
         )
 
