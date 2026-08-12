@@ -33,3 +33,16 @@ lint.mccabe.max-complexity = 10
 # Use Google-style docstrings.
 lint.pydocstyle.convention = "google"
 exclude = ["examples"]
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "slow: extensive cross-backend comparison tests",
+]
+filterwarnings = [
+  "default::DeprecationWarning",
+  "default::PendingDeprecationWarning",
+  "default::RuntimeWarning",
+  "error::pytest.PytestUnraisableExceptionWarning",
+]

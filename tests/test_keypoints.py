@@ -40,6 +40,8 @@ class TestKeypointsMetric(TestCase):
 
     @parameterized.expand([(COCO, COCOeval_faster), (origCOCO, origCOCOeval)])
     def test_evaluate(self, coco_cls, cocoeval_cls):
+        """Compare keypoint evaluation after both evaluators summarize
+        results."""
         if coco_cls is None:
             raise unittest.SkipTest("Skipping pycocotools test.")
 
@@ -53,12 +55,20 @@ class TestKeypointsMetric(TestCase):
         cocoEval.evaluate()
         cocoEval.accumulate()
 
-        if cocoeval_cls is COCOeval_faster:
-            print(str(cocoEval))
-        else:
-            cocoEval.summarize()
+        cocoEval.summarize()
 
         self.assertListEqual(cocoEval.stats.tolist(), self.results)
+
+    def test_evaluate_repr(self):
+        """Smoke-test the faster evaluator string representation
+        independently."""
+        coco_gt = COCO(self.gt_file)
+        coco_dt = coco_gt.loadRes(self.dt_file)
+        coco_eval = COCOeval_faster(coco_gt, coco_dt, "keypoints")
+        coco_eval.evaluate()
+        coco_eval.accumulate()
+
+        self.assertIn("COCOeval_faster", str(coco_eval))
 
     def test_evaluate_bad_config(self):
         cocoGt = COCO(self.gt_file)

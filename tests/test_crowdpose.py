@@ -24,6 +24,8 @@ class TestCrowdpose(unittest.TestCase):
             self.dt_file = os.path.join(os.path.dirname(__file__), self.dt_file)
 
     def test_crowdpose_eval(self):
+        """Keep the CrowdPose regression metrics within numeric tolerance."""
+        # Regression pin, recorded 2026-07-22 against faster_coco_eval 1.7.2.
         stats_as_dict = {
             "AP_all": 0.7877215935879303,
             "AP_50": 0.9881188118811886,
@@ -48,7 +50,8 @@ class TestCrowdpose(unittest.TestCase):
         cocoEval.accumulate()
         cocoEval.summarize()
 
-        self.assertAlmostEqual(cocoEval.stats_as_dict, stats_as_dict, places=10)
+        for key, expected_value in stats_as_dict.items():
+            self.assertAlmostEqual(cocoEval.stats_as_dict[key], expected_value, places=10, msg=key)
 
 
 if __name__ == "__main__":

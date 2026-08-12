@@ -1,5 +1,6 @@
 import unittest
 from copy import deepcopy
+from importlib.util import find_spec
 from unittest import TestCase
 
 from parameterized import parameterized
@@ -12,6 +13,10 @@ try:
     from torchmetrics.detection.mean_ap import MeanAveragePrecision
 except ImportError:
     raise unittest.SkipTest("Skipping all tests for torchmetrics.")
+
+_AVAILABLE_BACKENDS = ["faster_coco_eval"]
+if find_spec("pycocotools") is not None:
+    _AVAILABLE_BACKENDS.append("pycocotools")
 
 # fmt: off
 _inputs = {
@@ -229,32 +234,38 @@ class TestTorchmetricsLib(TestCase):
         self.assertDictEqual(result, self.valid_result)
 
     def test_segm_iou_empty_gt_mask(self):
-        """Test empty ground truths."""
+        """Validate deterministic metrics when the ground-truth mask is
+        empty."""
+        torch.manual_seed(42)
         backend = "faster_coco_eval"
         metric = MeanAveragePrecision(iou_type="segm", backend=backend)
         metric.update(
             [
                 {
-                    "masks": torch.randint(0, 1, (1, 10, 10)).bool(),
+                    "masks": torch.randint(0, 2, (1, 10, 10)).bool(),
                     "scores": Tensor([0.5]),
                     "labels": IntTensor([4]),
                 }
             ],
             [{"masks": Tensor([]), "labels": IntTensor([])}],
         )
-        metric.compute()
+        result = metric.compute()
 
-    @parameterized.expand([False, True])
-    def test_average_argument(self, class_metrics):
+        self.assertIsInstance(result, dict)
+        torch.testing.assert_close(result["map"], torch.tensor(-1.0))
+        torch.testing.assert_close(result["mar_100"], torch.tensor(-1.0))
+        self.assertTrue(torch.equal(result["classes"].reshape(-1), torch.tensor([4], dtype=torch.int32)))
+
+    @parameterized.expand([
+        (backend, class_metrics) for backend in _AVAILABLE_BACKENDS for class_metrics in (False, True)
+    ])
+    def test_average_argument(self, backend, class_metrics):
         """Test that average argument works.
 
         Calculating macro on inputs that only have one label should be
         the same as micro. Calculating class metrics should be the same
         regardless of average argument.
         """
-        backend = "pycocotools"
-        backend = "faster_coco_eval"
-
         if class_metrics:
             _preds = _inputs["preds"]
             _target = _inputs["target"]

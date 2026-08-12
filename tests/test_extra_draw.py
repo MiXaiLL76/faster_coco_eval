@@ -1,4 +1,5 @@
 import os
+import tempfile
 import unittest
 from copy import deepcopy
 
@@ -24,8 +25,9 @@ from faster_coco_eval.extra.draw import (
 class DummyCOCO:
     """Minimal COCO mock for tests."""
 
-    def __init__(self):
-        self.imgs = {1: {"file_name": "test.jpg", "width": 100, "height": 100}}
+    def __init__(self, image_path):
+        """Build a minimal COCO object pointing at the test image."""
+        self.imgs = {1: {"file_name": image_path, "width": 100, "height": 100}}
         self.imgToAnns = {1: [{"id": 1, "bbox": [10, 10, 20, 20], "category_id": 1}]}
         self.cats = {1: {"id": 1, "name": "class1", "skeleton": []}}
 
@@ -34,16 +36,17 @@ class TestExtraDraw(unittest.TestCase):
     maxDiff = None
 
     def setUp(self):
-        self.dummy_coco = DummyCOCO()
+        """Create an isolated image fixture for the draw tests."""
+        self._temp_dir = tempfile.TemporaryDirectory()
+        self.image_path = os.path.join(self._temp_dir.name, "test.jpg")
+        self.dummy_coco = DummyCOCO(self.image_path)
         # Create a fake jpg file for testing
         img = Image.new("RGB", (100, 100), color=(255, 255, 255))
-        img.save("test.jpg")
+        img.save(self.image_path)
 
     def tearDown(self):
-        try:
-            os.remove("test.jpg")
-        except Exception:
-            pass
+        """Remove the isolated image fixture."""
+        self._temp_dir.cleanup()
 
     def test_generate_ann_polygon_bbox(self):
         ann = {"bbox": [10, 10, 20, 20], "category_id": 1}
