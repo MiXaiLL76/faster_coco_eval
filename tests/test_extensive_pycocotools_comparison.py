@@ -428,11 +428,10 @@ class TestExtensivePycocotoolsComparison(TestCase):
     def test_edge_case_no_predictions(self):
         """Test evaluation with no predictions.
 
-        Note: Both pycocotools and faster_coco_eval have issues with truly empty
-        prediction lists (loadRes() fails on empty lists when trying to inspect the
-        first element to determine annotation type). This is a known limitation in
-        the COCO API design. We use a very low-scoring prediction instead to test
-        the low-prediction scenario.
+        Note: pycocotools still rejects truly empty prediction lists when it
+        inspects the first element to determine annotation type. The parity
+        comparison therefore uses a very low-scoring prediction; faster_coco_eval
+        separately accepts empty results.
         """
         if origCOCO is None:
             raise unittest.SkipTest("pycocotools not available")
@@ -448,8 +447,8 @@ class TestExtensivePycocotoolsComparison(TestCase):
         with open(gt_file, "w") as f:
             json.dump(coco_data, f)
 
-        # Use a very low score prediction instead of empty list
-        # (Both APIs crash on truly empty prediction lists)
+        # Use a very low score prediction so this comparison remains compatible
+        # with pycocotools.
         predictions = [
             {
                 "image_id": coco_data["images"][0]["id"],

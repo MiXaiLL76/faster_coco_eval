@@ -155,22 +155,25 @@ class COCO:
 
     def getAnnIds(
         self,
-        imgIds: List[int] = [],
-        catIds: List[int] = [],
-        areaRng: List[float] = [],
-        iscrowd: bool = None,
-    ) -> List[int]:
+        imgIds: list[int] | None = None,
+        catIds: list[int] | None = None,
+        areaRng: list[float] | None = None,
+        iscrowd: bool | None = None,
+    ) -> list[int]:
         """Get ann ids that satisfy given filter conditions.
 
         Args:
-            imgIds (List[int], optional): Get anns for given images. Defaults to [].
-            catIds (List[int], optional): Get anns for given categories. Defaults to [].
-            areaRng (List[float], optional): Get anns for given area range (e.g. [0, inf]). Defaults to [].
+            imgIds (List[int], optional): Get anns for given images. Defaults to None.
+            catIds (List[int], optional): Get anns for given categories. Defaults to None.
+            areaRng (List[float], optional): Get anns for given area range (e.g. [0, inf]). Defaults to None.
             iscrowd (bool, optional): Get anns for given crowd label (False or True). Defaults to None.
 
         Returns:
             List[int]: Integer array of ann ids that satisfy the criteria.
         """
+        imgIds = [] if imgIds is None else imgIds
+        catIds = [] if catIds is None else catIds
+        areaRng = [] if areaRng is None else areaRng
         imgIds = set(imgIds if _isArrayLike(imgIds) else [imgIds])
         catIds = set(catIds if _isArrayLike(catIds) else [catIds])
 
@@ -214,20 +217,23 @@ class COCO:
 
     def getCatIds(
         self,
-        catNms: List[str] = [],
-        supNms: List[str] = [],
-        catIds: List[int] = [],
-    ) -> List[int]:
+        catNms: list[str] | None = None,
+        supNms: list[str] | None = None,
+        catIds: list[int] | None = None,
+    ) -> list[int]:
         """Get category ids that satisfy given filter conditions.
 
         Args:
-            catNms (List[str], optional): Get categories for given cat names. Defaults to [].
-            supNms (List[str], optional): Get categories for given supercategory names. Defaults to [].
-            catIds (List[int], optional): Get categories for given ids. Defaults to [].
+            catNms (List[str], optional): Get categories for given cat names. Defaults to None.
+            supNms (List[str], optional): Get categories for given supercategory names. Defaults to None.
+            catIds (List[int], optional): Get categories for given ids. Defaults to None.
 
         Returns:
             List[int]: Integer array of cat ids.
         """
+        catNms = [] if catNms is None else catNms
+        supNms = [] if supNms is None else supNms
+        catIds = [] if catIds is None else catIds
         catNms = set(catNms if _isArrayLike(catNms) else [catNms])
         supNms = set(supNms if _isArrayLike(supNms) else [supNms])
         catIds = set(catIds if _isArrayLike(catIds) else [catIds])
@@ -249,16 +255,18 @@ class COCO:
         ids = [cat["id"] for cat in cats]
         return ids
 
-    def getImgIds(self, imgIds: List[int] = [], catIds: List[int] = []) -> List[int]:
+    def getImgIds(self, imgIds: list[int] | None = None, catIds: list[int] | None = None) -> list[int]:
         """Get image ids that satisfy given filter conditions.
 
         Args:
-            imgIds (List[int], optional): Get images for given ids. Defaults to [].
-            catIds (List[int], optional): Get images with all given categories. Defaults to [].
+            imgIds (List[int], optional): Get images for given ids. Defaults to None.
+            catIds (List[int], optional): Get images with all given categories. Defaults to None.
 
         Returns:
             List[int]: Integer array of img ids.
         """
+        imgIds = [] if imgIds is None else imgIds
+        catIds = [] if catIds is None else catIds
         imgIds = imgIds if _isArrayLike(imgIds) else [imgIds]
         catIds = catIds if _isArrayLike(catIds) else [catIds]
 
@@ -273,43 +281,46 @@ class COCO:
                     ids &= set(self.catToImgs[catId])
         return list(ids)
 
-    def loadAnns(self, ids: Union[List[int], int] = []) -> List[dict]:
+    def loadAnns(self, ids: list[int] | int | None = None) -> list[dict]:
         """Load annotations with the specified ids.
 
         Args:
-            ids (Union[List[int], int], optional): Integer ids specifying annotations. Defaults to [].
+            ids (Union[List[int], int], optional): Integer ids specifying annotations. Defaults to None.
 
         Returns:
             List[dict]: Loaded annotation objects.
         """
+        ids = [] if ids is None else ids
         if _isArrayLike(ids):
             return [self.anns[i] for i in ids]
         elif type(ids) is int:
             return [self.anns[ids]]
 
-    def loadCats(self, ids: Union[List[int], int] = []) -> List[dict]:
+    def loadCats(self, ids: list[int] | int | None = None) -> list[dict]:
         """Load categories with the specified ids.
 
         Args:
-            ids (Union[List[int], int], optional): Integer ids specifying categories. Defaults to [].
+            ids (Union[List[int], int], optional): Integer ids specifying categories. Defaults to None.
 
         Returns:
             List[dict]: Loaded category objects.
         """
+        ids = [] if ids is None else ids
         if _isArrayLike(ids):
             return [self.cats[i] for i in ids]
         elif type(ids) is int:
             return [self.cats[ids]]
 
-    def loadImgs(self, ids: Union[List[int], int] = []) -> List[dict]:
+    def loadImgs(self, ids: list[int] | int | None = None) -> list[dict]:
         """Load images with the specified ids.
 
         Args:
-            ids (Union[List[int], int], optional): Integer ids specifying images. Defaults to [].
+            ids (Union[List[int], int], optional): Integer ids specifying images. Defaults to None.
 
         Returns:
             List[dict]: Loaded image objects.
         """
+        ids = [] if ids is None else ids
         if _isArrayLike(ids):
             return [self.imgs[i] for i in ids]
         elif type(ids) is int:
@@ -370,6 +381,14 @@ class COCO:
 
         if min_score != 0.0:
             anns = [ann for ann in anns if ann.get("score", 1) >= min_score]
+
+        if not anns:
+            # Preserve the source image/category metadata so an empty result is evaluable.
+            res.dataset["annotations"] = []
+            res.dataset["categories"] = copy.deepcopy(self.dataset.get("categories", []))
+            res.createIndex()
+            self.print_function(f"Done (t={time.time() - tic:0.2f}s)")
+            return res
 
         annsImgIds = [ann["image_id"] for ann in anns]
         assert set(annsImgIds) == (set(annsImgIds) & set(self.getImgIds())), (
@@ -508,7 +527,7 @@ class COCO:
             for ann in anns:
                 print(ann["caption"])
 
-    def download(self, tarDir=None, imgIds=[]):
+    def download(self, tarDir=None, imgIds: list[int] | None = None):
         """Deprecated: Download images (no longer supported).
 
         Args:
@@ -589,17 +608,17 @@ class COCO:
 
     def get_ann_ids(
         self,
-        img_ids: List[int] = [],
-        cat_ids: List[int] = [],
-        area_rng: List[float] = [],
-        iscrowd: bool = None,
-    ) -> List[int]:
+        img_ids: list[int] | None = None,
+        cat_ids: list[int] | None = None,
+        area_rng: list[float] | None = None,
+        iscrowd: bool | None = None,
+    ) -> list[int]:
         """Get ann ids that satisfy given filter conditions.
 
         Args:
-            img_ids (List[int], optional): Get anns for given imgs. Defaults to [].
-            cat_ids (List[int], optional): Get anns for given cats. Defaults to [].
-            area_rng (List[float], optional): Get anns with area less than this. Defaults to [].
+            img_ids (List[int], optional): Get anns for given imgs. Defaults to None.
+            cat_ids (List[int], optional): Get anns for given cats. Defaults to None.
+            area_rng (List[float], optional): Get anns with area less than this. Defaults to None.
             iscrowd (bool, optional): Get anns for given crowd label. Defaults to None.
 
         Returns:
@@ -609,28 +628,28 @@ class COCO:
 
     def get_cat_ids(
         self,
-        cat_names: List[str] = [],
-        sup_names: List[str] = [],
-        cat_ids: List[int] = [],
-    ) -> List[int]:
+        cat_names: list[str] | None = None,
+        sup_names: list[str] | None = None,
+        cat_ids: list[int] | None = None,
+    ) -> list[int]:
         """Get cat ids that satisfy given filter conditions.
 
         Args:
-            cat_names (List[str], optional): Get cats for given names. Defaults to [].
-            sup_names (List[str], optional): Get cats for given supercategory names. Defaults to [].
-            cat_ids (List[int], optional): Get cats for given ids. Defaults to [].
+            cat_names (List[str], optional): Get cats for given names. Defaults to None.
+            sup_names (List[str], optional): Get cats for given supercategory names. Defaults to None.
+            cat_ids (List[int], optional): Get cats for given ids. Defaults to None.
 
         Returns:
             List[int]: Integer array of cat ids.
         """
         return self.getCatIds(cat_names, sup_names, cat_ids)
 
-    def get_img_ids(self, img_ids: List[int] = [], cat_ids: List[int] = []) -> List[int]:
+    def get_img_ids(self, img_ids: list[int] | None = None, cat_ids: list[int] | None = None) -> list[int]:
         """Get img ids that satisfy given filter conditions.
 
         Args:
-            img_ids (List[int], optional): Get imgs for given ids. Defaults to [].
-            cat_ids (List[int], optional): Get imgs with all given cats. Defaults to [].
+            img_ids (List[int], optional): Get imgs for given ids. Defaults to None.
+            cat_ids (List[int], optional): Get imgs with all given cats. Defaults to None.
 
         Returns:
             List[int]: Integer array of img ids.
