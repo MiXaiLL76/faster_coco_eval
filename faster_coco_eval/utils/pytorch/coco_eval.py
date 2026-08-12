@@ -20,7 +20,7 @@ import contextlib
 import copy
 import os
 import pickle
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import numpy as np
 import torch
@@ -42,7 +42,7 @@ class FasterCocoEvaluator:
     def __init__(
         self,
         coco_gt: COCO,
-        iou_types: List[str],
+        iou_types: list[str],
         lvis_style: bool = False,
         ranges={
             "small": [0**2, 32**2],
@@ -66,7 +66,7 @@ class FasterCocoEvaluator:
 
         self.iou_types = iou_types
         self.ranges = ranges
-        self.coco_eval: Dict[str, COCOeval_faster] = {}
+        self.coco_eval: dict[str, COCOeval_faster] = {}
         for iou_type in iou_types:
             self.coco_eval[iou_type] = COCOeval_faster(
                 coco_gt,
@@ -101,7 +101,7 @@ class FasterCocoEvaluator:
         self.img_ids = []
         self.eval_imgs = {k: [] for k in self.iou_types}
 
-    def update(self, predictions: Dict[Any, Any]) -> None:
+    def update(self, predictions: dict[Any, Any]) -> None:
         """Updates the evaluator with new predictions.
 
         Args:
@@ -166,7 +166,7 @@ class FasterCocoEvaluator:
             coco_eval.summarize()
             self.stats_as_dict[iou_type] = coco_eval.stats_as_dict
 
-    def prepare(self, predictions: Dict[Any, Any], iou_type: str) -> List[Dict[str, Any]]:
+    def prepare(self, predictions: dict[Any, Any], iou_type: str) -> list[dict[str, Any]]:
         """Prepares predictions for COCO evaluation.
 
         Args:
@@ -185,7 +185,7 @@ class FasterCocoEvaluator:
         else:
             raise ValueError(f"Unknown iou type {iou_type}")
 
-    def prepare_for_coco_detection(self, predictions: Dict[Any, Any]) -> List[Dict[str, Any]]:
+    def prepare_for_coco_detection(self, predictions: dict[Any, Any]) -> list[dict[str, Any]]:
         """Converts bounding box predictions to COCO detection format.
 
         Args:
@@ -218,7 +218,7 @@ class FasterCocoEvaluator:
             ])
         return coco_results
 
-    def prepare_for_coco_segmentation(self, predictions: Dict[Any, Any]) -> List[Dict[str, Any]]:
+    def prepare_for_coco_segmentation(self, predictions: dict[Any, Any]) -> list[dict[str, Any]]:
         """Converts mask predictions to COCO segmentation format.
 
         Args:
@@ -261,7 +261,7 @@ class FasterCocoEvaluator:
             ])
         return coco_results
 
-    def prepare_for_coco_keypoint(self, predictions: Dict[Any, Any]) -> List[Dict[str, Any]]:
+    def prepare_for_coco_keypoint(self, predictions: dict[Any, Any]) -> list[dict[str, Any]]:
         """Converts keypoint predictions to COCO keypoint format.
 
         Args:
@@ -312,7 +312,7 @@ def convert_to_xywh(boxes: torch.Tensor) -> torch.Tensor:
     return torch.stack((xmin, ymin, xmax - xmin, ymax - ymin), dim=1)
 
 
-def all_gather(data: Any, world_size: int = None) -> List[Any]:
+def all_gather(data: Any, world_size: int = None) -> list[Any]:
     """Run all_gather on arbitrary picklable data (not necessarily tensors).
 
     Args:
@@ -365,9 +365,7 @@ def all_gather(data: Any, world_size: int = None) -> List[Any]:
     return data_list
 
 
-def merge(
-    img_ids: Union[List[Any], np.ndarray], eval_imgs: List[Any], world_size: int = None
-) -> Tuple[List[Any], List[Any]]:
+def merge(img_ids: list[Any] | np.ndarray, eval_imgs: list[Any], world_size: int = None) -> tuple[list[Any], list[Any]]:
     """Merges evaluation results from all processes.
 
     Args:

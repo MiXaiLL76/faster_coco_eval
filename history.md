@@ -3,6 +3,8 @@
 ## Unreleased
 
 - [x] **breaking change**: Support Python 3.10 and later only.
+- [x] Restore IEEE floating-point semantics by removing compiler fast-math assumptions; numerical edge cases involving non-finite values or signed zero may change.
+- [x] Include runtime requirements and project metadata in source distributions; missing requirement files now fail loudly during packaging.
 
 ## v1.7.2
 

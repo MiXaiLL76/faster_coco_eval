@@ -18,6 +18,7 @@ class FakeFigure:
     def __init__(self, data=None, layout=None, **kwargs):
         self.data = data
         self.layout = layout
+
     def update_traces(self, **kwargs):
         self.trace_updates = kwargs
 

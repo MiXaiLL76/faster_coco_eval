@@ -39,7 +39,8 @@ class FakeFigure:
 
 
 def test_generate_ann_polygon_does_not_mutate_segmentation(monkeypatch):
-    """Close polygon coordinates in a temporary list for repeatable rendering."""
+    """Close polygon coordinates in a temporary list for repeatable
+    rendering."""
     monkeypatch.setattr(draw, "go", SimpleNamespace(Scatter=FakeScatter))
     monkeypatch.setattr(draw, "plotly_available", True)
     segmentation = [[10, 10, 30, 10, 30, 30, 10, 30]]

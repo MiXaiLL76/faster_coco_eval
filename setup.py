@@ -94,6 +94,8 @@ def parse_requirements(fname="requirements/runtime.txt", with_version=True):
                         parts.append(";" + platform_deps)
                 item = "".join(parts)
                 yield item
+        else:
+            raise FileNotFoundError(f"Requirements file not found: {require_fpath}")
 
     packages = list(gen_packages_items())
     return packages
@@ -113,9 +115,9 @@ def get_extensions(version_info):
 
     if not WIN:
         kwargs["extra_compile_args"] = [
+            # Keep IEEE floating-point behavior while retaining portable optimization.
+            "-O3",
             "-fPIC",
-            "-ffinite-math-only",
-            "-fno-signed-zeros",
             "-ftree-vectorize",
             "-funroll-loops",
         ]

@@ -17,22 +17,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         # for private repo - first is the checkout step, which needs to use unlimited fetch depth for pushing
         #with:
         #  fetch-depth: 0
       - name: 🐍 Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.10"
       - name: 🔑 Compute pre-commit cache key
         run: echo "PY=$(python -VV 2>&1 | sha256sum | cut -d' ' -f1)" >> "$GITHUB_ENV"
       - name: 💾 Cache pre-commit environments
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.cache/pre-commit
           key: pre-commit|${{ runner.os }}|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
-        uses: pre-commit/action@v3.0.1
+      - name: Run pre-commit
+        uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
         # this action also provides an additional behaviour when used in private repositories
         # when configured with a GitHub token, the action will push back fixes to the pull request branch
         #with:

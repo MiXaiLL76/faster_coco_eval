@@ -9,7 +9,7 @@ import pathlib
 import time
 import warnings
 from collections import defaultdict
-from typing import Callable, List, Optional, Union
+from collections.abc import Callable
 
 import numpy as np
 
@@ -34,7 +34,7 @@ def _isArrayLike(obj):
 class COCO:
     def __init__(
         self,
-        annotation_file: Optional[Union[str, dict, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath]] = None,
+        annotation_file: str | dict | os.PathLike | pathlib.PosixPath | pathlib.WindowsPath | None = None,
         use_deepcopy: bool = False,
         print_function: Callable = logger.debug,
     ):
@@ -328,8 +328,8 @@ class COCO:
 
     @staticmethod
     def load_json(
-        json_file: Union[str, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath, dict, list],
-        use_deepcopy: Optional[bool] = False,
+        json_file: str | os.PathLike | pathlib.PosixPath | pathlib.WindowsPath | dict | list,
+        use_deepcopy: bool | None = False,
     ) -> dict:
         """Load a json file.
 
@@ -352,7 +352,7 @@ class COCO:
 
     def loadRes(
         self,
-        resFile: Union[str, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath, dict, list, np.ndarray],
+        resFile: str | os.PathLike | pathlib.PosixPath | pathlib.WindowsPath | dict | list | np.ndarray,
         min_score: float = 0.0,
     ) -> "COCO":
         """Load result file and return a result api object.
@@ -434,7 +434,7 @@ class COCO:
         res.createIndex()
         return res
 
-    def showAnns(self, anns: List[dict], draw_bbox: Optional[bool] = False):
+    def showAnns(self, anns: list[dict], draw_bbox: bool | None = False):
         """Display the specified annotations.
 
         Args:
@@ -539,7 +539,7 @@ class COCO:
         """
         warnings.warn("download deprecated in 1.3.0", DeprecationWarning)
 
-    def loadNumpyAnnotations(self, data: np.ndarray) -> List[dict]:
+    def loadNumpyAnnotations(self, data: np.ndarray) -> list[dict]:
         """Convert result data from array to anns.
 
         Args:
@@ -656,7 +656,7 @@ class COCO:
         """
         return self.getImgIds(img_ids, cat_ids)
 
-    def load_anns(self, ids: List[int]) -> List[dict]:
+    def load_anns(self, ids: list[int]) -> list[dict]:
         """Load anns with the specified ids.
 
         Args:
@@ -667,7 +667,7 @@ class COCO:
         """
         return self.loadAnns(ids)
 
-    def load_cats(self, ids: List[int]) -> List[dict]:
+    def load_cats(self, ids: list[int]) -> list[dict]:
         """Load cats with the specified ids.
 
         Args:
@@ -678,7 +678,7 @@ class COCO:
         """
         return self.loadCats(ids)
 
-    def load_imgs(self, ids: List[int]) -> List[dict]:
+    def load_imgs(self, ids: list[int]) -> list[dict]:
         """Load imgs with the specified ids.
 
         Args:
@@ -783,7 +783,7 @@ class COCO:
         for key, val in self.to_dict().items():  # noqa: UP028
             yield key, val
 
-    def dump(self, output_file: Union[str, os.PathLike]):
+    def dump(self, output_file: str | os.PathLike):
         """Dump annotations to a json file.
 
         Args:

@@ -5,7 +5,8 @@ from faster_coco_eval import COCO
 
 
 class TestOrphanAnnotations(unittest.TestCase):
-    """Verify annotations remain consistently indexed without image metadata."""
+    """Verify annotations remain consistently indexed without image
+    metadata."""
 
     def test_orphan_annotation_is_available_from_every_annotation_index(self):
         """Keep orphan annotations loadable and discoverable by category."""

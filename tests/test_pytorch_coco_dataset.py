@@ -21,7 +21,8 @@ def test_import_does_not_patch_pycocotools():
 
 
 def test_constructor_patches_before_base_parse_and_reuses_base_coco():
-    """Initialize the compatibility module before torchvision parses annotations."""
+    """Initialize the compatibility module before torchvision parses
+    annotations."""
 
     def fake_base_init(dataset, *args, **kwargs):
         """Provide the COCO object that torchvision normally creates."""
