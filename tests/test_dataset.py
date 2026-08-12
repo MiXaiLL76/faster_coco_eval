@@ -293,6 +293,78 @@ class TestBaseCoco(unittest.TestCase):
 
         self.assertEqual(len(evaluations), 1)
 
+    def test_evaluate_images_matches_independent_image_category_calls(self):
+        """Match multi-pair evaluation to the equivalent independent calls."""
+        gt_dataset = _C.Dataset()
+        dt_dataset = _C.Dataset()
+        image_ids = [1, 2]
+        category_ids = [1, 2]
+        ious_by_pair = {}
+
+        for image_id in image_ids:
+            for category_id in category_ids:
+                annotation_offset = image_id * 100 + category_id * 10
+                for index in range(2):
+                    gt_dataset.append(
+                        image_id,
+                        category_id,
+                        {
+                            "id": annotation_offset + index,
+                            "area": 25.0 + index * 100.0,
+                            "ignore": False,
+                            "is_crowd": False,
+                        },
+                    )
+                    dt_dataset.append(
+                        image_id,
+                        category_id,
+                        {
+                            "id": 1000 + annotation_offset + index,
+                            "score": 0.9 - index * 0.1,
+                            "area": 25.0 + index * 100.0,
+                            "ignore": False,
+                            "is_crowd": False,
+                        },
+                    )
+                ious_by_pair[image_id, category_id] = [[0.9, 0.1], [0.2, 0.8]]
+
+        area_ranges = [[0.0, float("inf")], [0.0, 50.0]]
+        all_ious = [[ious_by_pair[image_id, category_id] for category_id in category_ids] for image_id in image_ids]
+        combined = _C.COCOevalEvaluateImages(
+            area_ranges,
+            100,
+            [0.5, 0.75],
+            all_ious,
+            gt_dataset,
+            dt_dataset,
+            image_ids,
+            category_ids,
+            True,
+        )
+
+        independent = {}
+        for image_id in image_ids:
+            for category_id in category_ids:
+                independent[image_id, category_id] = _C.COCOevalEvaluateImages(
+                    area_ranges,
+                    100,
+                    [0.5, 0.75],
+                    [[ious_by_pair[image_id, category_id]]],
+                    gt_dataset,
+                    dt_dataset,
+                    [image_id],
+                    [category_id],
+                    True,
+                )
+
+        expected = [
+            independent[image_id, category_id][area_index].__getstate__()
+            for category_id in category_ids
+            for area_index in range(len(area_ranges))
+            for image_id in image_ids
+        ]
+        self.assertEqual([evaluation.__getstate__() for evaluation in combined], expected)
+
     def test_evaluate_images_validates_merged_category_iou_shape(self):
         """Validate IoU dimensions after categories are merged."""
         gt_dataset = _C.Dataset()

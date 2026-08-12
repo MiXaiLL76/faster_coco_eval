@@ -222,7 +222,7 @@ void LightweightDataset::clear_cache_entry(double img_id, double cat_id) const {
 std::vector<std::vector<std::vector<InstanceAnnotation>>>
 LightweightDataset::get_cpp_instances(const std::vector<double>& img_ids,
                                       const std::vector<double>& cat_ids,
-                                      const bool& useCats) {
+                                      const bool& useCats) const {
         std::vector<std::vector<std::vector<InstanceAnnotation>>> result;
         result.reserve(img_ids.size());  // Reserve space for image indices
 
