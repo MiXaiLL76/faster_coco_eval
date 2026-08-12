@@ -248,6 +248,81 @@ class TestBaseCoco(unittest.TestCase):
         # Verify C++ annotation object exists and is correct type
         self.assertIsInstance(cpp_ann, _C.InstanceAnnotation)
 
+    @parameterized.expand([
+        ("missing_iou_rows", [[[]]]),
+        ("missing_iou_columns", [[[[]]]]),
+    ])
+    def test_evaluate_images_rejects_iou_shape_mismatch(self, _, ious):
+        """Reject IoU rows that do not match the dataset instance counts."""
+        gt_dataset = _C.Dataset()
+        dt_dataset = _C.Dataset()
+        gt_dataset.append(1, 1, {"id": 1, "area": 1.0, "ignore": False, "is_crowd": False})
+        dt_dataset.append(1, 1, {"id": 2, "score": 1.0, "area": 1.0, "ignore": False, "is_crowd": False})
+
+        with self.assertRaisesRegex(RuntimeError, "image_category_ious"):
+            _C.COCOevalEvaluateImages(
+                [[0.0, float("inf")]],
+                100,
+                [0.5],
+                ious,
+                gt_dataset,
+                dt_dataset,
+                [1],
+                [1],
+                True,
+            )
+
+    def test_evaluate_images_accepts_empty_ground_truth_iou_shape(self):
+        """Accept the empty IoU result used when an image has no ground
+        truth."""
+        gt_dataset = _C.Dataset()
+        dt_dataset = _C.Dataset()
+        dt_dataset.append(1, 1, {"id": 2, "score": 1.0, "area": 1.0, "ignore": False, "is_crowd": False})
+
+        evaluations = _C.COCOevalEvaluateImages(
+            [[0.0, float("inf")]],
+            100,
+            [0.5],
+            [[[]]],
+            gt_dataset,
+            dt_dataset,
+            [1],
+            [1],
+            True,
+        )
+
+        self.assertEqual(len(evaluations), 1)
+
+    def test_evaluate_images_validates_merged_category_iou_shape(self):
+        """Validate IoU dimensions after categories are merged."""
+        gt_dataset = _C.Dataset()
+        dt_dataset = _C.Dataset()
+        for category_id, annotation_id in [(1, 1), (2, 2)]:
+            gt_dataset.append(
+                1,
+                category_id,
+                {"id": annotation_id, "area": 1.0, "ignore": False, "is_crowd": False},
+            )
+            dt_dataset.append(
+                1,
+                category_id,
+                {"id": annotation_id + 10, "score": 1.0, "area": 1.0, "ignore": False, "is_crowd": False},
+            )
+
+        evaluations = _C.COCOevalEvaluateImages(
+            [[0.0, float("inf")]],
+            100,
+            [0.5],
+            [[[[0.5, 0.5], [0.5, 0.5]]]],
+            gt_dataset,
+            dt_dataset,
+            [1],
+            [1, 2],
+            False,
+        )
+
+        self.assertEqual(len(evaluations), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

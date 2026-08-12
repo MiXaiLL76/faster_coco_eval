@@ -8,6 +8,9 @@
 #include <pybind11/stl_bind.h>
 
 #include <cmath>
+#include <limits>
+#include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace py = pybind11;
@@ -19,14 +22,41 @@ namespace mask_api {
 namespace Mask {
 
 class RLE {
+       private:
+        void validate() const {
+                if (m != cnts.size()) {
+                        throw std::range_error(
+                            "RLE run count does not match cnts.size().");
+                }
+                if (w != 0 && h > std::numeric_limits<uint64_t>::max() / w) {
+                        throw std::range_error(
+                            "RLE dimensions overflow the pixel count.");
+                }
+
+                const uint64_t max_pixels = h * w;
+                uint64_t total = 0;
+                for (const uint64_t count : cnts) {
+                        if (count > max_pixels - total) {
+                                throw std::range_error(
+                                    "RLE counts exceed the mask dimensions.");
+                        }
+                        total += count;
+                }
+        }
+
        public:
         RLE() : h{0}, w{0}, m{0} {}
 
         RLE(uint64_t h, uint64_t w, uint64_t m, std::vector<uint64_t> cnts)
-            : h{h}, w{w}, m{m}, cnts{cnts} {}
+            : h{h}, w{w}, m{m}, cnts{std::move(cnts)} {
+                validate();
+        }
 
         RLE(uint64_t h, uint64_t w, std::vector<uint64_t> cnts)
-            : h{h}, w{w}, m{1}, cnts{cnts} {}
+            : h{h}, w{w}, m{0}, cnts{std::move(cnts)} {
+                m = this->cnts.size();
+                validate();
+        }
 
         uint64_t h;
         uint64_t w;
