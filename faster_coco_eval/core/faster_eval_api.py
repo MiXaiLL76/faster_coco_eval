@@ -4,7 +4,9 @@
 import copy
 import itertools
 import logging
+import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 
@@ -52,9 +54,16 @@ class COCOeval_faster(COCOevalBase):
         else:
             raise ValueError(f"p.iouType must be segm, bbox, boundary or keypoints. Get {p.iouType}")
 
-        self.ious = {
-            (imgId, catId): computeIoU(imgId, catId) for (imgId, catId) in itertools.product(p.imgIds, catIds)
-        }  # bottleneck
+        iou_pairs = list(itertools.product(p.imgIds, catIds))
+        max_workers = min(os.cpu_count() or 1, 8, len(iou_pairs))
+        if p.compute_rle and max_workers > 1:
+            # Each task owns a distinct result key; consuming futures in input
+            # order preserves the deterministic dictionary layout.
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                future_ious = {pair: executor.submit(computeIoU, *pair) for pair in iou_pairs}
+                self.ious = {pair: future.result() for pair, future in future_ious.items()}
+        else:
+            self.ious = {pair: computeIoU(*pair) for pair in iou_pairs}
 
         # Memory optimization: pass datasets directly instead of pre-loading all instances
 
