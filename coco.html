@@ -80,6 +80,8 @@
 <li class="toctree-l1"><a class="reference internal" href="coco_eval.html">COCOeval</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faster_eval_api.html">COCOeval_faster</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mask.html">Mask API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extra.html">Extra API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils_pytorch.html">PyTorch Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="history.html">History</a></li>
 </ul>
@@ -195,7 +197,7 @@ categories.</p>
 <dd><p>Dump annotations to a json file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>output_file</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">PathLike</span></code>]</span>) – Path to the output json file.</p>
+<dd class="field-odd"><p><strong>output_file</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> | <code class="xref py py-class docutils literal notranslate"><span class="pre">PathLike</span></code></span>) – Path to the output json file.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -411,7 +413,7 @@ function.</p>
 <dd class="field-even"><p>Converted annotations as a list of dicts.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>]</span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -423,7 +425,7 @@ function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>resFile</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">PathLike</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">PosixPath</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">WindowsPath</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>]</span>) – File name of result file or numpy array.</p></li>
+<li><p><strong>resFile</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> | <code class="xref py py-class docutils literal notranslate"><span class="pre">PathLike</span></code> | <code class="xref py py-class docutils literal notranslate"><span class="pre">PosixPath</span></code> | <code class="xref py py-class docutils literal notranslate"><span class="pre">WindowsPath</span></code> | <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code> | <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> | <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span>) – File name of result file or numpy array.</p></li>
 <li><p><strong>min_score</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Minimum score to consider a result. Defaults to 0.0.</p></li>
 </ul>
 </dd>
@@ -442,13 +444,13 @@ function.</p>
 <dd><p>Load anns with the specified ids.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ids</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – Integer ids specifying anns.</p>
+<dd class="field-odd"><p><strong>ids</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – Integer ids specifying anns.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Loaded annotation objects.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>]</span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -459,13 +461,13 @@ function.</p>
 <dd><p>Load cats with the specified ids.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ids</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – Integer ids specifying cats.</p>
+<dd class="field-odd"><p><strong>ids</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – Integer ids specifying cats.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Loaded category objects.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>]</span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -476,13 +478,13 @@ function.</p>
 <dd><p>Load imgs with the specified ids.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ids</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – Integer ids specifying imgs.</p>
+<dd class="field-odd"><p><strong>ids</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – Integer ids specifying imgs.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Loaded image objects.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>]</span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -494,8 +496,8 @@ function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>json_file</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">PathLike</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">PosixPath</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">WindowsPath</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>]</span>) – Path to the json file or data dict/list.</p></li>
-<li><p><strong>use_deepcopy</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – If True, use deep copy. Defaults to False.</p></li>
+<li><p><strong>json_file</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> | <code class="xref py py-class docutils literal notranslate"><span class="pre">PathLike</span></code> | <code class="xref py py-class docutils literal notranslate"><span class="pre">PosixPath</span></code> | <code class="xref py py-class docutils literal notranslate"><span class="pre">WindowsPath</span></code> | <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code> | <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></span>) – Path to the json file or data dict/list.</p></li>
+<li><p><strong>use_deepcopy</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – If True, use deep copy. Defaults to False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -528,8 +530,8 @@ function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>anns</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>]</span>) – Annotations to display.</p></li>
-<li><p><strong>draw_bbox</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – Whether to display bbox. Defaults to False.</p></li>
+<li><p><strong>anns</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>]</span>) – Annotations to display.</p></li>
+<li><p><strong>draw_bbox</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Whether to display bbox. Defaults to False.</p></li>
 </ul>
 </dd>
 </dl>

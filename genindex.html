@@ -46,6 +46,8 @@
 <li class="toctree-l1"><a class="reference internal" href="coco_eval.html">COCOeval</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faster_eval_api.html">COCOeval_faster</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mask.html">Mask API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extra.html">Extra API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils_pytorch.html">PyTorch Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="history.html">History</a></li>
 </ul>
@@ -78,6 +80,7 @@
 
 <div class="genindex-jumpbox">
  <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
  | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
  | <a href="#E"><strong>E</strong></a>
@@ -90,6 +93,7 @@
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
+ | <a href="#U"><strong>U</strong></a>
  
 </div>
 <h2 id="A">A</h2>
@@ -100,15 +104,41 @@
       <ul>
         <li><a href="faster_eval_api.html#faster_coco_eval.core.COCOeval_faster.accumulate">(faster_coco_eval.core.COCOeval_faster method)</a>
 </li>
+        <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.accumulate">(faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator method)</a>
+</li>
+        <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.accumulate">(faster_coco_eval.utils.pytorch.FasterCocoEvaluator method)</a>
+</li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.coco_eval.all_gather">all_gather() (in module faster_coco_eval.utils.pytorch.coco_eval)</a>
+</li>
       <li><a href="coco.html#faster_coco_eval.core.COCO.annToMask">annToMask() (faster_coco_eval.core.COCO method)</a>
 </li>
       <li><a href="coco.html#faster_coco_eval.core.COCO.annToRLE">annToRLE() (faster_coco_eval.core.COCO method)</a>
 </li>
       <li><a href="mask.html#faster_coco_eval.core.mask.area">area() (in module faster_coco_eval.core.mask)</a>
 </li>
+  </ul></td>
+</tr></table>
+
+<h2 id="B">B</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="extra.html#faster_coco_eval.extra.Curves.build_ced_curve">build_ced_curve() (faster_coco_eval.extra.Curves method)</a>
+
+      <ul>
+        <li><a href="extra.html#faster_coco_eval.extra.curves.Curves.build_ced_curve">(faster_coco_eval.extra.curves.Curves method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="extra.html#faster_coco_eval.extra.Curves.build_curve">build_curve() (faster_coco_eval.extra.Curves method)</a>
+
+      <ul>
+        <li><a href="extra.html#faster_coco_eval.extra.curves.Curves.build_curve">(faster_coco_eval.extra.curves.Curves method)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -121,14 +151,26 @@
 </li>
       <li><a href="coco.html#faster_coco_eval.core.COCO.cat_img_map">cat_img_map (faster_coco_eval.core.COCO property)</a>
 </li>
+      <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.cleanup">cleanup() (faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator method)</a>
+
+      <ul>
+        <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.cleanup">(faster_coco_eval.utils.pytorch.FasterCocoEvaluator method)</a>
+</li>
+      </ul></li>
       <li><a href="coco.html#faster_coco_eval.core.COCO">COCO (class in faster_coco_eval.core)</a>
 </li>
       <li><a href="coco_eval.html#faster_coco_eval.core.cocoeval.COCOeval">COCOeval (class in faster_coco_eval.core.cocoeval)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="faster_eval_api.html#faster_coco_eval.core.COCOeval_faster">COCOeval_faster (class in faster_coco_eval.core)</a>
 </li>
+      <li><a href="extra.html#faster_coco_eval.extra.display.PreviewResults.compute_confusion_matrix">compute_confusion_matrix() (faster_coco_eval.extra.display.PreviewResults method)</a>
+
+      <ul>
+        <li><a href="extra.html#faster_coco_eval.extra.PreviewResults.compute_confusion_matrix">(faster_coco_eval.extra.PreviewResults method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="faster_eval_api.html#faster_coco_eval.core.COCOeval_faster.compute_mAUC">compute_mAUC() (faster_coco_eval.core.COCOeval_faster method)</a>
 </li>
       <li><a href="faster_eval_api.html#faster_coco_eval.core.COCOeval_faster.compute_mIoU">compute_mIoU() (faster_coco_eval.core.COCOeval_faster method)</a>
@@ -137,8 +179,22 @@
 </li>
       <li><a href="coco_eval.html#faster_coco_eval.core.cocoeval.COCOeval.computeOks">computeOks() (faster_coco_eval.core.cocoeval.COCOeval method)</a>
 </li>
+      <li><a href="extra.html#faster_coco_eval.extra.utils.conver_mask_to_poly">conver_mask_to_poly() (in module faster_coco_eval.extra.utils)</a>
+</li>
+      <li><a href="extra.html#faster_coco_eval.extra.utils.convert_ann_rle_to_poly">convert_ann_rle_to_poly() (in module faster_coco_eval.extra.utils)</a>
+</li>
+      <li><a href="extra.html#faster_coco_eval.extra.utils.convert_rle_to_poly">convert_rle_to_poly() (in module faster_coco_eval.extra.utils)</a>
+</li>
+      <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.coco_eval.convert_to_xywh">convert_to_xywh() (in module faster_coco_eval.utils.pytorch.coco_eval)</a>
+</li>
       <li><a href="coco.html#faster_coco_eval.core.COCO.createIndex">createIndex() (faster_coco_eval.core.COCO method)</a>
 </li>
+      <li><a href="extra.html#faster_coco_eval.extra.Curves">Curves (class in faster_coco_eval.extra)</a>
+
+      <ul>
+        <li><a href="extra.html#faster_coco_eval.extra.curves.Curves">(class in faster_coco_eval.extra.curves)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -147,9 +203,33 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="mask.html#faster_coco_eval.core.mask.decode">decode() (in module faster_coco_eval.core.mask)</a>
 </li>
+      <li><a href="extra.html#faster_coco_eval.extra.display.PreviewResults.display_image">display_image() (faster_coco_eval.extra.display.PreviewResults method)</a>
+
+      <ul>
+        <li><a href="extra.html#faster_coco_eval.extra.PreviewResults.display_image">(faster_coco_eval.extra.PreviewResults method)</a>
+</li>
+        <li><a href="extra.html#faster_coco_eval.extra.draw.display_image">(in module faster_coco_eval.extra.draw)</a>
+</li>
+      </ul></li>
+      <li><a href="extra.html#faster_coco_eval.extra.display.PreviewResults.display_matrix">display_matrix() (faster_coco_eval.extra.display.PreviewResults method)</a>
+
+      <ul>
+        <li><a href="extra.html#faster_coco_eval.extra.PreviewResults.display_matrix">(faster_coco_eval.extra.PreviewResults method)</a>
+</li>
+        <li><a href="extra.html#faster_coco_eval.extra.draw.display_matrix">(in module faster_coco_eval.extra.draw)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="extra.html#faster_coco_eval.extra.display.PreviewResults.display_tp_fp_fn">display_tp_fp_fn() (faster_coco_eval.extra.display.PreviewResults method)</a>
+
+      <ul>
+        <li><a href="extra.html#faster_coco_eval.extra.PreviewResults.display_tp_fp_fn">(faster_coco_eval.extra.PreviewResults method)</a>
+</li>
+      </ul></li>
       <li><a href="coco.html#faster_coco_eval.core.COCO.download">download() (faster_coco_eval.core.COCO method)</a>
+</li>
+      <li><a href="extra.html#faster_coco_eval.extra.extra.ExtraEval.drop_cocodt_by_score">drop_cocodt_by_score() (faster_coco_eval.extra.extra.ExtraEval method)</a>
 </li>
       <li><a href="coco.html#faster_coco_eval.core.COCO.dump">dump() (faster_coco_eval.core.COCO method)</a>
 </li>
@@ -166,12 +246,16 @@
       <ul>
         <li><a href="faster_eval_api.html#faster_coco_eval.core.COCOeval_faster.evaluate">(faster_coco_eval.core.COCOeval_faster method)</a>
 </li>
+        <li><a href="extra.html#faster_coco_eval.extra.extra.ExtraEval.evaluate">(faster_coco_eval.extra.extra.ExtraEval method)</a>
+</li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="coco_eval.html#faster_coco_eval.core.cocoeval.COCOeval.evaluateImg">evaluateImg() (faster_coco_eval.core.cocoeval.COCOeval method)</a>
 </li>
       <li><a href="faster_eval_api.html#faster_coco_eval.core.COCOeval_faster.extended_metrics">extended_metrics (faster_coco_eval.core.COCOeval_faster property)</a>
+</li>
+      <li><a href="extra.html#faster_coco_eval.extra.extra.ExtraEval">ExtraEval (class in faster_coco_eval.extra.extra)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -186,8 +270,87 @@
         <li><a href="mask.html#module-faster_coco_eval.core.mask">module</a>
 </li>
       </ul></li>
+      <li>
+    faster_coco_eval.extra
+
+      <ul>
+        <li><a href="extra.html#module-faster_coco_eval.extra">module</a>
+</li>
+      </ul></li>
+      <li>
+    faster_coco_eval.extra.curves
+
+      <ul>
+        <li><a href="extra.html#module-faster_coco_eval.extra.curves">module</a>
+</li>
+      </ul></li>
+      <li>
+    faster_coco_eval.extra.display
+
+      <ul>
+        <li><a href="extra.html#module-faster_coco_eval.extra.display">module</a>
+</li>
+      </ul></li>
+      <li>
+    faster_coco_eval.extra.draw
+
+      <ul>
+        <li><a href="extra.html#module-faster_coco_eval.extra.draw">module</a>
+</li>
+      </ul></li>
+      <li>
+    faster_coco_eval.extra.extra
+
+      <ul>
+        <li><a href="extra.html#module-faster_coco_eval.extra.extra">module</a>
+</li>
+      </ul></li>
+      <li>
+    faster_coco_eval.extra.utils
+
+      <ul>
+        <li><a href="extra.html#module-faster_coco_eval.extra.utils">module</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    faster_coco_eval.utils.pytorch
+
+      <ul>
+        <li><a href="utils_pytorch.html#module-faster_coco_eval.utils.pytorch">module</a>
+</li>
+      </ul></li>
+      <li>
+    faster_coco_eval.utils.pytorch.coco_dataset
+
+      <ul>
+        <li><a href="utils_pytorch.html#module-faster_coco_eval.utils.pytorch.coco_dataset">module</a>
+</li>
+      </ul></li>
+      <li>
+    faster_coco_eval.utils.pytorch.coco_eval
+
+      <ul>
+        <li><a href="utils_pytorch.html#module-faster_coco_eval.utils.pytorch.coco_eval">module</a>
+</li>
+      </ul></li>
+      <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.FasterCocoDetection">FasterCocoDetection (class in faster_coco_eval.utils.pytorch)</a>
+
+      <ul>
+        <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.coco_dataset.FasterCocoDetection">(class in faster_coco_eval.utils.pytorch.coco_dataset)</a>
+</li>
+      </ul></li>
+      <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.FasterCocoEvaluator">FasterCocoEvaluator (class in faster_coco_eval.utils.pytorch)</a>
+
+      <ul>
+        <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator">(class in faster_coco_eval.utils.pytorch.coco_eval)</a>
+</li>
+      </ul></li>
+      <li><a href="extra.html#faster_coco_eval.extra.extra.ExtraEval.fn_image_ann_map">fn_image_ann_map (faster_coco_eval.extra.extra.ExtraEval property)</a>
+</li>
+      <li><a href="extra.html#faster_coco_eval.extra.extra.ExtraEval.fp_image_ann_map">fp_image_ann_map (faster_coco_eval.extra.extra.ExtraEval property)</a>
+</li>
       <li><a href="mask.html#faster_coco_eval.core.mask.frPyObjects">frPyObjects() (in module faster_coco_eval.core.mask)</a>
 </li>
   </ul></td>
@@ -196,6 +359,8 @@
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="extra.html#faster_coco_eval.extra.draw.generate_ann_polygon">generate_ann_polygon() (in module faster_coco_eval.extra.draw)</a>
+</li>
       <li><a href="coco.html#faster_coco_eval.core.COCO.get_ann_ids">get_ann_ids() (faster_coco_eval.core.COCO method)</a>
 </li>
       <li><a href="coco.html#faster_coco_eval.core.COCO.get_cat_ids">get_cat_ids() (faster_coco_eval.core.COCO method)</a>
@@ -261,14 +426,34 @@
       <li><a href="faster_eval_api.html#faster_coco_eval.core.COCOeval_faster.math_matches">math_matches() (faster_coco_eval.core.COCOeval_faster method)</a>
 </li>
       <li><a href="mask.html#faster_coco_eval.core.mask.merge">merge() (in module faster_coco_eval.core.mask)</a>
+
+      <ul>
+        <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.coco_eval.merge">(in module faster_coco_eval.utils.pytorch.coco_eval)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
+      </ul></li>
       <li>
     module
 
       <ul>
         <li><a href="mask.html#module-faster_coco_eval.core.mask">faster_coco_eval.core.mask</a>
+</li>
+        <li><a href="extra.html#module-faster_coco_eval.extra">faster_coco_eval.extra</a>
+</li>
+        <li><a href="extra.html#module-faster_coco_eval.extra.curves">faster_coco_eval.extra.curves</a>
+</li>
+        <li><a href="extra.html#module-faster_coco_eval.extra.display">faster_coco_eval.extra.display</a>
+</li>
+        <li><a href="extra.html#module-faster_coco_eval.extra.draw">faster_coco_eval.extra.draw</a>
+</li>
+        <li><a href="extra.html#module-faster_coco_eval.extra.extra">faster_coco_eval.extra.extra</a>
+</li>
+        <li><a href="extra.html#module-faster_coco_eval.extra.utils">faster_coco_eval.extra.utils</a>
+</li>
+        <li><a href="utils_pytorch.html#module-faster_coco_eval.utils.pytorch">faster_coco_eval.utils.pytorch</a>
+</li>
+        <li><a href="utils_pytorch.html#module-faster_coco_eval.utils.pytorch.coco_dataset">faster_coco_eval.utils.pytorch.coco_dataset</a>
+</li>
+        <li><a href="utils_pytorch.html#module-faster_coco_eval.utils.pytorch.coco_eval">faster_coco_eval.utils.pytorch.coco_eval</a>
 </li>
       </ul></li>
   </ul></td>
@@ -277,6 +462,62 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="extra.html#faster_coco_eval.extra.Curves.plot_ced_metric">plot_ced_metric() (faster_coco_eval.extra.Curves method)</a>
+
+      <ul>
+        <li><a href="extra.html#faster_coco_eval.extra.curves.Curves.plot_ced_metric">(faster_coco_eval.extra.curves.Curves method)</a>
+</li>
+        <li><a href="extra.html#faster_coco_eval.extra.draw.plot_ced_metric">(in module faster_coco_eval.extra.draw)</a>
+</li>
+      </ul></li>
+      <li><a href="extra.html#faster_coco_eval.extra.Curves.plot_f1_confidence">plot_f1_confidence() (faster_coco_eval.extra.Curves method)</a>
+
+      <ul>
+        <li><a href="extra.html#faster_coco_eval.extra.curves.Curves.plot_f1_confidence">(faster_coco_eval.extra.curves.Curves method)</a>
+</li>
+        <li><a href="extra.html#faster_coco_eval.extra.draw.plot_f1_confidence">(in module faster_coco_eval.extra.draw)</a>
+</li>
+      </ul></li>
+      <li><a href="extra.html#faster_coco_eval.extra.Curves.plot_pre_rec">plot_pre_rec() (faster_coco_eval.extra.Curves method)</a>
+
+      <ul>
+        <li><a href="extra.html#faster_coco_eval.extra.curves.Curves.plot_pre_rec">(faster_coco_eval.extra.curves.Curves method)</a>
+</li>
+        <li><a href="extra.html#faster_coco_eval.extra.draw.plot_pre_rec">(in module faster_coco_eval.extra.draw)</a>
+</li>
+      </ul></li>
+      <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.prepare">prepare() (faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator method)</a>
+
+      <ul>
+        <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.prepare">(faster_coco_eval.utils.pytorch.FasterCocoEvaluator method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.prepare_for_coco_detection">prepare_for_coco_detection() (faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator method)</a>
+
+      <ul>
+        <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.prepare_for_coco_detection">(faster_coco_eval.utils.pytorch.FasterCocoEvaluator method)</a>
+</li>
+      </ul></li>
+      <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.prepare_for_coco_keypoint">prepare_for_coco_keypoint() (faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator method)</a>
+
+      <ul>
+        <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.prepare_for_coco_keypoint">(faster_coco_eval.utils.pytorch.FasterCocoEvaluator method)</a>
+</li>
+      </ul></li>
+      <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.prepare_for_coco_segmentation">prepare_for_coco_segmentation() (faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator method)</a>
+
+      <ul>
+        <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.prepare_for_coco_segmentation">(faster_coco_eval.utils.pytorch.FasterCocoEvaluator method)</a>
+</li>
+      </ul></li>
+      <li><a href="extra.html#faster_coco_eval.extra.PreviewResults">PreviewResults (class in faster_coco_eval.extra)</a>
+
+      <ul>
+        <li><a href="extra.html#faster_coco_eval.extra.display.PreviewResults">(class in faster_coco_eval.extra.display)</a>
+</li>
+      </ul></li>
       <li><a href="coco.html#faster_coco_eval.core.COCO.print_function">print_function (faster_coco_eval.core.COCO property)</a>
 
       <ul>
@@ -305,18 +546,30 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="mask.html#faster_coco_eval.core.mask.segmToRle">segmToRle() (in module faster_coco_eval.core.mask)</a>
 </li>
+      <li><a href="extra.html#faster_coco_eval.extra.draw.show_anns">show_anns() (in module faster_coco_eval.extra.draw)</a>
+</li>
       <li><a href="coco.html#faster_coco_eval.core.COCO.showAnns">showAnns() (faster_coco_eval.core.COCO method)</a>
 </li>
       <li><a href="coco_eval.html#faster_coco_eval.core.cocoeval.COCOeval.split">split() (faster_coco_eval.core.cocoeval.COCOeval method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="faster_eval_api.html#faster_coco_eval.core.COCOeval_faster.stats_as_dict">stats_as_dict (faster_coco_eval.core.COCOeval_faster property)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="coco_eval.html#faster_coco_eval.core.cocoeval.COCOeval.summarize">summarize() (faster_coco_eval.core.cocoeval.COCOeval method)</a>
 
       <ul>
         <li><a href="faster_eval_api.html#faster_coco_eval.core.COCOeval_faster.summarize">(faster_coco_eval.core.COCOeval_faster method)</a>
+</li>
+        <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.summarize">(faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator method)</a>
+</li>
+        <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.summarize">(faster_coco_eval.utils.pytorch.FasterCocoEvaluator method)</a>
+</li>
+      </ul></li>
+      <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.synchronize_between_processes">synchronize_between_processes() (faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator method)</a>
+
+      <ul>
+        <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.synchronize_between_processes">(faster_coco_eval.utils.pytorch.FasterCocoEvaluator method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -331,6 +584,18 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="mask.html#faster_coco_eval.core.mask.toBbox">toBbox() (in module faster_coco_eval.core.mask)</a>
 </li>
+  </ul></td>
+</tr></table>
+
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.update">update() (faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator method)</a>
+
+      <ul>
+        <li><a href="utils_pytorch.html#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.update">(faster_coco_eval.utils.pytorch.FasterCocoEvaluator method)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 

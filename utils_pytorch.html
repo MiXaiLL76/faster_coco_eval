@@ -1,0 +1,603 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyTorch Utilities &mdash; faster-coco-eval 1.7.2 1.7.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom_nbsphinx.css?v=ce1cc334" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=908dc885"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Examples" href="examples.html" />
+    <link rel="prev" title="Extra API" href="extra.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            faster-coco-eval 1.7.2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="coco.html">COCO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coco_eval.html">COCOeval</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faster_eval_api.html">COCOeval_faster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mask.html">Mask API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extra.html">Extra API</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">PyTorch Utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.FasterCocoDetection"><code class="docutils literal notranslate"><span class="pre">FasterCocoDetection</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.accumulate"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.accumulate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.cleanup"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.cleanup()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.prepare"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.prepare()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.prepare_for_coco_detection"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.prepare_for_coco_detection()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.prepare_for_coco_keypoint"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.prepare_for_coco_keypoint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.prepare_for_coco_segmentation"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.prepare_for_coco_segmentation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.summarize"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.summarize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.synchronize_between_processes"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.synchronize_between_processes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.update"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-faster_coco_eval.utils.pytorch.coco_dataset">Implementation modules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.coco_dataset.FasterCocoDetection"><code class="docutils literal notranslate"><span class="pre">FasterCocoDetection</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.accumulate"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.accumulate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.cleanup"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.cleanup()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.prepare"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.prepare()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.prepare_for_coco_detection"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.prepare_for_coco_detection()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.prepare_for_coco_keypoint"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.prepare_for_coco_keypoint()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.prepare_for_coco_segmentation"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.prepare_for_coco_segmentation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.summarize"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.summarize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.synchronize_between_processes"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.synchronize_between_processes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.update"><code class="docutils literal notranslate"><span class="pre">FasterCocoEvaluator.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.coco_eval.all_gather"><code class="docutils literal notranslate"><span class="pre">all_gather()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.coco_eval.convert_to_xywh"><code class="docutils literal notranslate"><span class="pre">convert_to_xywh()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.utils.pytorch.coco_eval.merge"><code class="docutils literal notranslate"><span class="pre">merge()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="history.html">History</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">faster-coco-eval 1.7.2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">PyTorch Utilities</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/utils_pytorch.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-faster_coco_eval.utils.pytorch">
+<span id="pytorch-utilities"></span><h1>PyTorch Utilities<a class="headerlink" href="#module-faster_coco_eval.utils.pytorch" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.FasterCocoDetection">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">faster_coco_eval.utils.pytorch.</span></span><span class="sig-name descname"><span class="pre">FasterCocoDetection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transforms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.FasterCocoDetection" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">CocoDetection</span></code></p>
+<p><a class="reference external" href="http://mscoco.org/dataset/#detections-challenge2016">MS Coco Detection</a> Dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>root</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> | <code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></span>) – Root directory where images are downloaded to.</p></li>
+<li><p><strong>annFile</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Path to json annotation file.</p></li>
+<li><p><strong>transform</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – A function/transform that takes in a PIL image
+and returns a transformed version. E.g., <code class="docutils literal notranslate"><span class="pre">transforms.ToTensor</span></code>.</p></li>
+<li><p><strong>target_transform</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – A function/transform that takes in the
+target and transforms it.</p></li>
+<li><p><strong>transforms</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – A function/transform that takes input sample and its target as entry
+and returns a transformed version.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.FasterCocoEvaluator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">faster_coco_eval.utils.pytorch.</span></span><span class="sig-name descname"><span class="pre">FasterCocoEvaluator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coco_gt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_types</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lvis_style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ranges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'large':</span> <span class="pre">[9216,</span> <span class="pre">10000000000.0],</span> <span class="pre">'medium':</span> <span class="pre">[1024,</span> <span class="pre">9216],</span> <span class="pre">'small':</span> <span class="pre">[0,</span> <span class="pre">1024]}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>COCO evaluator for distributed evaluation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coco_gt</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="coco.html#faster_coco_eval.core.COCO" title="faster_coco_eval.core.coco.COCO"><code class="xref py py-class docutils literal notranslate"><span class="pre">COCO</span></code></a></span>) – Ground truth COCO object.</p></li>
+<li><p><strong>iou_types</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – List of IoU types to evaluate, e.g., [‘bbox’, ‘segm’, ‘keypoints’].</p></li>
+<li><p><strong>lvis_style</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to use LVIS-style evaluation. Defaults to False.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.FasterCocoEvaluator.accumulate">
+<span class="sig-name descname"><span class="pre">accumulate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.accumulate" title="Link to this definition"></a></dt>
+<dd><p>Accumulates evaluation results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.FasterCocoEvaluator.cleanup">
+<span class="sig-name descname"><span class="pre">cleanup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.cleanup" title="Link to this definition"></a></dt>
+<dd><p>Cleans up and re-initializes the evaluator state for a new
+evaluation run.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.FasterCocoEvaluator.prepare">
+<span class="sig-name descname"><span class="pre">prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.prepare" title="Link to this definition"></a></dt>
+<dd><p>Prepares predictions for COCO evaluation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>predictions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span>) – Dictionary mapping image ids to predictions.</p></li>
+<li><p><strong>iou_type</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Type of IoU to prepare for, e.g., ‘bbox’, ‘segm’, or ‘keypoints’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of detection results in COCO format.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.FasterCocoEvaluator.prepare_for_coco_detection">
+<span class="sig-name descname"><span class="pre">prepare_for_coco_detection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.prepare_for_coco_detection" title="Link to this definition"></a></dt>
+<dd><p>Converts bounding box predictions to COCO detection format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>predictions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span>) – Dictionary mapping image ids to prediction dicts. Each prediction dict must contain:
+- “boxes”: Tensor of shape [N, 4] (x1, y1, x2, y2)
+- “scores”: torch.Tensor of shape [N] of length N
+- “labels”: torch.Tensor of shape [N] of length N</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of detection results in COCO format.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.FasterCocoEvaluator.prepare_for_coco_keypoint">
+<span class="sig-name descname"><span class="pre">prepare_for_coco_keypoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.prepare_for_coco_keypoint" title="Link to this definition"></a></dt>
+<dd><p>Converts keypoint predictions to COCO keypoint format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>predictions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span>) – Dictionary mapping image ids to prediction dicts. Each prediction dict must contain:
+- “boxes”: Tensor of shape [N, 4]
+- “scores”: torch.Tensor of shape [N]
+- “labels”: torch.Tensor of shape [N]
+- “keypoints”: Tensor of shape [N, K, 3]</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of keypoint results in COCO format.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.FasterCocoEvaluator.prepare_for_coco_segmentation">
+<span class="sig-name descname"><span class="pre">prepare_for_coco_segmentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.prepare_for_coco_segmentation" title="Link to this definition"></a></dt>
+<dd><p>Converts mask predictions to COCO segmentation format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>predictions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span>) – Dictionary mapping image ids to prediction dicts. Each prediction dict must contain:
+- “scores”: torch.Tensor of shape [N]
+- “labels”: torch.Tensor of shape [N]
+- “masks”: Tensor of shape [N, 1, H, W]</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of segmentation results in COCO format.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.FasterCocoEvaluator.summarize">
+<span class="sig-name descname"><span class="pre">summarize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.summarize" title="Link to this definition"></a></dt>
+<dd><p>Prints and stores evaluation statistics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.FasterCocoEvaluator.synchronize_between_processes">
+<span class="sig-name descname"><span class="pre">synchronize_between_processes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.synchronize_between_processes" title="Link to this definition"></a></dt>
+<dd><p>Synchronizes results across distributed processes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.FasterCocoEvaluator.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.FasterCocoEvaluator.update" title="Link to this definition"></a></dt>
+<dd><p>Updates the evaluator with new predictions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>predictions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span>) – Dictionary mapping image ids to predictions. The structure depends on the IoU type.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<section id="module-faster_coco_eval.utils.pytorch.coco_dataset">
+<span id="implementation-modules"></span><h2>Implementation modules<a class="headerlink" href="#module-faster_coco_eval.utils.pytorch.coco_dataset" title="Link to this heading"></a></h2>
+<p>MS Coco Detection &lt;<a class="reference external" href="http://mscoco.org/dataset/#detections-challenge2016">http://mscoco.org/dataset/#detections-challenge2016</a>&gt;`_ Dataset.</p>
+<p>Mostly copy-paste from
+<a class="reference external" href="https://github.com/pytorch/vision/blob/edfd5a7701310589927d2f83bed11cfeb06965a1/torchvision/datasets/coco.py">https://github.com/pytorch/vision/blob/edfd5a7701310589927d2f83bed11cfeb06965a1/torchvision/datasets/coco.py</a>
+The difference is that pycocotools is replaced by a faster library faster-coco-eval</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.coco_dataset.FasterCocoDetection">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">faster_coco_eval.utils.pytorch.coco_dataset.</span></span><span class="sig-name descname"><span class="pre">FasterCocoDetection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transforms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.coco_dataset.FasterCocoDetection" title="Link to this definition"></a></dt>
+<dd><p><a class="reference external" href="http://mscoco.org/dataset/#detections-challenge2016">MS Coco Detection</a> Dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>root</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> | <code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></span>) – Root directory where images are downloaded to.</p></li>
+<li><p><strong>annFile</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Path to json annotation file.</p></li>
+<li><p><strong>transform</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – A function/transform that takes in a PIL image
+and returns a transformed version. E.g., <code class="docutils literal notranslate"><span class="pre">transforms.ToTensor</span></code>.</p></li>
+<li><p><strong>target_transform</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – A function/transform that takes in the
+target and transforms it.</p></li>
+<li><p><strong>transforms</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – A function/transform that takes input sample and its target as entry
+and returns a transformed version.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<p id="module-faster_coco_eval.utils.pytorch.coco_eval">COCO evaluator that works in distributed mode.</p>
+<p>Mostly copy-paste from
+<a class="reference external" href="https://github.com/pytorch/vision/blob/edfd5a7/references/detection/coco_eval.py">https://github.com/pytorch/vision/blob/edfd5a7/references/detection/coco_eval.py</a>
+The difference is that pycocotools is replaced by a faster library faster-coco-eval</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">faster_coco_eval.utils.pytorch.coco_eval.</span></span><span class="sig-name descname"><span class="pre">FasterCocoEvaluator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coco_gt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_types</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lvis_style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ranges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'large':</span> <span class="pre">[9216,</span> <span class="pre">10000000000.0],</span> <span class="pre">'medium':</span> <span class="pre">[1024,</span> <span class="pre">9216],</span> <span class="pre">'small':</span> <span class="pre">[0,</span> <span class="pre">1024]}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator" title="Link to this definition"></a></dt>
+<dd><p>COCO evaluator for distributed evaluation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coco_gt</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="coco.html#faster_coco_eval.core.COCO" title="faster_coco_eval.core.coco.COCO"><code class="xref py py-class docutils literal notranslate"><span class="pre">COCO</span></code></a></span>) – Ground truth COCO object.</p></li>
+<li><p><strong>iou_types</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – List of IoU types to evaluate, e.g., [‘bbox’, ‘segm’, ‘keypoints’].</p></li>
+<li><p><strong>lvis_style</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to use LVIS-style evaluation. Defaults to False.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.accumulate">
+<span class="sig-name descname"><span class="pre">accumulate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.accumulate" title="Link to this definition"></a></dt>
+<dd><p>Accumulates evaluation results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.cleanup">
+<span class="sig-name descname"><span class="pre">cleanup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.cleanup" title="Link to this definition"></a></dt>
+<dd><p>Cleans up and re-initializes the evaluator state for a new
+evaluation run.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.prepare">
+<span class="sig-name descname"><span class="pre">prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.prepare" title="Link to this definition"></a></dt>
+<dd><p>Prepares predictions for COCO evaluation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>predictions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span>) – Dictionary mapping image ids to predictions.</p></li>
+<li><p><strong>iou_type</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Type of IoU to prepare for, e.g., ‘bbox’, ‘segm’, or ‘keypoints’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of detection results in COCO format.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.prepare_for_coco_detection">
+<span class="sig-name descname"><span class="pre">prepare_for_coco_detection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.prepare_for_coco_detection" title="Link to this definition"></a></dt>
+<dd><p>Converts bounding box predictions to COCO detection format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>predictions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span>) – Dictionary mapping image ids to prediction dicts. Each prediction dict must contain:
+- “boxes”: Tensor of shape [N, 4] (x1, y1, x2, y2)
+- “scores”: torch.Tensor of shape [N] of length N
+- “labels”: torch.Tensor of shape [N] of length N</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of detection results in COCO format.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.prepare_for_coco_keypoint">
+<span class="sig-name descname"><span class="pre">prepare_for_coco_keypoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.prepare_for_coco_keypoint" title="Link to this definition"></a></dt>
+<dd><p>Converts keypoint predictions to COCO keypoint format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>predictions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span>) – Dictionary mapping image ids to prediction dicts. Each prediction dict must contain:
+- “boxes”: Tensor of shape [N, 4]
+- “scores”: torch.Tensor of shape [N]
+- “labels”: torch.Tensor of shape [N]
+- “keypoints”: Tensor of shape [N, K, 3]</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of keypoint results in COCO format.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.prepare_for_coco_segmentation">
+<span class="sig-name descname"><span class="pre">prepare_for_coco_segmentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.prepare_for_coco_segmentation" title="Link to this definition"></a></dt>
+<dd><p>Converts mask predictions to COCO segmentation format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>predictions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span>) – Dictionary mapping image ids to prediction dicts. Each prediction dict must contain:
+- “scores”: torch.Tensor of shape [N]
+- “labels”: torch.Tensor of shape [N]
+- “masks”: Tensor of shape [N, 1, H, W]</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of segmentation results in COCO format.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.summarize">
+<span class="sig-name descname"><span class="pre">summarize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.summarize" title="Link to this definition"></a></dt>
+<dd><p>Prints and stores evaluation statistics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.synchronize_between_processes">
+<span class="sig-name descname"><span class="pre">synchronize_between_processes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.synchronize_between_processes" title="Link to this definition"></a></dt>
+<dd><p>Synchronizes results across distributed processes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.coco_eval.FasterCocoEvaluator.update" title="Link to this definition"></a></dt>
+<dd><p>Updates the evaluator with new predictions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>predictions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span>) – Dictionary mapping image ids to predictions. The structure depends on the IoU type.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.coco_eval.all_gather">
+<span class="sig-prename descclassname"><span class="pre">faster_coco_eval.utils.pytorch.coco_eval.</span></span><span class="sig-name descname"><span class="pre">all_gather</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">world_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.coco_eval.all_gather" title="Link to this definition"></a></dt>
+<dd><p>Run all_gather on arbitrary picklable data (not necessarily tensors).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></span>) – Any picklable object.</p></li>
+<li><p><strong>world_size</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of processes in distributed mode. If None, auto-detect.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of data gathered from each rank.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.coco_eval.convert_to_xywh">
+<span class="sig-prename descclassname"><span class="pre">faster_coco_eval.utils.pytorch.coco_eval.</span></span><span class="sig-name descname"><span class="pre">convert_to_xywh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.coco_eval.convert_to_xywh" title="Link to this definition"></a></dt>
+<dd><p>Converts bounding boxes from (xmin, ymin, xmax, ymax) to (xmin, ymin,
+width, height) format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>boxes</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span>) – Bounding boxes of shape [N, 4].</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Converted bounding boxes of shape [N, 4].</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="faster_coco_eval.utils.pytorch.coco_eval.merge">
+<span class="sig-prename descclassname"><span class="pre">faster_coco_eval.utils.pytorch.coco_eval.</span></span><span class="sig-name descname"><span class="pre">merge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img_ids</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_imgs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">world_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.utils.pytorch.coco_eval.merge" title="Link to this definition"></a></dt>
+<dd><p>Merges evaluation results from all processes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>img_ids</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>] | <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span>) – List or array of image ids.</p></li>
+<li><p><strong>eval_imgs</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span>) – List of evaluation image results.</p></li>
+<li><p><strong>world_size</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of processes in distributed mode. If None, auto-detect.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(merged image ids, merged eval images)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="extra.html" class="btn btn-neutral float-left" title="Extra API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="examples.html" class="btn btn-neutral float-right" title="Examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024-2026, MiXaiLL76.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
