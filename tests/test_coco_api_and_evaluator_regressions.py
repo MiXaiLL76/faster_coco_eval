@@ -14,26 +14,22 @@ def _make_eval(
     detection_bbox: list[float] | None = None,
     ranges: dict[str, list[float]] | None = None,
     iou_type: str = "bbox",
+    include_second_pair: bool = False,
 ) -> COCOeval_faster:
     """Build a small evaluator for core regression tests."""
-    gt = COCO()
-    gt.dataset = {
-        "images": [{"id": 1, "width": 20, "height": 20}],
-        "annotations": [
-            {
-                "id": 1,
-                "image_id": 1,
-                "category_id": 1,
-                "bbox": [0.0, 0.0, 10.0, 10.0],
-                "segmentation": [[0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 10.0, 0.0]],
-                "area": 100.0,
-                "iscrowd": 0,
-            }
-        ],
-        "categories": [{"id": 1, "name": "object"}],
-    }
-    gt.createIndex()
-    dt = gt.loadRes([
+    images = [{"id": 1, "width": 20, "height": 20}]
+    annotations = [
+        {
+            "id": 1,
+            "image_id": 1,
+            "category_id": 1,
+            "bbox": [0.0, 0.0, 10.0, 10.0],
+            "segmentation": [[0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 10.0, 0.0]],
+            "area": 100.0,
+            "iscrowd": 0,
+        }
+    ]
+    detections = [
         {
             "image_id": 1,
             "category_id": 1,
@@ -41,7 +37,34 @@ def _make_eval(
             "segmentation": [[0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 10.0, 0.0]],
             "score": 1.0,
         }
-    ])
+    ]
+    if include_second_pair:
+        images.append({"id": 2, "width": 20, "height": 20})
+        annotations.append({
+            "id": 2,
+            "image_id": 2,
+            "category_id": 1,
+            "bbox": [0.0, 0.0, 10.0, 10.0],
+            "segmentation": [[0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 10.0, 0.0]],
+            "area": 100.0,
+            "iscrowd": 0,
+        })
+        detections.append({
+            "image_id": 2,
+            "category_id": 1,
+            "bbox": [0.0, 0.0, 10.0, 10.0],
+            "segmentation": [[0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 10.0, 0.0]],
+            "score": 1.0,
+        })
+
+    gt = COCO()
+    gt.dataset = {
+        "images": images,
+        "annotations": annotations,
+        "categories": [{"id": 1, "name": "object"}],
+    }
+    gt.createIndex()
+    dt = gt.loadRes(detections)
     evaluator_kwargs = {"print_function": lambda *_: None}
     if ranges is not None:
         evaluator_kwargs["ranges"] = ranges
@@ -112,7 +135,7 @@ def test_evaluate_computes_iou_pairs_concurrently():
                 with self.call_lock:
                     self.active_calls -= 1
 
-    base_evaluator = _make_eval(iou_type="segm")
+    base_evaluator = _make_eval(iou_type="segm", include_second_pair=True)
     evaluator = ObservableEvaluator(base_evaluator.cocoGt, base_evaluator.cocoDt)
     evaluator.params.imgIds = [1, 2]
     evaluator.evaluate()
