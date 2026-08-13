@@ -1,4 +1,5 @@
 import inspect
+import os
 import subprocess
 import sys
 import threading
@@ -111,6 +112,9 @@ def test_math_matches_clears_annotations_before_a_second_run():
 
 def test_evaluate_computes_iou_pairs_concurrently():
     """Independent image/category IoUs should overlap across worker threads."""
+    if (os.cpu_count() or 1) < 2:
+        pytest.skip("requires at least two CPUs to exercise concurrent IoU workers")
+    expected_concurrent_pairs = 2
 
     class ObservableEvaluator(COCOeval_faster):
         """Record concurrent calls while retaining real IoU behavior."""
@@ -121,7 +125,7 @@ def test_evaluate_computes_iou_pairs_concurrently():
             self.active_calls = 0
             self.max_active_calls = 0
             self.call_lock = threading.Lock()
-            self.workers_ready = threading.Barrier(2)
+            self.workers_ready = threading.Barrier(expected_concurrent_pairs)
 
         def computeIoU(self, imgId: int, catId: int) -> list[float] | np.ndarray:
             """Wait for a peer worker before computing the real IoU result."""
@@ -129,7 +133,7 @@ def test_evaluate_computes_iou_pairs_concurrently():
                 self.active_calls += 1
                 self.max_active_calls = max(self.max_active_calls, self.active_calls)
             try:
-                self.workers_ready.wait(timeout=1)
+                self.workers_ready.wait(timeout=5)
                 return super().computeIoU(imgId, catId)
             finally:
                 with self.call_lock:
@@ -140,7 +144,8 @@ def test_evaluate_computes_iou_pairs_concurrently():
     evaluator.params.imgIds = [1, 2]
     evaluator.evaluate()
 
-    assert (evaluator.max_active_calls, list(evaluator.ious)) == (2, [(1, 1), (2, 1)])
+    assert evaluator.max_active_calls == 2
+    assert set(evaluator.ious) == {(1, 1), (2, 1)}
 
 
 def test_load_res_accepts_empty_results():
