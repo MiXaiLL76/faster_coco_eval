@@ -657,14 +657,21 @@ std::variant<py::array_t<double, py::array::f_style>, std::vector<double>> iou(
         }
 
         std::vector<double> iou_result;
-        if (std::holds_alternative<std::vector<double>>(_dt)) {
-                const auto& _dt_box = std::get<std::vector<double>>(_dt);
-                const auto& _gt_box = std::get<std::vector<double>>(_gt);
-                iou_result = bbIou(_dt_box, _gt_box, m, n, iscrowd);
-        } else {
-                const auto& _dt_rle = std::get<std::vector<RLE>>(_dt);
-                const auto& _gt_rle = std::get<std::vector<RLE>>(_gt);
-                iou_result = rleIou(_dt_rle, _gt_rle, m, n, iscrowd);
+        {
+                // The remaining work only reads C++ values; keep Python API
+                // conversion and the returned array construction GIL-safe.
+                py::gil_scoped_release release;
+                if (std::holds_alternative<std::vector<double>>(_dt)) {
+                        const auto& _dt_box =
+                            std::get<std::vector<double>>(_dt);
+                        const auto& _gt_box =
+                            std::get<std::vector<double>>(_gt);
+                        iou_result = bbIou(_dt_box, _gt_box, m, n, iscrowd);
+                } else {
+                        const auto& _dt_rle = std::get<std::vector<RLE>>(_dt);
+                        const auto& _gt_rle = std::get<std::vector<RLE>>(_gt);
+                        iou_result = rleIou(_dt_rle, _gt_rle, m, n, iscrowd);
+                }
         }
         return py::array(iou_result.size(), iou_result.data()).reshape({m, n});
 }
