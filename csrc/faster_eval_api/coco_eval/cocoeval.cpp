@@ -685,8 +685,9 @@ py::dict Accumulate(const py::object& params,
 
         std::unordered_map<std::string, double> matched;
 
-        for (auto eval : evaluations) {
-                for (auto matched_annotation : eval.matched_annotations) {
+        for (const auto& eval : evaluations) {
+                for (const auto& matched_annotation :
+                     eval.matched_annotations) {
                         std::string key =
                             std::to_string(matched_annotation.dt_id) + "_" +
                             std::to_string(matched_annotation.gt_id);
