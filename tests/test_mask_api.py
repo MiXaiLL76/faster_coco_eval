@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+import sys
+import threading
 import unittest
 
 import faster_coco_eval.mask_api_new_cpp as _mask
@@ -230,6 +232,47 @@ class TestMaskApi(unittest.TestCase):
 
         result_poly_iou = module.iou(self.poly_rles[:3], self.poly_rles[:3], [0, 0, 0]).round(4)
         self.assertEqual(poly_iou.tolist(), result_poly_iou.tolist())
+
+    def test_iou_releases_gil_during_cpp_compute(self):
+        """Allow another Python thread to run during native IoU computation."""
+        rows, columns = np.indices((256, 256))
+        checkerboard = np.asfortranarray(((rows + columns) % 2).astype(np.uint8)[..., None])
+        encoded = _mask.encode(checkerboard)[0]
+        rles = [encoded] * 24
+        started = threading.Event()
+        finished = threading.Event()
+        errors = []
+
+        def compute_iou():
+            started.set()
+            try:
+                _mask.iou(rles, rles, [0] * len(rles))
+            except Exception as ex:  # pragma: no cover - surfaced below
+                errors.append(ex)
+            finally:
+                finished.set()
+
+        original_switch_interval = sys.getswitchinterval()
+        worker = threading.Thread(target=compute_iou)
+        observed_start = False
+        overlapped = False
+        try:
+            # Prevent a Python bytecode switch between started.set() and iou().
+            # The main thread can resume before completion only if native iou()
+            # releases the GIL.
+            sys.setswitchinterval(1.0)
+            worker.start()
+            observed_start = started.wait(timeout=1.0)
+            overlapped = observed_start and not finished.is_set()
+            worker.join(timeout=5.0)
+        finally:
+            sys.setswitchinterval(original_switch_interval)
+
+        self.assertTrue(observed_start, "IoU worker did not start")
+        self.assertFalse(worker.is_alive(), "IoU worker did not finish")
+        if errors:
+            raise errors[0]
+        self.assertTrue(overlapped, "Python thread could not run while native IoU was active")
 
     def test_iou_size_mismatch_writes_sentinel_to_pair(self):
         """Return -1 in each pair's output cell when RLE sizes differ."""

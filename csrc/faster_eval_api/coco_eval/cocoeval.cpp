@@ -57,20 +57,24 @@ void SortInstancesByIgnore(
     std::vector<bool>* ignores) {
         ignores->clear();
         ignores->reserve(ground_truth_instances.size());
-        for (auto o : ground_truth_instances) {
-                ignores->emplace_back(o.ignore || o.area < area_range[0] ||
-                                      o.area > area_range[1]);
+        size_t non_ignored_count = 0;
+        for (const auto& o : ground_truth_instances) {
+                const bool ignore = o.ignore || o.area < area_range[0] ||
+                                    o.area > area_range[1];
+                ignores->emplace_back(ignore);
+                non_ignored_count += !ignore;
         }
 
+        // A boolean key needs only two stable buckets; direct placement avoids
+        // comparison sorting while preserving input order inside each bucket.
         ground_truth_sorted_indices->resize(ground_truth_instances.size());
-        std::iota(ground_truth_sorted_indices->begin(),
-                  ground_truth_sorted_indices->end(), 0);
-        std::stable_sort(ground_truth_sorted_indices->begin(),
-                         ground_truth_sorted_indices->end(),
-                         [&ignores](size_t j1, size_t j2) {
-                                 return (int)(*ignores)[j1] <
-                                        (int)(*ignores)[j2];
-                         });
+        size_t non_ignored_index = 0;
+        size_t ignored_index = non_ignored_count;
+        for (size_t index = 0; index < ignores->size(); ++index) {
+                const size_t output_index =
+                    (*ignores)[index] ? ignored_index++ : non_ignored_index++;
+                (*ground_truth_sorted_indices)[output_index] = index;
+        }
 }
 
 // For each IOU threshold, greedily match each detected instance to a ground
@@ -700,8 +704,9 @@ py::dict Accumulate(const py::object& params,
 
         std::unordered_map<std::string, double> matched;
 
-        for (auto eval : evaluations) {
-                for (auto matched_annotation : eval.matched_annotations) {
+        for (const auto& eval : evaluations) {
+                for (const auto& matched_annotation :
+                     eval.matched_annotations) {
                         std::string key =
                             std::to_string(matched_annotation.dt_id) + "_" +
                             std::to_string(matched_annotation.gt_id);
