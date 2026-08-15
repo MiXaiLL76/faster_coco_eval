@@ -6,6 +6,7 @@ import itertools
 import logging
 import os
 import time
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -14,6 +15,31 @@ import faster_coco_eval.faster_eval_api_cpp as _C
 from faster_coco_eval.core.cocoeval import COCOeval as COCOevalBase
 
 logger = logging.getLogger(__name__)
+
+
+def _available_cpu_count() -> int:
+    """Return the logical CPU capacity available to this process."""
+    process_cpu_count = getattr(os, "process_cpu_count", None)
+    if callable(process_cpu_count):
+        try:
+            cpu_count = process_cpu_count()
+        except (NotImplementedError, OSError):
+            logger.debug("Unable to read the process CPU count; falling back to CPU affinity.", exc_info=True)
+        else:
+            if cpu_count is not None:
+                return cpu_count
+
+    sched_getaffinity = getattr(os, "sched_getaffinity", None)
+    if callable(sched_getaffinity):
+        try:
+            available_cpus = sched_getaffinity(0)
+        except (AttributeError, NotImplementedError, OSError):
+            logger.debug("Unable to read CPU affinity; falling back to the host CPU count.", exc_info=True)
+            available_cpus = set()
+        if available_cpus:
+            return len(available_cpus)
+
+    return os.cpu_count() or 1
 
 
 class COCOeval_faster(COCOevalBase):
@@ -54,16 +80,36 @@ class COCOeval_faster(COCOevalBase):
         else:
             raise ValueError(f"p.iouType must be segm, bbox, boundary or keypoints. Get {p.iouType}")
 
-        iou_pairs = list(itertools.product(p.imgIds, catIds))
-        max_workers = min(os.cpu_count() or 1, 8, len(iou_pairs))
-        if p.compute_rle and max_workers > 1:
+        pair_count = len(p.imgIds) * len(catIds)
+        max_workers = 1
+        if p.compute_rle and self.rle_iou_max_workers > 1 and pair_count > 1:
+            max_workers = min(_available_cpu_count(), self.rle_iou_max_workers, pair_count)
+        if max_workers > 1:
             # Each task owns a distinct result key; consuming futures in input
-            # order preserves the deterministic dictionary layout.
+            # order preserves deterministic dictionary layout while the bounded
+            # queue prevents one future per image/category pair.
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                future_ious = {pair: executor.submit(computeIoU, *pair) for pair in iou_pairs}
-                self.ious = {pair: future.result() for pair, future in future_ious.items()}
+                iou_pairs = iter(itertools.product(p.imgIds, catIds))
+                pending_ious = deque()
+                for _ in range(2 * max_workers):
+                    try:
+                        pair = next(iou_pairs)
+                    except StopIteration:
+                        break
+                    pending_ious.append((pair, executor.submit(computeIoU, *pair)))
+
+                computed_ious = {}
+                while pending_ious:
+                    pair, future = pending_ious.popleft()
+                    computed_ious[pair] = future.result()
+                    try:
+                        next_pair = next(iou_pairs)
+                    except StopIteration:
+                        continue
+                    pending_ious.append((next_pair, executor.submit(computeIoU, *next_pair)))
+                self.ious = computed_ious
         else:
-            self.ious = {pair: computeIoU(*pair) for pair in iou_pairs}
+            self.ious = {pair: computeIoU(*pair) for pair in itertools.product(p.imgIds, catIds)}
 
         # Memory optimization: pass datasets directly instead of pre-loading all instances
 
