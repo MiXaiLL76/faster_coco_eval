@@ -181,8 +181,9 @@ InstanceAnnotation LightweightDataset::parse_py_annotation(
 }
 
 // Get C++ annotation objects with caching for performance
-std::vector<InstanceAnnotation> LightweightDataset::get_cpp_annotations(
+const std::vector<InstanceAnnotation>& LightweightDataset::get_cpp_annotations(
     double img_id, double cat_id) const {
+        static const std::vector<InstanceAnnotation> kEmpty;
         const std::pair<int64_t, int64_t> key(static_cast<int64_t>(img_id),
                                               static_cast<int64_t>(cat_id));
 
@@ -204,10 +205,10 @@ std::vector<InstanceAnnotation> LightweightDataset::get_cpp_annotations(
                 }
 
                 // Cache the result for future use
-                cpp_cache[key] = result;
-                return result;
+                auto inserted = cpp_cache.emplace(key, std::move(result));
+                return inserted.first->second;
         } else {
-                return {};
+                return kEmpty;
         }
 }
 
@@ -222,7 +223,7 @@ void LightweightDataset::clear_cache_entry(double img_id, double cat_id) const {
 std::vector<std::vector<std::vector<InstanceAnnotation>>>
 LightweightDataset::get_cpp_instances(const std::vector<double>& img_ids,
                                       const std::vector<double>& cat_ids,
-                                      const bool& useCats) {
+                                      const bool& useCats) const {
         std::vector<std::vector<std::vector<InstanceAnnotation>>> result;
         result.reserve(img_ids.size());  // Reserve space for image indices
 

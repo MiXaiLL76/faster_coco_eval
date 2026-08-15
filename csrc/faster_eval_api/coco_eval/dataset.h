@@ -54,7 +54,7 @@ class LightweightDataset {
         std::vector<py::dict> get(double img_id, double cat_id);
 
         // Get C++ annotation objects with caching for performance
-        std::vector<InstanceAnnotation> get_cpp_annotations(
+        const std::vector<InstanceAnnotation>& get_cpp_annotations(
             double img_id, double cat_id) const;
 
         // Clear cache entry for specific (img_id, cat_id) to free memory
@@ -64,7 +64,7 @@ class LightweightDataset {
         std::vector<std::vector<std::vector<InstanceAnnotation>>>
         get_cpp_instances(const std::vector<double>& img_ids,
                           const std::vector<double>& cat_ids,
-                          const bool& useCats);
+                          const bool& useCats) const;
 
         // Get all Python dict annotations for provided img_ids and cat_ids
         std::vector<std::vector<std::vector<py::dict>>> get_instances(

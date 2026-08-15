@@ -1,10 +1,14 @@
 #include <time.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
+#include <exception>
+#include <future>
 #include <numeric>
 #include <sstream>
 #include <stdexcept>
+#include <thread>
 
 // clang-format off
 #include "cocoeval.h"
@@ -211,15 +215,13 @@ std::vector<ImageEvaluation> EvaluateImages(
                 throw std::runtime_error(error.str());
         }
 
-        std::vector<uint64_t> detection_sorted_indices;
-        std::vector<uint64_t> ground_truth_sorted_indices;
-        std::vector<bool> ignores;
-        std::vector<ImageEvaluation> results_all(num_images * num_area_ranges *
-                                                 num_categories);
+        // Convert Python-backed annotations before evaluation so the matching
+        // loop reads only stable C++ values.
+        const auto image_category_ground_truth_instances =
+            gt_dataset.get_cpp_instances(img_ids, cat_ids, useCats);
+        const auto image_category_detection_instances =
+            dt_dataset.get_cpp_instances(img_ids, cat_ids, useCats);
 
-        // Store results for each image, category, and area range combination.
-        // Results for each IOU threshold are packed into the same
-        // ImageEvaluation object
         for (auto i = 0; i < num_images; ++i) {
                 if (image_category_ious[i].size() !=
                     static_cast<std::size_t>(num_categories)) {
@@ -232,142 +234,155 @@ std::vector<ImageEvaluation> EvaluateImages(
                               << image_category_ious[i].size() << ".";
                         throw std::runtime_error(error.str());
                 }
+        }
 
-                for (auto c = 0; c < num_categories; ++c) {
-                        // Read annotations on-demand from datasets
-                        double img_id = img_ids[i];
+        // The preloaded vectors own their data, so cache entries can be
+        // released before evaluation without touching shared maps later.
+        for (const double img_id : img_ids) {
+                for (const double cat_id : cat_ids) {
+                        gt_dataset.clear_cache_entry(img_id, cat_id);
+                        dt_dataset.clear_cache_entry(img_id, cat_id);
+                }
+        }
 
-                        std::vector<InstanceAnnotation> ground_truth_instances;
-                        std::vector<InstanceAnnotation> detection_instances;
+        std::vector<ImageEvaluation> results_all(num_images * num_area_ranges *
+                                                 num_categories);
 
+        auto evaluate_image_category = [&](const std::size_t task_index) {
+                const auto i = static_cast<int>(task_index / num_categories);
+                const auto c = static_cast<int>(task_index % num_categories);
+                const double img_id = img_ids[i];
+                const auto& ground_truth_instances =
+                    image_category_ground_truth_instances[i][c];
+                const auto& detection_instances =
+                    image_category_detection_instances[i][c];
+                std::vector<uint64_t> detection_sorted_indices;
+                std::vector<uint64_t> ground_truth_sorted_indices;
+                std::vector<bool> ignores;
+
+                SortInstancesByDetectionScore(detection_instances,
+                                              &detection_sorted_indices);
+                if ((int)detection_sorted_indices.size() > max_detections) {
+                        detection_sorted_indices.resize(max_detections);
+                }
+
+                const auto& category_ious = image_category_ious[i][c];
+                const std::size_t expected_ground_truth =
+                    ground_truth_instances.size();
+                const std::size_t expected_detections =
+                    expected_ground_truth == 0 ||
+                            detection_sorted_indices.empty()
+                        ? 0
+                        : detection_sorted_indices.size();
+
+                if (category_ious.size() != expected_detections) {
+                        std::ostringstream error;
+                        error << "image_category_ious[" << i << "][" << c
+                              << "] for image id " << img_id;
                         if (useCats) {
-                                double cat_id = cat_ids[c];
-                                ground_truth_instances =
-                                    gt_dataset.get_cpp_annotations(img_id,
-                                                                   cat_id);
-                                detection_instances =
-                                    dt_dataset.get_cpp_annotations(img_id,
-                                                                   cat_id);
+                                error << " and category id " << cat_ids[c];
                         } else {
-                                // When useCats=False, merge all categories for
-                                // this image
-                                for (size_t j = 0; j < cat_ids.size(); ++j) {
-                                        double cat_id = cat_ids[j];
-                                        std::vector<InstanceAnnotation>
-                                            gt_anns =
-                                                gt_dataset.get_cpp_annotations(
-                                                    img_id, cat_id);
-                                        std::vector<InstanceAnnotation>
-                                            dt_anns =
-                                                dt_dataset.get_cpp_annotations(
-                                                    img_id, cat_id);
-
-                                        ground_truth_instances.insert(
-                                            ground_truth_instances.end(),
-                                            std::make_move_iterator(
-                                                gt_anns.begin()),
-                                            std::make_move_iterator(
-                                                gt_anns.end()));
-                                        detection_instances.insert(
-                                            detection_instances.end(),
-                                            std::make_move_iterator(
-                                                dt_anns.begin()),
-                                            std::make_move_iterator(
-                                                dt_anns.end()));
-                                }
+                                error << " with merged categories";
                         }
+                        error << " has an invalid detection dimension; "
+                                 "expected "
+                              << expected_detections << ", got "
+                              << category_ious.size() << ".";
+                        throw std::runtime_error(error.str());
+                }
 
-                        SortInstancesByDetectionScore(
-                            detection_instances, &detection_sorted_indices);
-                        if ((int)detection_sorted_indices.size() >
-                            max_detections) {
-                                detection_sorted_indices.resize(max_detections);
-                        }
-
-                        const auto& category_ious = image_category_ious[i][c];
-                        const std::size_t expected_ground_truth =
-                            ground_truth_instances.size();
-                        const std::size_t expected_detections =
-                            expected_ground_truth == 0 ||
-                                    detection_sorted_indices.empty()
-                                ? 0
-                                : detection_sorted_indices.size();
-
-                        if (category_ious.size() != expected_detections) {
+                for (std::size_t d = 0; d < category_ious.size(); ++d) {
+                        if (category_ious[d].size() != expected_ground_truth) {
                                 std::ostringstream error;
                                 error << "image_category_ious[" << i << "]["
-                                      << c << "] for image id " << img_id;
+                                      << c << "][" << d << "] for image id "
+                                      << img_id;
                                 if (useCats) {
                                         error << " and category id "
                                               << cat_ids[c];
                                 } else {
                                         error << " with merged categories";
                                 }
-                                error << " has an invalid detection dimension; "
-                                         "expected "
-                                      << expected_detections << ", got "
-                                      << category_ious.size() << ".";
+                                error << " has an invalid ground-truth "
+                                         "dimension; expected "
+                                      << expected_ground_truth << ", got "
+                                      << category_ious[d].size() << ".";
                                 throw std::runtime_error(error.str());
                         }
+                }
 
-                        for (std::size_t d = 0; d < category_ious.size(); ++d) {
-                                if (category_ious[d].size() !=
-                                    expected_ground_truth) {
-                                        std::ostringstream error;
-                                        error << "image_category_ious[" << i
-                                              << "][" << c << "][" << d
-                                              << "] for image id " << img_id;
-                                        if (useCats) {
-                                                error << " and category id "
-                                                      << cat_ids[c];
-                                        } else {
-                                                error << " with merged "
-                                                         "categories";
-                                        }
-                                        error << " has an invalid ground-truth "
-                                                 "dimension; expected "
-                                              << expected_ground_truth
-                                              << ", got "
-                                              << category_ious[d].size() << ".";
-                                        throw std::runtime_error(error.str());
+                for (size_t a = 0; a < area_ranges.size(); ++a) {
+                        SortInstancesByIgnore(
+                            area_ranges[a], ground_truth_instances,
+                            &ground_truth_sorted_indices, &ignores);
+
+                        MatchDetectionsToGroundTruth(
+                            detection_instances, detection_sorted_indices,
+                            ground_truth_instances, ground_truth_sorted_indices,
+                            ignores, category_ious, iou_thresholds,
+                            area_ranges[a],
+                            &results_all[c * num_area_ranges * num_images +
+                                         a * num_images + i]);
+                }
+        };
+
+        const std::size_t num_tasks =
+            static_cast<std::size_t>(num_images) * num_categories;
+        if (num_tasks == 0) {
+                return results_all;
+        }
+
+        const std::size_t worker_count = std::min<std::size_t>(
+            num_tasks, std::max(1u, std::thread::hardware_concurrency()));
+        std::exception_ptr first_exception;
+        {
+                py::gil_scoped_release release;
+                if (worker_count == 1) {
+                        for (std::size_t task_index = 0; task_index < num_tasks;
+                             ++task_index) {
+                                try {
+                                        evaluate_image_category(task_index);
+                                } catch (...) {
+                                        first_exception =
+                                            std::current_exception();
+                                        break;
                                 }
                         }
+                } else {
+                        std::atomic<std::size_t> next_task{0};
+                        auto evaluate_tasks = [&]() {
+                                while (true) {
+                                        const std::size_t task_index =
+                                            next_task.fetch_add(1);
+                                        if (task_index >= num_tasks) {
+                                                return;
+                                        }
+                                        evaluate_image_category(task_index);
+                                }
+                        };
 
-                        for (size_t a = 0; a < area_ranges.size(); ++a) {
-                                SortInstancesByIgnore(
-                                    area_ranges[a], ground_truth_instances,
-                                    &ground_truth_sorted_indices, &ignores);
-
-                                MatchDetectionsToGroundTruth(
-                                    detection_instances,
-                                    detection_sorted_indices,
-                                    ground_truth_instances,
-                                    ground_truth_sorted_indices, ignores,
-                                    category_ious, iou_thresholds,
-                                    area_ranges[a],
-                                    &results_all[c * num_area_ranges *
-                                                     num_images +
-                                                 a * num_images + i]);
+                        std::vector<std::future<void>> futures;
+                        futures.reserve(worker_count);
+                        for (std::size_t worker = 0; worker < worker_count;
+                             ++worker) {
+                                futures.emplace_back(std::async(
+                                    std::launch::async, evaluate_tasks));
                         }
 
-                        // Clear cache entries to free memory after processing
-                        // all area_ranges
-                        if (useCats) {
-                                double cat_id = cat_ids[c];
-                                gt_dataset.clear_cache_entry(img_id, cat_id);
-                                dt_dataset.clear_cache_entry(img_id, cat_id);
-                        } else {
-                                // When useCats=False, clear cache for all
-                                // categories used
-                                for (size_t j = 0; j < cat_ids.size(); ++j) {
-                                        double cat_id = cat_ids[j];
-                                        gt_dataset.clear_cache_entry(img_id,
-                                                                     cat_id);
-                                        dt_dataset.clear_cache_entry(img_id,
-                                                                     cat_id);
+                        for (auto& future : futures) {
+                                try {
+                                        future.get();
+                                } catch (...) {
+                                        if (!first_exception) {
+                                                first_exception =
+                                                    std::current_exception();
+                                        }
                                 }
                         }
                 }
+        }
+        if (first_exception) {
+                std::rethrow_exception(first_exception);
         }
 
         return results_all;
