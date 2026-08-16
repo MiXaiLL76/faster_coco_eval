@@ -391,8 +391,9 @@ std::vector<ImageEvaluation> EvaluateImages(
 // Convert a python list to a vector
 template <typename T>
 std::vector<T> list_to_vec(const py::list& l) {
-        std::vector<T> v(py::len(l));
-        for (int i = 0; i < (int)py::len(l); ++i) {
+        const auto n = py::len(l);
+        std::vector<T> v(n);
+        for (size_t i = 0; i < n; ++i) {
                 v[i] = l[i].cast<T>();
         }
         return v;
