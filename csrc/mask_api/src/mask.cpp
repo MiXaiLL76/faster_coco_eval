@@ -55,11 +55,12 @@ class ParallelPermitPool {
                         --pool.available;
                 }
                 ~Permit() {
-                        std::lock_guard<std::mutex> lock(pool.mutex);
-                        ++pool.available;
+                        {
+                                std::lock_guard<std::mutex> lock(pool.mutex);
+                                ++pool.available;
+                        }
                         pool.condition.notify_one();
                 }
-                Permit(Permit&&) = default;
                 Permit(const Permit&) = delete;
                 Permit& operator=(const Permit&) = delete;
 
@@ -88,27 +89,25 @@ void parallelFor(size_t count, Function&& function) {
                 return;
         }
 
-        // Always run the first chunk inline so the calling thread performs
-        // useful work while waiting on permits for the remaining chunks.
         const size_t chunk_size = (count + workers - 1) / workers;
+
+        // Each worker acquires its own shared permit from inside the async
+        // task, so the process-wide budget bounds concurrently *running*
+        // chunks. The calling thread only waits on futures and never holds a
+        // permit, which avoids a hold-and-wait deadlock between concurrent
+        // callers; excess chunks simply run as earlier workers free permits.
         std::vector<std::future<void>> futures;
-        futures.reserve(workers - 1);
-        for (size_t start = chunk_size; start < count; start += chunk_size) {
+        futures.reserve(workers);
+        for (size_t start = 0; start < count; start += chunk_size) {
                 const size_t end = std::min(start + chunk_size, count);
-                // Bound applies process-wide: each async chunk must hold a
-                // shared permit before spawning its worker thread.
-                ParallelPermitPool::Permit permit(parallelPermitPool());
-                futures.emplace_back(std::async(
-                    std::launch::async, [&function, start, end,
-                                         permit = std::move(permit)]() mutable {
+                futures.emplace_back(
+                    std::async(std::launch::async, [&function, start, end]() {
+                            ParallelPermitPool::Permit permit(
+                                parallelPermitPool());
                             for (size_t index = start; index < end; ++index) {
                                     function(index);
                             }
                     }));
-        }
-        const size_t first_end = std::min(chunk_size, count);
-        for (size_t index = 0; index < first_end; ++index) {
-                function(index);
         }
         for (auto& future : futures) {
                 future.get();
