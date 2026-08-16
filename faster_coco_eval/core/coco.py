@@ -108,12 +108,22 @@ class COCO:
                 imgs[img["id"]] = img
 
         if "annotations" in self.dataset:
-            for ann in self.dataset["annotations"]:
-                if type(ann["image_id"]) is not int:
-                    ann["image_id"] = int(ann["image_id"])
+            # Preserve category-less datasets without branching for every normal COCO annotation.
+            if "categories" in self.dataset:
+                for ann in self.dataset["annotations"]:
+                    if type(ann["image_id"]) is not int:
+                        ann["image_id"] = int(ann["image_id"])
 
-                imgToAnns[ann["image_id"]].append(ann)
-                anns[ann["id"]] = ann
+                    imgToAnns[ann["image_id"]].append(ann)
+                    anns[ann["id"]] = ann
+                    catToImgs[ann["category_id"]].append(ann["image_id"])
+            else:
+                for ann in self.dataset["annotations"]:
+                    if type(ann["image_id"]) is not int:
+                        ann["image_id"] = int(ann["image_id"])
+
+                    imgToAnns[ann["image_id"]].append(ann)
+                    anns[ann["id"]] = ann
 
             if 0 in anns:
                 warnings.warn(
@@ -129,10 +139,6 @@ class COCO:
         if "categories" in self.dataset:
             for cat in self.dataset["categories"]:
                 cats[cat["id"]] = cat
-
-        if "annotations" in self.dataset and "categories" in self.dataset:
-            for ann in self.dataset["annotations"]:
-                catToImgs[ann["category_id"]].append(ann["image_id"])
 
         self.print_function("index created!")
         self.print_function(f"Done (t={time.time() - tic:0.2f}s)")

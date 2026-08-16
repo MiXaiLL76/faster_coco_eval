@@ -582,18 +582,16 @@ std::vector<double> _preproc_bbox_array(const py::object& pyobj) {
 //   - std::out_of_range if the input type is unsupported or malformed.
 std::tuple<std::variant<std::vector<RLE>, std::vector<double>>, size_t>
 _preproc(const py::object& pyobj) {
-        std::string type = py::str(py::type::of(pyobj));
-        if (type == "<class 'numpy.ndarray'>") {
+        if (py::isinstance<py::array>(pyobj)) {
                 auto result = _preproc_bbox_array(pyobj);
                 return {result, result.size() / 4};
-        } else if (type == "<class 'list'>") {
+        } else if (py::isinstance<py::list>(pyobj)) {
                 auto pyobj_list = pyobj.cast<std::vector<py::object>>();
                 if (pyobj_list.empty()) {
                         return {std::vector<double>{}, 0};
                 }
-                std::string sub_type = py::str(py::type::of(pyobj_list[0]));
-                if (sub_type == "<class 'list'>" ||
-                    sub_type == "<class 'numpy.ndarray'>") {
+                if (py::isinstance<py::list>(pyobj_list[0]) ||
+                    py::isinstance<py::array>(pyobj_list[0])) {
                         auto matrix =
                             pyobj.cast<std::vector<std::vector<double>>>();
                         for (const auto& item : matrix) {
@@ -612,7 +610,7 @@ _preproc(const py::object& pyobj) {
                         return {result, result.size() / 4};
                 }
         check_rle:
-                if (sub_type == "<class 'dict'>") {
+                if (py::isinstance<py::dict>(pyobj_list[0])) {
                         auto result =
                             _frString(pyobj.cast<std::vector<py::dict>>());
                         return {result, result.size()};
@@ -695,27 +693,24 @@ std::variant<py::array_t<double, py::array::f_style>, std::vector<double>> iou(
 std::variant<pybind11::dict, std::vector<pybind11::dict>> frPyObjects(
     const py::object& pyobj, const uint64_t& h, const uint64_t& w) {
         std::vector<RLE> rles;
-        std::string type = py::str(py::type::of(pyobj));
 
         // Handle Python list input
-        if (type == "<class 'list'>") {
+        if (py::isinstance<py::list>(pyobj)) {
                 std::vector<py::object> pyobj_list =
                     pyobj.cast<std::vector<py::object>>();
                 if (pyobj_list.size() == 0) {
                         throw std::out_of_range("list index out of range");
                 }
 
-                std::string sub_type = py::str(py::type::of(pyobj_list[0]));
-
                 // List of dicts: treat as uncompressed RLEs
-                if (sub_type == "<class 'dict'>") {
+                if (py::isinstance<py::dict>(pyobj_list[0])) {
                         return frUncompressedRLE(
                             pyobj.cast<std::vector<py::dict>>());
                 }
                 // List of lists or numpy arrays: treat as bbox or polygon
                 // depending on shape
-                else if ((sub_type == "<class 'list'>") ||
-                         (sub_type == "<class 'numpy.ndarray'>")) {
+                else if (py::isinstance<py::list>(pyobj_list[0]) ||
+                         py::isinstance<py::array>(pyobj_list[0])) {
                         std::vector<std::vector<double>> numpy_array =
                             pyobj.cast<std::vector<std::vector<double>>>();
                         if (numpy_array[0].size() == 4) {
@@ -726,8 +721,8 @@ std::variant<pybind11::dict, std::vector<pybind11::dict>> frPyObjects(
                 }
                 // List of floats or ints: treat as a single bbox or polygon
                 // depending on length
-                else if ((sub_type == "<class 'float'>") ||
-                         (sub_type == "<class 'int'>")) {
+                else if (py::isinstance<py::float_>(pyobj_list[0]) ||
+                         py::isinstance<py::int_>(pyobj_list[0])) {
                         std::vector<double> array =
                             pyobj.cast<std::vector<double>>();
                         if (array.size() == 4) {
@@ -742,12 +737,12 @@ std::variant<pybind11::dict, std::vector<pybind11::dict>> frPyObjects(
                 }
         }
         // Handle numpy ndarray input as bounding boxes
-        else if (type == "<class 'numpy.ndarray'>") {
+        else if (py::isinstance<py::array>(pyobj)) {
                 return frBbox(pyobj.cast<std::vector<std::vector<double>>>(), h,
                               w);
         }
         // Handle single dict input as uncompressed RLE
-        else if (type == "<class 'dict'>") {
+        else if (py::isinstance<py::dict>(pyobj)) {
                 return frUncompressedRLE(
                     {pyobj})[0];  // Return the first (and only) dict
         } else {
