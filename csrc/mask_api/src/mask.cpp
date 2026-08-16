@@ -11,6 +11,7 @@ typedef std::ptrdiff_t ssize_t;
 #include <algorithm>
 #include <condition_variable>
 #include <cstdint>
+#include <exception>
 #include <future>
 #include <iostream>
 #include <mutex>
@@ -109,9 +110,18 @@ void parallelFor(size_t count, Function&& function) {
                             }
                     }));
         }
+        // Join every worker before surfacing a failure so no task's exception
+        // is silently discarded and the propagated error is deterministic.
+        std::exception_ptr first_error;
         for (auto& future : futures) {
-                future.get();
+                try {
+                        future.get();
+                } catch (...) {
+                        if (!first_error)
+                                first_error = std::current_exception();
+                }
         }
+        if (first_error) std::rethrow_exception(first_error);
 }
 
 }  // namespace

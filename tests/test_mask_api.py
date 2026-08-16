@@ -208,6 +208,17 @@ class TestMaskApi(unittest.TestCase):
         with self.assertRaises(ValueError):
             _mask.area(rles)
 
+    def test_parallel_batch_decode_multiple_malformed_items(self):
+        """Multiple malformed items must still surface an error deterministically."""
+        masks = self._parallel_batch_masks()
+        rles = [mask_util.encode(np.asfortranarray(m[..., None]))[0] for m in masks]
+        # Two undersized items in different chunks of a parallel batch.
+        rles[1] = {"size": [32, 32], "counts": b"0"}
+        rles[9] = {"size": [32, 32], "counts": b"0"}
+
+        with self.assertRaises(ValueError):
+            _mask.decode(rles)
+
     def test_decode_rejects_count_larger_than_each_mask(self):
         """Reject oversized uncompressed RLE counts at construction time."""
         with self.assertRaises(ValueError):
