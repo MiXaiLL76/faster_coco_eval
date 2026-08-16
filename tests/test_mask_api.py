@@ -117,6 +117,99 @@ class TestMaskApi(unittest.TestCase):
     def test_rles(self):
         self.assertTrue(np.all([_mask.encode(_mask.decode([rle])) == [rle] for rle in self.rleObjs]))
 
+    @staticmethod
+    def _parallel_batch_masks(count=16, shape=(32, 32), seed=7):
+        """Deterministic masks sized to cross the parallel batch threshold."""
+        rng = np.random.RandomState(seed)
+        masks = []
+        for i in range(count):
+            mask = np.zeros(shape, dtype=np.uint8)
+            mask[4 + i : 4 + i + 8, 3 + i : 3 + i + 9] = 1
+            mask[rng.rand(*shape) < 0.1] ^= 1
+            masks.append(mask)
+        return masks
+
+    @staticmethod
+    def _erode_reference(mask, dilation):
+        """Dense reference for 3x3-style erosion used by the parallel path."""
+        h, w = mask.shape
+        padded = np.pad(mask, dilation, mode="constant")
+        eroded = np.ones_like(mask)
+        for dy in range(2 * dilation + 1):
+            for dx in range(2 * dilation + 1):
+                eroded &= padded[dy : dy + h, dx : dx + w]
+        return eroded
+
+    def test_parallel_batch_encode_parity_and_order(self):
+        """Batch encode must match per-mask encode and keep slot order."""
+        masks = self._parallel_batch_masks()
+        stacked = np.asfortranarray(np.stack(masks, axis=2))
+
+        batch = _mask.encode(stacked)
+        solo = [mask_util.encode(np.asfortranarray(m[..., None]))[0] for m in masks]
+
+        self.assertEqual(batch, solo)
+
+    def test_parallel_batch_decode_parity_and_order(self):
+        """Batch decode must match per-mask decode and keep slot order."""
+        masks = self._parallel_batch_masks()
+        rles = [mask_util.encode(np.asfortranarray(m[..., None]))[0] for m in masks]
+
+        decoded = _mask.decode(rles)
+
+        self.assertEqual(decoded.shape, (32, 32, len(masks)))
+        for index, mask in enumerate(masks):
+            np.testing.assert_array_equal(decoded[:, :, index], mask)
+
+    def test_parallel_batch_area_parity_and_order(self):
+        """Batch area must match per-mask areas in order."""
+        masks = self._parallel_batch_masks()
+        rles = [mask_util.encode(np.asfortranarray(m[..., None]))[0] for m in masks]
+
+        areas = _mask.area(rles)
+
+        self.assertEqual(areas.tolist(), [int(m.sum()) for m in masks])
+
+    def test_parallel_batch_erode_parity_and_order(self):
+        """Batch erosion must match the dense reference and keep slot order."""
+        masks = self._parallel_batch_masks()
+        rles = [mask_util.encode(np.asfortranarray(m[..., None]))[0] for m in masks]
+
+        eroded = _mask.erode_3x3(rles, 1)
+        decoded = _mask.decode(eroded)
+
+        for index, mask in enumerate(masks):
+            np.testing.assert_array_equal(
+                decoded[:, :, index], self._erode_reference(mask, 1)
+            )
+
+    def test_parallel_batch_decode_propagates_malformed_item(self):
+        """A malformed item in a parallel batch must surface its error."""
+        masks = self._parallel_batch_masks()
+        rles = [mask_util.encode(np.asfortranarray(m[..., None]))[0] for m in masks]
+        rles[5] = {"size": [32, 32], "counts": b"0"}  # runs sum below h*w
+
+        with self.assertRaises(ValueError):
+            _mask.decode(rles)
+
+    def test_parallel_batch_erode_propagates_malformed_item(self):
+        """A malformed item must fail erode_3x3 even in a parallel batch."""
+        masks = self._parallel_batch_masks()
+        rles = [mask_util.encode(np.asfortranarray(m[..., None]))[0] for m in masks]
+        rles[3] = {"size": [2, 2], "counts": b"05"}  # runs exceed h*w
+
+        with self.assertRaises(ValueError):
+            _mask.erode_3x3(rles, 1)
+
+    def test_parallel_batch_area_propagates_malformed_item(self):
+        """A malformed item must fail area even in a parallel batch."""
+        masks = self._parallel_batch_masks()
+        rles = [mask_util.encode(np.asfortranarray(m[..., None]))[0] for m in masks]
+        rles[2] = {"size": [2, 2], "counts": b"05"}  # runs exceed h*w
+
+        with self.assertRaises(ValueError):
+            _mask.area(rles)
+
     def test_decode_rejects_count_larger_than_each_mask(self):
         """Reject oversized uncompressed RLE counts at construction time."""
         with self.assertRaises(ValueError):

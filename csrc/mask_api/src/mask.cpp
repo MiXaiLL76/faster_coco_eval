@@ -9,9 +9,11 @@ typedef std::ptrdiff_t ssize_t;
 #include <time.h>
 
 #include <algorithm>
+#include <condition_variable>
 #include <cstdint>
 #include <future>
 #include <iostream>
+#include <mutex>
 #include <numeric>
 #include <thread>
 #include <vector>
@@ -28,12 +30,59 @@ namespace {
 
 constexpr size_t kParallelBatchThreshold = 8;
 
+// Process-wide permit budget capping the total number of async batch workers
+// across all concurrent calls. Because callers release the GIL, several Python
+// threads may enter the batch APIs at once; without a shared bound each call
+// could spawn up to hardware_concurrency() OS threads, oversubscribing the
+// machine.
+class ParallelPermitPool {
+       public:
+        static size_t capacity() {
+                return std::max(
+                    size_t{1},
+                    static_cast<size_t>(std::thread::hardware_concurrency()));
+        }
+
+        explicit ParallelPermitPool(size_t size) : available(size) {}
+
+        // RAII permit; acquisition blocks until a slot is free.
+        class Permit {
+               public:
+                explicit Permit(ParallelPermitPool& pool) : pool(pool) {
+                        std::unique_lock<std::mutex> lock(pool.mutex);
+                        pool.condition.wait(lock, [&pool] {
+                                return pool.available > 0;
+                        });
+                        --pool.available;
+                }
+                ~Permit() {
+                        std::lock_guard<std::mutex> lock(pool.mutex);
+                        ++pool.available;
+                        pool.condition.notify_one();
+                }
+                Permit(Permit&&) = default;
+                Permit(const Permit&) = delete;
+                Permit& operator=(const Permit&) = delete;
+
+               private:
+                ParallelPermitPool& pool;
+        };
+
+       private:
+        std::mutex mutex;
+        std::condition_variable condition;
+        size_t available;
+};
+
+ParallelPermitPool& parallelPermitPool() {
+        static ParallelPermitPool pool(ParallelPermitPool::capacity());
+        return pool;
+}
+
 template <typename Function>
 void parallelFor(size_t count, Function&& function) {
-        const size_t workers = std::min(
-            count,
-            std::max(size_t{1},
-                     static_cast<size_t>(std::thread::hardware_concurrency())));
+        const size_t workers =
+            std::min(count, ParallelPermitPool::capacity());
         if (count < kParallelBatchThreshold || workers < 2) {
                 for (size_t index = 0; index < count; ++index) {
                         function(index);
@@ -41,17 +90,29 @@ void parallelFor(size_t count, Function&& function) {
                 return;
         }
 
+        // Always run the first chunk inline so the calling thread performs
+        // useful work while waiting on permits for the remaining chunks.
         const size_t chunk_size = (count + workers - 1) / workers;
         std::vector<std::future<void>> futures;
-        futures.reserve(workers);
-        for (size_t start = 0; start < count; start += chunk_size) {
+        futures.reserve(workers - 1);
+        for (size_t start = chunk_size; start < count; start += chunk_size) {
                 const size_t end = std::min(start + chunk_size, count);
+                // Bound applies process-wide: each async chunk must hold a
+                // shared permit before spawning its worker thread.
+                ParallelPermitPool::Permit permit(parallelPermitPool());
                 futures.emplace_back(
-                    std::async(std::launch::async, [&function, start, end]() {
-                            for (size_t index = start; index < end; ++index) {
-                                    function(index);
-                            }
-                    }));
+                    std::async(std::launch::async,
+                               [&function, start, end,
+                                permit = std::move(permit)]() mutable {
+                                       for (size_t index = start; index < end;
+                                            ++index) {
+                                               function(index);
+                                       }
+                               }));
+        }
+        const size_t first_end = std::min(chunk_size, count);
+        for (size_t index = 0; index < first_end; ++index) {
+                function(index);
         }
         for (auto& future : futures) {
                 future.get();
