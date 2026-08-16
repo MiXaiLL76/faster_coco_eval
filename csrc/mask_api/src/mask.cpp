@@ -115,7 +115,7 @@ std::vector<RLE> rleEncode(const py::array_t<uint8_t, py::array::f_style>& M,
                                 }
                         }
                         cnts.emplace_back(count);
-                        rles[index] = RLE(h, w, cnts.size(), std::move(cnts));
+                        rles[index] = RLE(h, w, std::move(cnts));
                 });
         }
         return rles;
