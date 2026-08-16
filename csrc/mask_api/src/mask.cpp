@@ -50,9 +50,8 @@ class ParallelPermitPool {
                public:
                 explicit Permit(ParallelPermitPool& pool) : pool(pool) {
                         std::unique_lock<std::mutex> lock(pool.mutex);
-                        pool.condition.wait(lock, [&pool] {
-                                return pool.available > 0;
-                        });
+                        pool.condition.wait(
+                            lock, [&pool] { return pool.available > 0; });
                         --pool.available;
                 }
                 ~Permit() {
@@ -81,8 +80,7 @@ ParallelPermitPool& parallelPermitPool() {
 
 template <typename Function>
 void parallelFor(size_t count, Function&& function) {
-        const size_t workers =
-            std::min(count, ParallelPermitPool::capacity());
+        const size_t workers = std::min(count, ParallelPermitPool::capacity());
         if (count < kParallelBatchThreshold || workers < 2) {
                 for (size_t index = 0; index < count; ++index) {
                         function(index);
@@ -100,15 +98,13 @@ void parallelFor(size_t count, Function&& function) {
                 // Bound applies process-wide: each async chunk must hold a
                 // shared permit before spawning its worker thread.
                 ParallelPermitPool::Permit permit(parallelPermitPool());
-                futures.emplace_back(
-                    std::async(std::launch::async,
-                               [&function, start, end,
-                                permit = std::move(permit)]() mutable {
-                                       for (size_t index = start; index < end;
-                                            ++index) {
-                                               function(index);
-                                       }
-                               }));
+                futures.emplace_back(std::async(
+                    std::launch::async, [&function, start, end,
+                                         permit = std::move(permit)]() mutable {
+                            for (size_t index = start; index < end; ++index) {
+                                    function(index);
+                            }
+                    }));
         }
         const size_t first_end = std::min(chunk_size, count);
         for (size_t index = 0; index < first_end; ++index) {

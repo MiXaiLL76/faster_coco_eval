@@ -179,9 +179,7 @@ class TestMaskApi(unittest.TestCase):
         decoded = _mask.decode(eroded)
 
         for index, mask in enumerate(masks):
-            np.testing.assert_array_equal(
-                decoded[:, :, index], self._erode_reference(mask, 1)
-            )
+            np.testing.assert_array_equal(decoded[:, :, index], self._erode_reference(mask, 1))
 
     def test_parallel_batch_decode_propagates_malformed_item(self):
         """A malformed item in a parallel batch must surface its error."""
