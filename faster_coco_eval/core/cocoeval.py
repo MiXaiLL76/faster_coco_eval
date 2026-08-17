@@ -34,6 +34,7 @@ class COCOeval:
         separate_eval: bool = False,
         boundary_dilation_ratio: float = 0.02,
         boundary_cpu_count: int = min(os.cpu_count() or 1, 4),
+        rle_iou_max_workers: int = 8,
     ):
         """Initialize CocoEval using coco APIs for gt and dt.
 
@@ -50,7 +51,11 @@ class COCOeval:
             separate_eval (bool): Whether to perform separate evaluation, defaults to False.
             boundary_dilation_ratio (float): Ratio for boundary dilation, defaults to 0.02.
             boundary_cpu_count (int): Number of CPUs for boundary computation, defaults to min(os.cpu_count() or 1, 4).
+            rle_iou_max_workers (int): Maximum worker threads for RLE IoU computation, defaults to 8.
         """
+        if isinstance(rle_iou_max_workers, bool) or not isinstance(rle_iou_max_workers, int) or rle_iou_max_workers < 1:
+            raise ValueError("rle_iou_max_workers must be a positive integer")
+
         if ranges is None:
             ranges = {
                 "small": [0, 32**2],
@@ -73,6 +78,7 @@ class COCOeval:
         self.separate_eval = separate_eval
         self.boundary_dilation_ratio = boundary_dilation_ratio
         self.boundary_cpu_count = boundary_cpu_count
+        self.rle_iou_max_workers = rle_iou_max_workers
         self.use_area = use_area
 
         if iouType == "keypoints" and self.lvis_style:
