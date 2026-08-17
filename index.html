@@ -174,13 +174,13 @@
 <span class="n">pred</span> <span class="o">=</span> <span class="n">anno</span><span class="o">.</span><span class="n">loadRes</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">pred_json</span><span class="p">))</span>  <span class="c1"># Predictions file</span>
 
 <span class="c1"># Evaluate bounding boxes</span>
-<span class="n">val</span> <span class="o">=</span> <span class="n">COCOeval</span><span class="p">(</span><span class="n">anno</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="s2">&quot;bbox&quot;</span><span class="p">)</span>
+<span class="n">val</span> <span class="o">=</span> <span class="n">COCOeval</span><span class="p">(</span><span class="n">anno</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="s2">"bbox"</span><span class="p">)</span>
 <span class="n">val</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
 <span class="n">val</span><span class="o">.</span><span class="n">accumulate</span><span class="p">()</span>
 <span class="n">val</span><span class="o">.</span><span class="n">summarize</span><span class="p">()</span>
 
 <span class="c1"># Or evaluate segmentation masks</span>
-<span class="n">val</span> <span class="o">=</span> <span class="n">COCOeval</span><span class="p">(</span><span class="n">anno</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="s2">&quot;segm&quot;</span><span class="p">)</span>
+<span class="n">val</span> <span class="o">=</span> <span class="n">COCOeval</span><span class="p">(</span><span class="n">anno</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="s2">"segm"</span><span class="p">)</span>
 <span class="n">val</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
 <span class="n">val</span><span class="o">.</span><span class="n">accumulate</span><span class="p">()</span>
 <span class="n">val</span><span class="o">.</span><span class="n">summarize</span><span class="p">()</span>
@@ -370,7 +370,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="faster_eval_api.html">COCOeval_faster</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="faster_eval_api.html#faster_coco_eval.core.COCOeval_faster"><code class="docutils literal notranslate"><span class="pre">COCOeval_faster</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="faster_eval_api.html#rle-iou-worker-limit">RLE IoU worker limit</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="mask.html">Mask API</a><ul>

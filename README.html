@@ -173,13 +173,13 @@
 <span class="n">pred</span> <span class="o">=</span> <span class="n">anno</span><span class="o">.</span><span class="n">loadRes</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">pred_json</span><span class="p">))</span>  <span class="c1"># Predictions file</span>
 
 <span class="c1"># Evaluate bounding boxes</span>
-<span class="n">val</span> <span class="o">=</span> <span class="n">COCOeval</span><span class="p">(</span><span class="n">anno</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="s2">&quot;bbox&quot;</span><span class="p">)</span>
+<span class="n">val</span> <span class="o">=</span> <span class="n">COCOeval</span><span class="p">(</span><span class="n">anno</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="s2">"bbox"</span><span class="p">)</span>
 <span class="n">val</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
 <span class="n">val</span><span class="o">.</span><span class="n">accumulate</span><span class="p">()</span>
 <span class="n">val</span><span class="o">.</span><span class="n">summarize</span><span class="p">()</span>
 
 <span class="c1"># Or evaluate segmentation masks</span>
-<span class="n">val</span> <span class="o">=</span> <span class="n">COCOeval</span><span class="p">(</span><span class="n">anno</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="s2">&quot;segm&quot;</span><span class="p">)</span>
+<span class="n">val</span> <span class="o">=</span> <span class="n">COCOeval</span><span class="p">(</span><span class="n">anno</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="s2">"segm"</span><span class="p">)</span>
 <span class="n">val</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
 <span class="n">val</span><span class="o">.</span><span class="n">accumulate</span><span class="p">()</span>
 <span class="n">val</span><span class="o">.</span><span class="n">summarize</span><span class="p">()</span>

@@ -104,10 +104,10 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">faster_coco_eval.extra</span><span class="w"> </span><span class="kn">import</span> <span class="n">Curves</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">faster_coco_eval.extra</span><span class="w"> </span><span class="kn">import</span> <span class="n">PreviewResults</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">faster_coco_eval</span><span class="o">.</span><span class="n">__version__</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">faster_coco_eval</span><span class="o">.</span><span class="n">__version__</span><span class="si">=}</span><span class="s2">"</span><span class="p">)</span>
 
-<span class="n">logging</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="s2">&quot;INFO&quot;</span><span class="p">)</span>
-<span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Запись.&quot;</span><span class="p">)</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="s2">"INFO"</span><span class="p">)</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Запись."</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -123,8 +123,8 @@ faster_coco_eval.__version__=&#39;1.5.3&#39;
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prepared_coco_in_dict</span> <span class="o">=</span> <span class="n">COCO</span><span class="o">.</span><span class="n">load_json</span><span class="p">(</span><span class="s2">&quot;../tests/dataset/gt_dataset.json&quot;</span><span class="p">)</span>
-<span class="n">prepared_anns</span> <span class="o">=</span> <span class="n">COCO</span><span class="o">.</span><span class="n">load_json</span><span class="p">(</span><span class="s2">&quot;../tests/dataset/dt_dataset.json&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prepared_coco_in_dict</span> <span class="o">=</span> <span class="n">COCO</span><span class="o">.</span><span class="n">load_json</span><span class="p">(</span><span class="s2">"../tests/dataset/gt_dataset.json"</span><span class="p">)</span>
+<span class="n">prepared_anns</span> <span class="o">=</span> <span class="n">COCO</span><span class="o">.</span><span class="n">load_json</span><span class="p">(</span><span class="s2">"../tests/dataset/dt_dataset.json"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -133,7 +133,7 @@ faster_coco_eval.__version__=&#39;1.5.3&#39;
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">threshold_iou</span> <span class="o">=</span> <span class="mf">0.5</span>
-<span class="n">iouType</span> <span class="o">=</span> <span class="s2">&quot;segm&quot;</span>
+<span class="n">iouType</span> <span class="o">=</span> <span class="s2">"segm"</span>
 
 <span class="n">cocoGt</span> <span class="o">=</span> <span class="n">COCO</span><span class="p">(</span><span class="n">prepared_coco_in_dict</span><span class="p">)</span>
 <span class="n">cocoDt</span> <span class="o">=</span> <span class="n">cocoGt</span><span class="o">.</span><span class="n">loadRes</span><span class="p">(</span><span class="n">prepared_anns</span><span class="p">)</span>
@@ -281,7 +281,7 @@ if (outputEl) {{
     <span class="n">cocoGt</span><span class="p">,</span> <span class="n">cocoDt</span><span class="p">,</span> <span class="n">iou_tresh</span><span class="o">=</span><span class="n">threshold_iou</span><span class="p">,</span> <span class="n">iouType</span><span class="o">=</span><span class="n">iouType</span><span class="p">,</span> <span class="n">useCats</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">)</span>
 
-<span class="n">results</span><span class="o">.</span><span class="n">display_tp_fp_fn</span><span class="p">(</span><span class="n">data_folder</span><span class="o">=</span><span class="s2">&quot;../tests/dataset/&quot;</span><span class="p">,</span> <span class="n">image_ids</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="n">results</span><span class="o">.</span><span class="n">display_tp_fp_fn</span><span class="p">(</span><span class="n">data_folder</span><span class="o">=</span><span class="s2">"../tests/dataset/"</span><span class="p">,</span> <span class="n">image_ids</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
