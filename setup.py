@@ -4,7 +4,17 @@ import glob
 from importlib.util import module_from_spec, spec_from_file_location
 
 import setuptools
-from pybind11.setup_helpers import MACOS, WIN, ParallelCompile, Pybind11Extension, build_ext
+from pybind11.setup_helpers import MACOS, WIN, Pybind11Extension, build_ext
+
+try:
+    from pybind11.setup_helpers import ParallelCompile
+except ImportError:
+    # Fallback for older pybind11 versions (<2.6)
+    class ParallelCompile:
+        def __init__(self, *args, **kwargs):
+            pass
+        def install(self):
+            pass
 from setuptools import setup
 
 ParallelCompile("4").install()
