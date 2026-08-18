@@ -209,7 +209,8 @@ class TestMaskApi(unittest.TestCase):
             _mask.area(rles)
 
     def test_parallel_batch_decode_multiple_malformed_items(self):
-        """Multiple malformed items must still surface an error deterministically."""
+        """Multiple malformed items must still surface an error
+        deterministically."""
         masks = self._parallel_batch_masks()
         rles = [mask_util.encode(np.asfortranarray(m[..., None]))[0] for m in masks]
         # Two undersized items in different chunks of a parallel batch.
