@@ -235,8 +235,6 @@ class FasterCocoEvaluator:
             if len(prediction) == 0:
                 continue
 
-            scores = prediction["scores"]
-            labels = prediction["labels"]
             masks = prediction["masks"]
 
             masks = masks > 0.5
@@ -279,8 +277,6 @@ class FasterCocoEvaluator:
             if len(prediction) == 0:
                 continue
 
-            boxes = prediction["boxes"]
-            boxes = convert_to_xywh(boxes).tolist()
             scores = prediction["scores"].tolist()
             labels = prediction["labels"].tolist()
             keypoints = prediction["keypoints"]

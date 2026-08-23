@@ -10,7 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 class ExtraEval:
-    """Extra evaluation for coco dataset."""
+    """Evaluate COCO results with eager construction-time execution.
+
+    ``iou_tresh`` retains its historical misspelling for API compatibility.
+    When both datasets are supplied, construction filters detections and runs
+    evaluation immediately; otherwise callers can invoke :meth:`evaluate`.
+    """
 
     def __init__(
         self,
@@ -30,7 +35,8 @@ class ExtraEval:
             cocoDt (COCO, optional): Detection results COCO object. Defaults to None.
             iouType (str, optional): Type of IoU evaluation ('bbox', 'segm', 'keypoints'). Defaults to "bbox".
             min_score (float, optional): Minimum score threshold for detections. Defaults to 0.
-            iou_tresh (float, optional): IoU threshold for evaluation. Defaults to 0.0.
+            iou_tresh (float, optional): Historical IoU-threshold parameter
+                spelling, retained for compatibility. Defaults to 0.0.
             recall_count (int, optional): Number of recall thresholds. Defaults to 100.
             useCats (bool, optional): Whether to use categories in evaluation. Defaults to False.
             kpt_oks_sigmas (list, optional): List of OKS sigmas for keypoints evaluation. Defaults to None.
@@ -49,7 +55,7 @@ class ExtraEval:
 
         if iouType == "keypoints":
             self.useCats = True
-            self.kpt_oks_sigmas = np.array(kpt_oks_sigmas)
+            self.kpt_oks_sigmas = None if kpt_oks_sigmas is None else np.array(kpt_oks_sigmas)
         else:
             self.kpt_oks_sigmas = None
 

@@ -35,6 +35,31 @@ def test_extra_eval_keypoints_usecats():
         assert isinstance(extra_eval.kpt_oks_sigmas, np.ndarray)
 
 
+def test_extra_eval_keypoints_preserves_absent_oks_sigmas():
+    """Keep an omitted OKS-sigma configuration as None for the evaluator."""
+    mock_gt = Mock()
+    mock_gt.anns = {}
+
+    with patch.object(ExtraEval, "evaluate"):
+        extra_eval = ExtraEval(cocoGt=mock_gt, cocoDt=None, iouType="keypoints")
+
+    assert extra_eval.kpt_oks_sigmas is None
+
+
+def test_extra_eval_evaluates_eagerly_with_legacy_iou_threshold_name():
+    """Preserve construction-time evaluation and the iou_tresh API spelling."""
+    mock_gt = Mock()
+    mock_gt.anns = {}
+    mock_dt = Mock()
+    mock_dt.anns = {}
+
+    with patch.object(ExtraEval, "evaluate") as evaluate:
+        extra_eval = ExtraEval(cocoGt=mock_gt, cocoDt=mock_dt, iou_tresh=0.25)
+
+    assert extra_eval.iou_tresh == 0.25
+    evaluate.assert_called_once_with()
+
+
 def test_extra_eval_non_keypoints():
     """Test ExtraEval for non-keypoints iouType."""
     mock_gt = Mock()

@@ -184,16 +184,18 @@ class Curves(ExtraEval):
                 """
                 x = np.array(x)
                 _median = np.median(x)
-                _q3 = np.sqrt(np.var(x))
+                _q3 = np.percentile(x, 75)
                 result = {
                     "x": [0],
                     "y": [0],
                 }
 
-                for val in np.linspace(x.min(), (_median + _q3), count):
-                    _mask = x < val
-                    result["y"].append(_mask.sum())
-                    result["x"].append(val)
+                curve_limit = _median + _q3
+                if x.min() < curve_limit:
+                    for val in np.linspace(x.min(), curve_limit, count):
+                        _mask = x < val
+                        result["y"].append(_mask.sum())
+                        result["x"].append(val)
 
                 result["y"].append(len(x))
                 result["x"].append(x.max())
