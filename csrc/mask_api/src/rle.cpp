@@ -74,7 +74,7 @@ RLE RLE::frString(const std::string& s, uint64_t h, uint64_t w) {
 
         // Decode each run from the string
         while (i < m) {
-                int64_t x = 0;
+                uint64_t encoded_value = 0;
                 int k = 0;
                 bool more;
 
@@ -82,21 +82,40 @@ RLE RLE::frString(const std::string& s, uint64_t h, uint64_t w) {
                         if (i >= m)
                                 throw std::runtime_error(
                                     "RLE string is malformed: early end.");
+                        if (k >= 13)
+                                throw std::runtime_error(
+                                    "RLE string is malformed: varint exceeds "
+                                    "64-bit width.");
 
                         // Subtract '0' to get value in range [0..63]
                         const int64_t c = static_cast<int64_t>(s[i]) -
                                           static_cast<int64_t>('0');
-                        x |= (c & 0x1f) << (5 * k);
                         more = c & 0x20;
+                        const uint64_t chunk = c & 0x1f;
+                        if (k == 12) {
+                                if (more || (chunk > 7 && chunk < 24)) {
+                                        throw std::runtime_error(
+                                            "RLE string is malformed: varint "
+                                            "exceeds 64-bit width.");
+                                }
+                                encoded_value |= (chunk & 0x0f) << 60;
+                        } else {
+                                encoded_value |= chunk << (5 * k);
+                        }
                         ++i;
                         ++k;
 
                         // If highest bit of this chunk is set and this is the
                         // last chunk, extend sign
-                        if (!more && (c & 0x10)) {
-                                x |= (~0LL) << (5 * k);
+                        if (!more && (c & 0x10) && k < 13) {
+                                encoded_value |= ~uint64_t{0} << (5 * k);
                         }
                 } while (more);
+
+                int64_t x =
+                    encoded_value <= std::numeric_limits<int64_t>::max()
+                        ? static_cast<int64_t>(encoded_value)
+                        : -1 - static_cast<int64_t>(~encoded_value);
 
                 // Cumulative sum for elements after the second
                 if (cnts.size() > 2) {
@@ -128,6 +147,7 @@ std::vector<double> RLE::toBbox() const {
         ys = h;
         xe = ye = 0;
         cc = 0;
+        bool has_foreground = false;
 
         for (size_t j = 0; j < m; ++j) {
                 uint64_t start = cc;  // Start index of current segment
@@ -138,6 +158,8 @@ std::vector<double> RLE::toBbox() const {
 
                 if (this->cnts[j] == 0)
                         continue;  // Skip zero-length foreground segments
+
+                has_foreground = true;
 
                 uint64_t y_start = start % h, x_start = (start - y_start) / h;
                 uint64_t y_end = (cc - 1) % h, x_end = (cc - 1 - y_end) / h;
@@ -152,6 +174,9 @@ std::vector<double> RLE::toBbox() const {
                         ys = std::min(ys, y_start);
                         ye = std::max(ye, y_end);
                 }
+        }
+        if (!has_foreground) {
+                return {0.0, 0.0, 0.0, 0.0};
         }
         // Return bounding box: [x, y, width, height]
         return {static_cast<double>(xs), static_cast<double>(ys),
