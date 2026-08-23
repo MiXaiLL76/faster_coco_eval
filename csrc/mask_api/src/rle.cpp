@@ -112,10 +112,9 @@ RLE RLE::frString(const std::string& s, uint64_t h, uint64_t w) {
                         }
                 } while (more);
 
-                int64_t x =
-                    encoded_value <= std::numeric_limits<int64_t>::max()
-                        ? static_cast<int64_t>(encoded_value)
-                        : -1 - static_cast<int64_t>(~encoded_value);
+                int64_t x = encoded_value <= std::numeric_limits<int64_t>::max()
+                                ? static_cast<int64_t>(encoded_value)
+                                : -1 - static_cast<int64_t>(~encoded_value);
 
                 // Cumulative sum for elements after the second
                 if (cnts.size() > 2) {
