@@ -1,5 +1,8 @@
 #!/usr/bin/python3
+"""Exercise native dataset and evaluator bindings."""
+
 import unittest
+from types import SimpleNamespace
 
 import faster_coco_eval.faster_eval_api_cpp as _C
 import numpy as np
@@ -13,6 +16,40 @@ class TestBaseCoco(unittest.TestCase):
 
     def setUp(self):
         pass
+
+    def test_accumulate_avoids_repeated_python_list_length_queries(self):
+        """Bound native length queries for converted parameter lists."""
+
+        class LengthCountingList(list):
+            """Record calls to the Python list length protocol."""
+
+            length_calls = 0
+
+            def __len__(self):
+                """Count and return the current list length."""
+                self.length_calls += 1
+                return super().__len__()
+
+        recall_thresholds = LengthCountingList([0.0, 0.5, 1.0])
+        max_detections = LengthCountingList([1, 10, 100])
+        params = SimpleNamespace(
+            recThrs=recall_thresholds,
+            maxDets=max_detections,
+            iouThrs=[],
+            useCats=1,
+            catIds=[],
+            areaRng=[],
+            imgIds=[],
+        )
+
+        result = _C.COCOevalAccumulate(params, [])
+
+        # Accumulation queries each list once for conversion and once for its
+        # output dimension; the conversion loop must not add further queries.
+        self.assertEqual(recall_thresholds.length_calls, 2)
+        self.assertEqual(max_detections.length_calls, 2)
+        self.assertEqual(result["counts"], [0, 3, 0, 0, 3])
+        self.assertEqual(result["precision"].shape, (0, 3, 0, 0, 3))
 
     def test_append(self):
         dataset = _C.Dataset()
