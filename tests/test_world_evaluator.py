@@ -1,11 +1,12 @@
 import copy
-import os
 import tempfile
 import unittest
 from collections import defaultdict
+from pathlib import Path
 from unittest import mock
 
 from faster_coco_eval import COCO
+from tests.conftest import TESTS_DIR
 
 try:
     import torch
@@ -23,16 +24,12 @@ class TestWorldCoco(unittest.TestCase):
 
     def setUp(self):
         """Prepare evaluation fixtures and an isolated Gloo rendezvous path."""
-        self.gt_lvis_file = os.path.join("lvis_dataset", "lvis_val_100.json")
-        self.dt_lvis_file = os.path.join("lvis_dataset", "lvis_results_100.json")
+        self.gt_lvis_file = TESTS_DIR / "lvis_dataset" / "lvis_val_100.json"
+        self.dt_lvis_file = TESTS_DIR / "lvis_dataset" / "lvis_results_100.json"
         self._rendezvous_dir = tempfile.TemporaryDirectory()
-        self._rendezvous_path = os.path.join(self._rendezvous_dir.name, "gloo-rendezvous")
+        self._rendezvous_path = Path(self._rendezvous_dir.name) / "gloo-rendezvous"
         # Only a process group initialized by this test may be destroyed here.
         self._owns_process_group = False
-
-        if not os.path.exists(self.gt_lvis_file):
-            self.gt_lvis_file = os.path.join(os.path.dirname(__file__), self.gt_lvis_file)
-            self.dt_lvis_file = os.path.join(os.path.dirname(__file__), self.dt_lvis_file)
 
         # Regression pin, recorded 2026-07-22 against faster_coco_eval 1.7.2.
         # Cross-check with the official LVIS API using scripts/derive_lvis_golden.py.
@@ -107,7 +104,7 @@ class TestWorldCoco(unittest.TestCase):
         world_size = 1
         # File rendezvous avoids sharing a TCP port with parallel test workers.
         dist.init_process_group(
-            "gloo", rank=0, world_size=world_size, init_method=f"file:///{self._rendezvous_path.lstrip('/')}"
+            "gloo", rank=0, world_size=world_size, init_method=self._rendezvous_path.as_uri()
         )
         self._owns_process_group = True
 

@@ -33,8 +33,7 @@ def test_conver_mask_to_poly_basic():
 
     polygons = conver_mask_to_poly(mask, bbox)
 
-    # Should return at least one polygon
-    assert isinstance(polygons, list)
+    assert polygons == [[20, 30, 20, 69, 79, 69, 79, 30]]
 
 
 @pytest.mark.skipif(not opencv_available, reason="OpenCV not available")
@@ -46,7 +45,13 @@ def test_conver_mask_to_poly_with_margin():
 
     polygons = conver_mask_to_poly(mask, bbox, boxes_margin=0.2)
 
-    assert isinstance(polygons, list)
+    assert len(polygons) == 1
+    assert set(map(tuple, np.asarray(polygons[0]).reshape(-1, 2))) == {
+        (40, 40),
+        (40, 59),
+        (59, 40),
+        (59, 59),
+    }
 
 
 @pytest.mark.skipif(not opencv_available, reason="OpenCV not available")
@@ -60,12 +65,24 @@ def test_conver_mask_to_poly_boundary_cases():
     bbox = [0, 0, 60, 60]
 
     polygons = conver_mask_to_poly(mask, bbox)
-    assert isinstance(polygons, list)
+    assert len(polygons) == 1
+    assert set(map(tuple, np.asarray(polygons[0]).reshape(-1, 2))) == {
+        (10, 10),
+        (10, 39),
+        (39, 10),
+        (39, 39),
+    }
 
     # Test with negative coordinates after margin
     bbox = [2, 2, 10, 10]
     polygons = conver_mask_to_poly(mask, bbox, boxes_margin=0.5)
-    assert isinstance(polygons, list)
+    assert len(polygons) == 1
+    assert set(map(tuple, np.asarray(polygons[0]).reshape(-1, 2))) == {
+        (10, 10),
+        (10, 16),
+        (16, 10),
+        (16, 16),
+    }
 
 
 @pytest.mark.skipif(not opencv_available, reason="OpenCV not available")
@@ -103,7 +120,7 @@ def test_convert_rle_to_poly(mock_decode):
 
     if opencv_available:
         polygons = convert_rle_to_poly(rle, bbox)
-        assert isinstance(polygons, list)
+        assert polygons == [[20, 30, 20, 69, 79, 69, 79, 30]]
         mock_decode.assert_called_once_with(rle)
     else:
         with pytest.raises(ImportError):
