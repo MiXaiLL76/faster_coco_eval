@@ -46,7 +46,8 @@ def test_coco_accepts_pathlib_paths_for_annotations_and_results(tmp_path: Path) 
 
 @pytest.mark.parametrize("loader_name", ["loadAnns", "loadCats", "loadImgs"])
 def test_coco_loaders_reject_non_integer_ids(loader_name: str) -> None:
-    """Unsupported scalar or iterable IDs must fail with a useful type error."""
+    """Unsupported scalar or iterable IDs must fail with a useful type
+    error."""
     coco = COCO(_dataset())
 
     with pytest.raises(TypeError, match="ids must"):
@@ -67,7 +68,8 @@ def test_to_dict_separate_fn_does_not_mutate_indexed_annotations() -> None:
 
 
 def test_python_auc_does_not_mutate_its_input_arrays() -> None:
-    """Envelope computation must not alter precision or recall owned by callers."""
+    """Envelope computation must not alter precision or recall owned by
+    callers."""
     recall = np.array([0.0, 0.5, 1.0])
     precision = np.array([1.0, 0.25, 0.5])
 
@@ -78,7 +80,8 @@ def test_python_auc_does_not_mutate_its_input_arrays() -> None:
 
 
 def test_extra_metrics_require_matching_data_and_handle_empty_matches() -> None:
-    """Extra metrics must reject premature calls and avoid empty-match division."""
+    """Extra metrics must reject premature calls and avoid empty-match
+    division."""
     evaluator = COCOeval_faster(print_function=lambda *_: None)
 
     with pytest.raises(RuntimeError, match="Matching"):
