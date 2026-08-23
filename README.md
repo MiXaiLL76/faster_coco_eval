@@ -16,9 +16,9 @@
 | ------------------------------ | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Support & Development**      | Outdated and not actively maintained. Issues and incompatibilities arise with new releases. | Actively maintained, continuously evolving, and regularly updated with new features and bug fixes.                                                                                        |
 | **Transparency & Reliability** | Lacks comprehensive testing, making updates risky and results less predictable.             | Emphasizes extensive test coverage and code quality, ensuring trustworthy and reliable results.                                                                                           |
-| **Performance**                | Significantly slower, especially on large datasets or distributed workloads.                | Native C++ implementation with measured speedups that depend on the workload and hardware.                                                                                              |
+| **Performance**                | Significantly slower, especially on large datasets or distributed workloads.                | Native C++ implementation with measured speedups that depend on the workload and hardware.                                                                                                |
 | **Functionality**              | Limited to basic COCO format evaluation.                                                    | Offers extended metrics, support for new IoU types, compatibility with more datasets (e.g., CrowdPose, LVIS), advanced visualizations, and seamless integration with PyTorch/TorchVision. |
-| **Ease of Use**                | Requires manual installation, often with compilation issues.                                | Simple `pip install` with pre-built wheels for common CPython/glibc Linux, macOS, and Windows platforms; source builds may be needed elsewhere.                                          |
+| **Ease of Use**                | Requires manual installation, often with compilation issues.                                | Simple `pip install` with pre-built wheels for common CPython/glibc Linux, macOS, and Windows platforms; source builds may be needed elsewhere.                                           |
 | **Visualization**              | Basic plotting capabilities.                                                                | Advanced error visualization, annotation display, and comprehensive metric analysis tools.                                                                                                |
 
 ______________________________________________________________________
@@ -102,8 +102,8 @@ Faster-COCO-Eval uses a native C++ implementation. The measured result below is 
 
 Local reference benchmark: 100 synthetic images, 15 ground-truth boxes and 100 detections per image, five categories, bbox evaluation, seven timed samples after two warmups. The benchmark was run on 2026-08-23 on macOS 26.6.1 arm64, Python 3.10.11, and NumPy 2.2.6. Both implementations produced identical `eval["precision"]` arrays.
 
-| Evaluation Type | Faster-COCO-Eval (sec) | pycocotools (sec) | Speedup  |
-| --------------- | ---------------------- | ----------------- | -------- |
+| Evaluation Type | Faster-COCO-Eval (sec)  | pycocotools (sec)       | Speedup   |
+| --------------- | ----------------------- | ----------------------- | --------- |
 | Bounding Boxes  | 0.053977 (MAD 0.001883) | 0.296960 (MAD 0.001667) | **5.50x** |
 
 Run it with `python scripts/benchmark_evaluation.py`; results are hardware- and workload-dependent.

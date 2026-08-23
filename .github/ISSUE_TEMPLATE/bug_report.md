@@ -16,6 +16,7 @@ Steps to reproduce the behavior
 A clear and concise description of what you expected to happen.
 
 **Environment**
+
 - OS and architecture:
 - Python version:
 - faster-coco-eval version:
