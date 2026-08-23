@@ -17,6 +17,18 @@ def _encode(x):
     return mask_util.encode(np.asfortranarray(x, np.uint8))
 
 
+class _ListSubclass(list):
+    """Exercise native dispatch with a Python list subclass."""
+
+
+class _DictSubclass(dict):
+    """Exercise native dispatch with a Python dict subclass."""
+
+
+class _ArraySubclass(np.ndarray):
+    """Exercise native dispatch with a NumPy array subclass."""
+
+
 class TestMaskApi(unittest.TestCase):
     maxDiff = None
 
@@ -335,6 +347,33 @@ class TestMaskApi(unittest.TestCase):
 
         result_poly_iou = module.iou(self.poly_rles[:3], self.poly_rles[:3], [0, 0, 0]).round(4)
         self.assertEqual(poly_iou.tolist(), result_poly_iou.tolist())
+
+    def test_iou_accepts_list_and_array_subclasses(self):
+        """Dispatch bounding boxes from list and NumPy array subclasses."""
+        expected = _mask.iou(self.bboxes[:2], self.bboxes[:2], [0, 0])
+        list_boxes = _ListSubclass(
+            [_ListSubclass(box) for box in self.bboxes[:2].tolist()],
+        )
+        array_boxes = self.bboxes[:2].view(_ArraySubclass)
+        rle_list = _ListSubclass([_DictSubclass(self.compressed_rle)])
+
+        np.testing.assert_array_equal(_mask.iou(list_boxes, list_boxes, [0, 0]), expected)
+        np.testing.assert_array_equal(_mask.iou(array_boxes, array_boxes, [0, 0]), expected)
+        np.testing.assert_array_equal(_mask.iou(rle_list, rle_list, [0]), np.ones((1, 1)))
+
+    def test_fr_py_objects_accepts_list_and_dict_subclasses(self):
+        """Dispatch segmentation input from list and dict subclasses."""
+        rle = _DictSubclass(self.uncompressed_rle)
+
+        self.assertEqual(
+            self.compressed_rle,
+            _mask.frPyObjects(_ListSubclass([rle]), 1350, 1080)[0],
+        )
+        self.assertEqual(self.compressed_rle, _mask.frPyObjects(rle, 1350, 1080))
+        self.assertEqual(
+            self.bbox_rles[:2],
+            _mask.frPyObjects(self.bboxes[:2].view(_ArraySubclass), 20, 20),
+        )
 
     def test_iou_releases_gil_during_cpp_compute(self):
         """Allow another Python thread to run during native IoU computation."""
