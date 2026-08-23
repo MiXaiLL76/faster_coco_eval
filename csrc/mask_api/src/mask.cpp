@@ -9,10 +9,12 @@ typedef std::ptrdiff_t ssize_t;
 #include <time.h>
 
 #include <algorithm>
+#include <condition_variable>
 #include <cstdint>
-#include <execution>
+#include <exception>
 #include <future>
 #include <iostream>
+#include <mutex>
 #include <numeric>
 #include <thread>
 #include <vector>
@@ -24,6 +26,105 @@ using namespace pybind11::literals;
 namespace mask_api {
 
 namespace Mask {
+
+namespace {
+
+constexpr size_t kParallelBatchThreshold = 8;
+
+// Process-wide permit budget capping the total number of async batch workers
+// across all concurrent calls. Because callers release the GIL, several Python
+// threads may enter the batch APIs at once; without a shared bound each call
+// could spawn up to hardware_concurrency() OS threads, oversubscribing the
+// machine.
+class ParallelPermitPool {
+       public:
+        static size_t capacity() {
+                return std::max(
+                    size_t{1},
+                    static_cast<size_t>(std::thread::hardware_concurrency()));
+        }
+
+        explicit ParallelPermitPool(size_t size) : available(size) {}
+
+        // RAII permit; acquisition blocks until a slot is free.
+        class Permit {
+               public:
+                explicit Permit(ParallelPermitPool& pool) : pool(pool) {
+                        std::unique_lock<std::mutex> lock(pool.mutex);
+                        pool.condition.wait(
+                            lock, [&pool] { return pool.available > 0; });
+                        --pool.available;
+                }
+                ~Permit() {
+                        {
+                                std::lock_guard<std::mutex> lock(pool.mutex);
+                                ++pool.available;
+                        }
+                        pool.condition.notify_one();
+                }
+                Permit(const Permit&) = delete;
+                Permit& operator=(const Permit&) = delete;
+
+               private:
+                ParallelPermitPool& pool;
+        };
+
+       private:
+        std::mutex mutex;
+        std::condition_variable condition;
+        size_t available;
+};
+
+ParallelPermitPool& parallelPermitPool() {
+        static ParallelPermitPool pool(ParallelPermitPool::capacity());
+        return pool;
+}
+
+template <typename Function>
+void parallelFor(size_t count, Function&& function) {
+        const size_t workers = std::min(count, ParallelPermitPool::capacity());
+        if (count < kParallelBatchThreshold || workers < 2) {
+                for (size_t index = 0; index < count; ++index) {
+                        function(index);
+                }
+                return;
+        }
+
+        const size_t chunk_size = (count + workers - 1) / workers;
+
+        // Each worker acquires its own shared permit from inside the async
+        // task, so the process-wide budget bounds concurrently *running*
+        // chunks. The calling thread only waits on futures and never holds a
+        // permit, which avoids a hold-and-wait deadlock between concurrent
+        // callers; excess chunks simply run as earlier workers free permits.
+        std::vector<std::future<void>> futures;
+        futures.reserve(workers);
+        for (size_t start = 0; start < count; start += chunk_size) {
+                const size_t end = std::min(start + chunk_size, count);
+                futures.emplace_back(
+                    std::async(std::launch::async, [&function, start, end]() {
+                            ParallelPermitPool::Permit permit(
+                                parallelPermitPool());
+                            for (size_t index = start; index < end; ++index) {
+                                    function(index);
+                            }
+                    }));
+        }
+        // Join every worker before surfacing a failure so no task's exception
+        // is silently discarded and the propagated error is deterministic.
+        std::exception_ptr first_error;
+        for (auto& future : futures) {
+                try {
+                        future.get();
+                } catch (...) {
+                        if (!first_error)
+                                first_error = std::current_exception();
+                }
+        }
+        if (first_error) std::rethrow_exception(first_error);
+}
+
+}  // namespace
 
 // Converts an RLE object to a Python bytes object using its toString() method.
 py::bytes rleToString(const RLE& R) { return py::bytes(R.toString()); }
@@ -52,40 +153,36 @@ std::vector<RLE> rleEncode(const py::array_t<uint8_t, py::array::f_style>& M,
                            uint64_t h, uint64_t w, uint64_t n) {
         auto mask = M.unchecked<3>();
 
-        std::vector<RLE> rles;
-        rles.reserve(n);
+        std::vector<RLE> rles(n);
+        {
+                py::gil_scoped_release release;
+                parallelFor(n, [&](size_t index) {
+                        std::vector<uint64_t> cnts;
+                        const size_t min_reserve = 16;
+                        const size_t max_reserve = h * w / 4;
+                        const size_t perimeter_estimate = 2 * (h + w);
+                        cnts.reserve(std::max(
+                            min_reserve,
+                            std::min(max_reserve, perimeter_estimate)));
 
-        for (uint64_t i = 0; i < n; ++i) {
-                std::vector<uint64_t> cnts;
-                // Improved allocation strategy: adaptive sizing based on mask
-                // characteristics
-                size_t min_reserve = 16;  // Minimum reasonable size
-                size_t max_reserve =
-                    h * w / 4;  // Maximum for very complex masks
-                size_t perimeter_estimate =
-                    2 * (h + w);  // Typical perimeter-based estimate
-                size_t estimated_size = std::max(
-                    min_reserve, std::min(max_reserve, perimeter_estimate));
-                cnts.reserve(estimated_size);
-
-                uint8_t prev = 0;
-                uint64_t count = 0;
-
-                // Traverse the mask in column-major order
-                for (uint64_t row = 0; row < w; ++row) {
-                        for (uint64_t col = 0; col < h; ++col) {
-                                uint8_t value = mask(col, row, i);
-                                if (value != prev) {
-                                        cnts.emplace_back(count);
-                                        count = 0;
-                                        prev = value;
+                        uint8_t previous = 0;
+                        uint64_t count = 0;
+                        for (uint64_t row = 0; row < w; ++row) {
+                                for (uint64_t column = 0; column < h;
+                                     ++column) {
+                                        const uint8_t value =
+                                            mask(column, row, index);
+                                        if (value != previous) {
+                                                cnts.emplace_back(count);
+                                                count = 0;
+                                                previous = value;
+                                        }
+                                        ++count;
                                 }
-                                ++count;
                         }
-                }
-                cnts.emplace_back(count);
-
-                rles.emplace_back(h, w, cnts.size(), std::move(cnts));
+                        cnts.emplace_back(count);
+                        rles[index] = RLE(h, w, std::move(cnts));
+                });
         }
         return rles;
 }
@@ -247,39 +344,47 @@ py::array_t<uint8_t, py::array::f_style> rleDecode(const std::vector<RLE>& R) {
             {static_cast<size_t>(h), static_cast<size_t>(w), n});
         auto mask = M.mutable_unchecked<3>();
 
-        for (size_t i = 0; i < n; ++i) {
-                uint8_t v = 0;
-                uint64_t x = 0, y = 0, c = 0;
+        {
+                py::gil_scoped_release release;
+                parallelFor(n, [&](size_t index) {
+                        uint8_t value = 0;
+                        uint64_t x = 0, y = 0, count = 0;
 
-                for (uint64_t j = 0; j < R[i].m; ++j) {
-                        for (uint64_t k = 0; k < R[i].cnts[j]; ++k) {
-                                if (c >= pixels_per_mask) {
-                                        std::stringstream ss;
-                                        ss << "Invalid RLE mask "
-                                              "representation; out of range "
-                                              "HxW=[0;0]->["
-                                           << h - 1 << ";" << w - 1
-                                           << "] x=" << x << "; y=" << y;
-                                        throw std::range_error(ss.str());
-                                }
+                        for (uint64_t run = 0; run < R[index].m; ++run) {
+                                for (uint64_t pixel = 0;
+                                     pixel < R[index].cnts[run]; ++pixel) {
+                                        if (count >= pixels_per_mask) {
+                                                std::stringstream ss;
+                                                ss << "Invalid RLE mask "
+                                                      "representation; out of "
+                                                      "range HxW=[0;0]->["
+                                                   << h - 1 << ";" << w - 1
+                                                   << "] x=" << x
+                                                   << "; y=" << y;
+                                                throw std::range_error(
+                                                    ss.str());
+                                        }
 
-                                mask(y, x, i) = v;
-                                ++c;
-                                ++y;
-                                if (y >= h) {
-                                        y = 0;
-                                        ++x;
+                                        mask(y, x, index) = value;
+                                        ++count;
+                                        ++y;
+                                        if (y >= h) {
+                                                y = 0;
+                                                ++x;
+                                        }
                                 }
+                                value = !value;
                         }
-                        v = !v;
-                }
-                if (c != pixels_per_mask) {
-                        std::stringstream ss;
-                        ss << "Invalid RLE mask representation; decoded " << c
-                           << " pixels but expected " << pixels_per_mask
-                           << " (h=" << h << ", w=" << w << ")";
-                        throw std::range_error(ss.str());
-                }
+                        if (count != pixels_per_mask) {
+                                std::stringstream ss;
+                                ss << "Invalid RLE mask representation; "
+                                      "decoded "
+                                   << count << " pixels but expected "
+                                   << pixels_per_mask << " (h=" << h
+                                   << ", w=" << w << ")";
+                                throw std::range_error(ss.str());
+                        }
+                });
         }
         return M;
 }
@@ -293,10 +398,14 @@ py::array_t<uint8_t, py::array::f_style> decode(
 std::vector<py::dict> erode_3x3(const std::vector<py::dict>& rleObjs,
                                 const int& dilation) {
         std::vector<RLE> rles = _frString(rleObjs);
-        std::transform(
-            rles.begin(), rles.end(), rles.begin(),
-            [dilation](const RLE& rle) { return rle.erode_3x3(dilation); });
-        return _toString(rles);
+        std::vector<RLE> eroded(rles.size());
+        {
+                py::gil_scoped_release release;
+                parallelFor(rles.size(), [&](size_t index) {
+                        eroded[index] = rles[index].erode_3x3(dilation);
+                });
+        }
+        return _toString(eroded);
 }
 
 std::vector<py::dict> toBoundary(const std::vector<py::dict>& rleObjs,
@@ -320,8 +429,12 @@ py::dict merge(const std::vector<py::dict>& rleObjs) {
 py::array_t<uint64_t> area(const std::vector<py::dict>& rleObjs) {
         std::vector<RLE> rles = _frString(rleObjs);
         std::vector<uint64_t> areas(rles.size());
-        std::transform(rles.begin(), rles.end(), areas.begin(),
-                       [](RLE const& rle) { return rle.area(); });
+        {
+                py::gil_scoped_release release;
+                parallelFor(rles.size(), [&](size_t index) {
+                        areas[index] = rles[index].area();
+                });
+        }
         return py::array(areas.size(), areas.data());
 }
 
