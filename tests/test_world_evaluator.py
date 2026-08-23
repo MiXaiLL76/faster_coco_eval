@@ -103,9 +103,7 @@ class TestWorldCoco(unittest.TestCase):
 
         world_size = 1
         # File rendezvous avoids sharing a TCP port with parallel test workers.
-        dist.init_process_group(
-            "gloo", rank=0, world_size=world_size, init_method=self._rendezvous_path.as_uri()
-        )
+        dist.init_process_group("gloo", rank=0, world_size=world_size, init_method=self._rendezvous_path.as_uri())
         self._owns_process_group = True
 
         for image_id, data in predictions.items():

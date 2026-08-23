@@ -1,4 +1,5 @@
-"""Shared pytest fixtures and fixture paths for deterministic test execution."""
+"""Shared pytest fixtures and fixture paths for deterministic test
+execution."""
 
 from pathlib import Path
 
