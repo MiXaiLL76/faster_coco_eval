@@ -7,6 +7,7 @@ import logging
 import os
 import time
 from collections import deque
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -189,7 +190,7 @@ class COCOeval_faster(COCOevalBase):
                     ann.pop(key, None)
 
         for dt_gt, iou in self.eval["matched"].items():
-            dt_id, gt_id = dt_gt.split("_")
+            dt_id, gt_id = dt_gt.split("_", 1)
 
             dt_id = int(dt_id)
             gt_id = int(gt_id)
@@ -216,7 +217,12 @@ class COCOeval_faster(COCOevalBase):
         Returns:
             float: Mean IoU across all matched detections and ground truths.
         """
-        return sum(self.eval["matched"].values()) / len(self.eval["matched"])
+        matched = self.eval.get("matched")
+        if matched is None:
+            raise RuntimeError("Matching data is unavailable; enable extra_calc and call accumulate() first")
+        if not matched:
+            return 0.0
+        return sum(matched.values()) / len(matched)
 
     def compute_mAUC(self) -> float:
         """Compute the mean Area Under Curve (mAUC) metric.
@@ -224,6 +230,9 @@ class COCOeval_faster(COCOevalBase):
         Returns:
             float: Mean AUC across all categories and area ranges.
         """
+        if "counts" not in self.eval or "precision" not in self.eval:
+            raise RuntimeError("Accumulation results are unavailable; call evaluate() and accumulate() first")
+
         aucs = []
 
         # K - category
@@ -241,7 +250,7 @@ class COCOeval_faster(COCOevalBase):
         if len(aucs):
             return sum(aucs) / len(aucs)
         else:
-            return 0
+            return 0.0
 
     def summarize(self):
         """Summarize and finalize the statistics of the evaluation.
@@ -309,7 +318,7 @@ class COCOeval_faster(COCOevalBase):
 
         # --- Compute actual (non-interpolated) precision/recall by sweeping confidence thresholds ---
         # Build set of TP detection IDs: detections matched to a GT with actual IoU >= 0.50
-        tp_dt_ids = {int(k.split("_")[0]) for k, iou in self.eval["matched"].items() if iou >= 0.5}
+        tp_dt_ids = {int(k.split("_", 1)[0]) for k, iou in self.eval["matched"].items() if iou >= 0.5}
 
         cat_ids_eval = (
             self.params.catIds
@@ -521,8 +530,8 @@ class COCOeval_faster(COCOevalBase):
         if method == "c++":
             return round(_C.calc_auc(recall_list, precision_list), 15)
         else:
-            mrec = recall_list
-            mpre = precision_list
+            mrec = np.asarray(recall_list).copy()
+            mpre = np.asarray(precision_list).copy()
 
             for i in range(mpre.size - 1, 0, -1):
                 mpre[i - 1] = np.maximum(mpre[i - 1], mpre[i])
@@ -541,3 +550,8 @@ class COCOeval(COCOeval_faster):
             Callable: The built-in print function.
         """
         return print
+
+    @print_function.setter
+    def print_function(self, value: Callable):
+        """Store a compatibility print function for temporary reassignment."""
+        self._print_function = value

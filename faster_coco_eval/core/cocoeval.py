@@ -140,10 +140,9 @@ class COCOeval:
         gts = self.cocoGt.loadAnns(self.cocoGt.getAnnIds(imgIds=p.imgIds, catIds=cat_ids))
         dts = self.cocoDt.loadAnns(self.cocoDt.getAnnIds(imgIds=p.imgIds, catIds=cat_ids))
 
-        # set ignore flag
+        # pycocotools gives iscrowd precedence over a dataset-provided ignore flag.
         for gt in gts:
-            gt["ignore"] = gt["ignore"] if "ignore" in gt else 0
-            gt["ignore"] = "iscrowd" in gt and gt["iscrowd"]
+            gt["ignore"] = int(gt.get("iscrowd", 0))
             if "keypoints" in p.iouType:
                 gt["ignore"] = (gt.get("num_keypoints", 0) == 0) or gt["ignore"]
 
@@ -193,7 +192,7 @@ class COCOeval:
         for dt in dts:
             img_id, cat_id = dt["image_id"], dt["category_id"]
             if self.lvis_style:
-                if (cat_id not in img_nl.get(img_id, []) and cat_id not in img_pl[img_id]) and self.lvis_style:
+                if cat_id not in img_nl.get(img_id, []) and cat_id not in img_pl[img_id]:
                     dt["drop"] = True
                     continue
 
@@ -280,15 +279,13 @@ class COCOeval:
 
             # combine mask and boundary iou
             boundary_ious = np.array(boundary_ious)
-            iscrowd = np.array(iscrowd)
-            if len(gt) and len(dt):
-                ious[:, iscrowd == 0] = np.minimum(ious[:, iscrowd == 0], boundary_ious[:, iscrowd == 0])
-            else:
-                ious = np.minimum(ious, boundary_ious)
+            non_crowd = ~np.asarray(iscrowd, dtype=bool)
+            if non_crowd.any():
+                ious[:, non_crowd] = np.minimum(ious[:, non_crowd], boundary_ious[:, non_crowd])
 
         return ious
 
-    def computeOks(self, imgId: int, catId: int) -> np.ndarray:
+    def computeOks(self, imgId: int, catId: int) -> list[float] | np.ndarray:
         """Compute OKS between ground truth and detection for a given image and
         category.
 
