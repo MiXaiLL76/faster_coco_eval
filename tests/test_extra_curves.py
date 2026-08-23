@@ -34,18 +34,10 @@ def _build_ced_curves(mae_values):
     curves = Curves.__new__(Curves)
     curves.cocoGt = SimpleNamespace(
         cats={1: {"id": 1, "name": "cat", "keypoints": ["nose"]}},
-        anns={
-            index: {"keypoints": [0.0, 0.0, 2], "matched": True, "dt_id": index}
-            for index in range(len(mae_values))
-        },
+        anns={index: {"keypoints": [0.0, 0.0, 2], "matched": True, "dt_id": index} for index in range(len(mae_values))},
         get_ann_ids=lambda cat_ids: list(range(len(mae_values))),
     )
-    curves.cocoDt = SimpleNamespace(
-        anns={
-            index: {"keypoints": [mae, mae, 2]}
-            for index, mae in enumerate(mae_values)
-        }
-    )
+    curves.cocoDt = SimpleNamespace(anns={index: {"keypoints": [mae, mae, 2]} for index, mae in enumerate(mae_values)})
     curves.eval = {}
     curves.iouType = "keypoints"
     return curves.build_ced_curve(mae_count=3)
