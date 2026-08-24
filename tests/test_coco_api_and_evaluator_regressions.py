@@ -560,3 +560,68 @@ def test_custom_summary_layout_matches_configured_ranges_and_max_dets():
     assert list(evaluator.stats_as_dict) == expected_labels
     assert len(evaluator.all_stats) == len(expected_labels)
     assert len(evaluator.stats) == 3 + len(ranges) * 2 + len(evaluator.params.maxDets)
+
+
+class TestGetAnns:
+    """Direct annotation lookup used by COCOeval._prepare."""
+
+    @staticmethod
+    def _dataset() -> COCO:
+        """Two images, two categories, one annotation each combination."""
+        return COCO({
+            "images": [{"id": 1, "width": 20, "height": 20}, {"id": 2, "width": 20, "height": 20}],
+            "categories": [{"id": 1, "name": "a"}, {"id": 2, "name": "b"}],
+            "annotations": [
+                {"id": 10, "image_id": 1, "category_id": 1, "bbox": [0, 0, 5, 5], "area": 25.0, "iscrowd": 0},
+                {"id": 11, "image_id": 1, "category_id": 2, "bbox": [1, 1, 5, 5], "area": 25.0, "iscrowd": 0},
+                {"id": 12, "image_id": 2, "category_id": 1, "bbox": [2, 2, 5, 5], "area": 25.0, "iscrowd": 0},
+            ],
+        })
+
+    @pytest.mark.parametrize(
+        ("img_ids", "cat_ids"),
+        [
+            pytest.param([1, 2], [1, 2], id="all-images-all-categories"),
+            pytest.param([1], [1, 2], id="one-image"),
+            pytest.param([1, 2], [1], id="one-category"),
+            pytest.param([], [], id="no-filter"),
+            pytest.param([2], [2], id="empty-intersection"),
+        ],
+    )
+    def test_matches_load_anns_of_get_ann_ids(self, img_ids, cat_ids):
+        """getAnns returns exactly what loadAnns(getAnnIds(...)) returns.
+
+        _prepare swapped the id round trip for this call, so any divergence in
+        selection or ordering would silently change which detections land in
+        each image/category bucket and shift the evaluation result.
+        """
+        coco = self._dataset()
+
+        direct = coco.getAnns(imgIds=img_ids, catIds=cat_ids)
+        via_ids = coco.loadAnns(coco.getAnnIds(imgIds=img_ids, catIds=cat_ids))
+
+        assert [ann["id"] for ann in direct] == [ann["id"] for ann in via_ids]
+
+    def test_returns_the_indexed_objects_not_copies(self):
+        """Returned dicts are the index's own objects.
+
+        _prepare mutates annotations in place (the ``ignore`` flag) and expects
+        those writes to be visible to the evaluator afterwards.
+        """
+        coco = self._dataset()
+
+        anns = coco.getAnns(imgIds=[1], catIds=[1])
+
+        assert anns[0] is coco.anns[10]
+
+    def test_unknown_image_id_does_not_grow_the_index(self):
+        """Querying a missing image id leaves img_ann_map untouched.
+
+        img_ann_map is a defaultdict, so a bare subscript would insert an empty
+        list for every unknown id and slowly leak entries across evaluations.
+        """
+        coco = self._dataset()
+        before = set(coco.img_ann_map)
+
+        assert coco.getAnns(imgIds=[999], catIds=[1]) == []
+        assert set(coco.img_ann_map) == before

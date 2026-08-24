@@ -137,8 +137,10 @@ class COCOeval:
 
         cat_ids = p.catIds if p.catIds else None
 
-        gts = self.cocoGt.loadAnns(self.cocoGt.getAnnIds(imgIds=p.imgIds, catIds=cat_ids))
-        dts = self.cocoDt.loadAnns(self.cocoDt.getAnnIds(imgIds=p.imgIds, catIds=cat_ids))
+        # getAnns avoids the annotation -> id -> annotation round trip that
+        # loadAnns(getAnnIds(...)) performs; selection and order are identical.
+        gts = self.cocoGt.getAnns(imgIds=p.imgIds, catIds=cat_ids)
+        dts = self.cocoDt.getAnns(imgIds=p.imgIds, catIds=cat_ids)
 
         # pycocotools gives iscrowd precedence over a dataset-provided ignore flag.
         for gt in gts:
