@@ -118,6 +118,69 @@ def test_math_matches_clears_annotations_before_a_second_run():
     assert evaluator.cocoGt.anns[1]["fn"] is True
 
 
+@pytest.mark.parametrize(
+    ("use_categories", "expected_keys", "expected_calls"),
+    [
+        pytest.param(
+            True,
+            {(1, 1), (1, 2), (2, 1), (2, 2)},
+            [(1, 1)],
+            id="category-aware",
+        ),
+        pytest.param(
+            False,
+            {(1, -1), (2, -1)},
+            [(1, -1)],
+            id="merged-categories",
+        ),
+    ],
+)
+def test_sparse_iou_dispatch_preserves_empty_public_pairs(
+    use_categories: bool,
+    expected_keys: set[tuple[int, int]],
+    expected_calls: list[tuple[int, int]],
+):
+    """Only GT/DT intersections compute IoU while public keys stay complete."""
+
+    class CountingEvaluator(COCOeval_faster):
+        """Record IoU calls while retaining the evaluator implementation."""
+
+        def __init__(self, coco_gt: COCO, coco_dt: COCO):
+            """Initialize the evaluator and its observed call list."""
+            super().__init__(coco_gt, coco_dt, iouType="bbox", print_function=lambda *_: None)
+            self.iou_calls: list[tuple[int, int]] = []
+
+        def computeIoU(self, imgId: int, catId: int) -> list[float] | np.ndarray:
+            """Record the pair before running the real bbox calculation."""
+            self.iou_calls.append((imgId, catId))
+            return super().computeIoU(imgId, catId)
+
+    coco_gt = COCO()
+    coco_gt.dataset = {
+        "images": [
+            {"id": 1, "width": 20, "height": 20},
+            {"id": 2, "width": 20, "height": 20},
+        ],
+        "annotations": [
+            {"id": 1, "image_id": 1, "category_id": 1, "bbox": [0, 0, 10, 10], "area": 100},
+            {"id": 2, "image_id": 2, "category_id": 1, "bbox": [0, 0, 10, 10], "area": 100},
+        ],
+        "categories": [{"id": 1, "name": "one"}, {"id": 2, "name": "two"}],
+    }
+    coco_gt.createIndex()
+    coco_dt = coco_gt.loadRes([
+        {"image_id": 1, "category_id": 1, "bbox": [0, 0, 10, 10], "score": 1.0},
+        {"image_id": 1, "category_id": 2, "bbox": [0, 0, 10, 10], "score": 0.5},
+    ])
+    evaluator = CountingEvaluator(coco_gt, coco_dt)
+    evaluator.params.useCats = int(use_categories)
+    evaluator.evaluate()
+
+    assert set(evaluator.ious) == expected_keys
+    assert evaluator.iou_calls == expected_calls
+    assert evaluator.ious[(2, 1 if use_categories else -1)] == []
+
+
 def test_accumulation_is_deterministic_across_category_area_tasks():
     """Repeated native accumulation must preserve every result tensor."""
     evaluator = _make_eval(include_second_pair=True)

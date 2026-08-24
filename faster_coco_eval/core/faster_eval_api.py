@@ -81,7 +81,16 @@ class COCOeval_faster(COCOevalBase):
         else:
             raise ValueError(f"p.iouType must be segm, bbox, boundary or keypoints. Get {p.iouType}")
 
-        pair_count = len(p.imgIds) * len(catIds)
+        all_iou_pairs = list(itertools.product(p.imgIds, catIds))
+        nonempty_iou_pairs = getattr(self, "_nonempty_iou_pairs", None)
+        pairs_to_compute = (
+            all_iou_pairs
+            if nonempty_iou_pairs is None
+            else [pair for pair in all_iou_pairs if pair in nonempty_iou_pairs]
+        )
+        self.ious = {pair: [] for pair in all_iou_pairs}
+
+        pair_count = len(pairs_to_compute)
         max_workers = 1
         if p.compute_rle and self.rle_iou_max_workers > 1 and pair_count > 1:
             max_workers = min(_available_cpu_count(), self.rle_iou_max_workers, pair_count)
@@ -90,7 +99,7 @@ class COCOeval_faster(COCOevalBase):
             # order preserves deterministic dictionary layout while the bounded
             # queue prevents one future per image/category pair.
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                iou_pairs = iter(itertools.product(p.imgIds, catIds))
+                iou_pairs = iter(pairs_to_compute)
                 pending_ious = deque()
                 for _ in range(2 * max_workers):
                     try:
@@ -99,18 +108,17 @@ class COCOeval_faster(COCOevalBase):
                         break
                     pending_ious.append((pair, executor.submit(computeIoU, *pair)))
 
-                computed_ious = {}
                 while pending_ious:
                     pair, future = pending_ious.popleft()
-                    computed_ious[pair] = future.result()
+                    self.ious[pair] = future.result()
                     try:
                         next_pair = next(iou_pairs)
                     except StopIteration:
                         continue
                     pending_ious.append((next_pair, executor.submit(computeIoU, *next_pair)))
-                self.ious = computed_ious
         else:
-            self.ious = {pair: computeIoU(*pair) for pair in itertools.product(p.imgIds, catIds)}
+            for pair in pairs_to_compute:
+                self.ious[pair] = computeIoU(*pair)
 
         # Memory optimization: pass datasets directly instead of pre-loading all instances
 
