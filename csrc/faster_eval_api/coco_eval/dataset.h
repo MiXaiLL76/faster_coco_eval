@@ -42,7 +42,6 @@ class LightweightDataset {
         // leave each object with its own fresh mutex; the source is locked so
         // the move cannot race a concurrent reader.
         LightweightDataset(LightweightDataset&& other) noexcept;
-        LightweightDataset& operator=(LightweightDataset&& other) noexcept;
         LightweightDataset(const LightweightDataset&) = delete;
         LightweightDataset& operator=(const LightweightDataset&) = delete;
 
@@ -94,26 +93,30 @@ class LightweightDataset {
         }
 
        private:
+        using AnnotationKey = std::pair<int64_t, int64_t>;
+        using AnnotationRefs =
+            std::unordered_map<AnnotationKey, std::vector<py::object>,
+                               hash_pair>;
+        using CppCache =
+            std::unordered_map<AnnotationKey, std::vector<InstanceAnnotation>,
+                               hash_pair>;
+
         // Lightweight storage: only references to Python objects
-        std::unordered_map<std::pair<int64_t, int64_t>, std::vector<py::object>,
-                           hash_pair>
-            annotation_refs;
+        AnnotationRefs annotation_refs;
 
         // Cache for frequently accessed InstanceAnnotation objects
-        mutable std::unordered_map<std::pair<int64_t, int64_t>,
-                                   std::vector<InstanceAnnotation>, hash_pair>
-            cpp_cache;
+        mutable CppCache cpp_cache;
+
+        // Increments whenever annotations are replaced or appended. Parsed
+        // data may be published only when this version still matches its
+        // source snapshot.
+        uint64_t annotation_version = 0;
 
         // Helper method to convert py::object to InstanceAnnotation
         InstanceAnnotation parse_py_annotation(const py::object& ann) const;
 
-        // Cache lookup assuming mutex is already held by the caller. Returns a
-        // reference valid only for as long as that lock is retained.
-        const std::vector<InstanceAnnotation>& get_cpp_annotations_locked(
-            const std::pair<int64_t, int64_t>& key) const;
-
-        // Guards annotation_refs and cpp_cache. Recursive locking is not
-        // supported, so locked helpers must never re-enter a public method.
+        // Guards annotation_refs, cpp_cache, and annotation_version. Python
+        // conversions and Python reference destruction must occur outside it.
         mutable std::mutex mutex;
 };
 }  // namespace COCOeval

@@ -21,23 +21,7 @@ LightweightDataset::LightweightDataset(LightweightDataset&& other) noexcept {
         std::lock_guard<std::mutex> guard(other.mutex);
         annotation_refs = std::move(other.annotation_refs);
         cpp_cache = std::move(other.cpp_cache);
-}
-
-LightweightDataset& LightweightDataset::operator=(
-    LightweightDataset&& other) noexcept {
-        if (this == &other) {
-                return *this;
-        }
-
-        // Order the two locks consistently so that concurrent a = b and b = a
-        // cannot deadlock.
-        std::lock(mutex, other.mutex);
-        std::lock_guard<std::mutex> self_guard(mutex, std::adopt_lock);
-        std::lock_guard<std::mutex> other_guard(other.mutex, std::adopt_lock);
-
-        annotation_refs = std::move(other.annotation_refs);
-        cpp_cache = std::move(other.cpp_cache);
-        return *this;
+        ++other.annotation_version;
 }
 
 // Store reference to annotation instead of copying data
@@ -48,21 +32,20 @@ void LightweightDataset::append_ref(double img_id, double cat_id,
 
         std::lock_guard<std::mutex> guard(mutex);
         annotation_refs[key].emplace_back(ann_ref);
+        cpp_cache.erase(key);
+        ++annotation_version;
 }
 
 // Remove all stored references and clear cache
 void LightweightDataset::clean() {
-        std::lock_guard<std::mutex> guard(mutex);
-        annotation_refs.clear();
-        cpp_cache.clear();
-
-        // Reclaim memory by swapping with empty containers
-        std::unordered_map<std::pair<int64_t, int64_t>, std::vector<py::object>,
-                           hash_pair>()
-            .swap(annotation_refs);
-        std::unordered_map<std::pair<int64_t, int64_t>,
-                           std::vector<InstanceAnnotation>, hash_pair>()
-            .swap(cpp_cache);
+        AnnotationRefs discarded_annotation_refs;
+        CppCache discarded_cpp_cache;
+        {
+                std::lock_guard<std::mutex> guard(mutex);
+                annotation_refs.swap(discarded_annotation_refs);
+                cpp_cache.swap(discarded_cpp_cache);
+                ++annotation_version;
+        }
 }
 
 // Get dataset size (number of (img_id, cat_id) pairs with annotations)
@@ -73,11 +56,15 @@ size_t LightweightDataset::size() const {
 
 // Serialize dataset contents to a tuple for pickle support
 py::tuple LightweightDataset::make_tuple() const {
-        std::lock_guard<std::mutex> guard(mutex);
+        AnnotationRefs annotations;
+        {
+                std::lock_guard<std::mutex> guard(mutex);
+                annotations = annotation_refs;
+        }
 
         // Create a list of (img_id, cat_id, annotation_list) tuples
         py::list serialized_data;
-        for (const auto& kv : annotation_refs) {
+        for (const auto& kv : annotations) {
                 auto key = kv.first;
                 auto ann_list = kv.second;
 
@@ -91,7 +78,7 @@ py::tuple LightweightDataset::make_tuple() const {
                     static_cast<double>(key.second), py_ann_list));
         }
 
-        return py::make_tuple(static_cast<int>(annotation_refs.size()),
+        return py::make_tuple(static_cast<int>(annotations.size()),
                               serialized_data);
 }
 
@@ -105,12 +92,8 @@ void LightweightDataset::load_tuple(py::tuple pickle_data) {
         int expected_size = pickle_data[0].cast<int>();
         py::list serialized_data = pickle_data[1].cast<py::list>();
 
-        std::lock_guard<std::mutex> guard(mutex);
-
-        // Clear existing data and reserve memory
-        annotation_refs.clear();
-        cpp_cache.clear();
-        annotation_refs.reserve(expected_size);
+        AnnotationRefs replacement_annotation_refs;
+        replacement_annotation_refs.reserve(expected_size);
 
         // Reconstruct data from serialized list
         for (auto item : serialized_data) {
@@ -130,7 +113,15 @@ void LightweightDataset::load_tuple(py::tuple pickle_data) {
                             py::reinterpret_borrow<py::object>(ann));
                 }
 
-                annotation_refs[key] = std::move(annotations);
+                replacement_annotation_refs[key] = std::move(annotations);
+        }
+
+        CppCache discarded_cpp_cache;
+        {
+                std::lock_guard<std::mutex> guard(mutex);
+                annotation_refs.swap(replacement_annotation_refs);
+                cpp_cache.swap(discarded_cpp_cache);
+                ++annotation_version;
         }
 }
 
@@ -139,21 +130,22 @@ std::vector<py::dict> LightweightDataset::get(double img_id, double cat_id) {
         const std::pair<int64_t, int64_t> key(static_cast<int64_t>(img_id),
                                               static_cast<int64_t>(cat_id));
 
-        std::lock_guard<std::mutex> guard(mutex);
-        auto it = annotation_refs.find(key);
-        if (it != annotation_refs.end()) {
-                std::vector<py::dict> result;
-                result.reserve(it->second.size());
-
-                for (const auto& py_ann : it->second) {
-                        // Convert py::object to py::dict
-                        result.emplace_back(py_ann.cast<py::dict>());
+        std::vector<py::object> annotations;
+        {
+                std::lock_guard<std::mutex> guard(mutex);
+                auto it = annotation_refs.find(key);
+                if (it == annotation_refs.end()) {
+                        return {};
                 }
-
-                return result;
-        } else {
-                return {};
+                annotations = it->second;
         }
+
+        std::vector<py::dict> result;
+        result.reserve(annotations.size());
+        for (const auto& py_ann : annotations) {
+                result.emplace_back(py_ann.cast<py::dict>());
+        }
+        return result;
 }
 
 // Helper method to convert py::object to InstanceAnnotation
@@ -217,45 +209,50 @@ InstanceAnnotation LightweightDataset::parse_py_annotation(
         return InstanceAnnotation(id, score, area, is_crowd, ignore, lvis_mark);
 }
 
-// Cache lookup; caller must already hold mutex.
-const std::vector<InstanceAnnotation>&
-LightweightDataset::get_cpp_annotations_locked(
-    const std::pair<int64_t, int64_t>& key) const {
-        static const std::vector<InstanceAnnotation> kEmpty;
-
-        // Check cache first
-        auto cache_it = cpp_cache.find(key);
-        if (cache_it != cpp_cache.end()) {
-                return cache_it->second;
-        }
-
-        // If not in cache, get from annotation_refs and convert
-        auto it = annotation_refs.find(key);
-        if (it != annotation_refs.end()) {
-                std::vector<InstanceAnnotation> result;
-                result.reserve(it->second.size());
-
-                // Convert each Python annotation to InstanceAnnotation
-                for (const auto& py_ann : it->second) {
-                        result.emplace_back(parse_py_annotation(py_ann));
-                }
-
-                // Cache the result for future use
-                auto inserted = cpp_cache.emplace(key, std::move(result));
-                return inserted.first->second;
-        } else {
-                return kEmpty;
-        }
-}
-
 // Get C++ annotation objects with caching for performance
 std::vector<InstanceAnnotation> LightweightDataset::get_cpp_annotations(
     double img_id, double cat_id) const {
         const std::pair<int64_t, int64_t> key(static_cast<int64_t>(img_id),
                                               static_cast<int64_t>(cat_id));
 
-        std::lock_guard<std::mutex> guard(mutex);
-        return get_cpp_annotations_locked(key);
+        for (;;) {
+                std::vector<py::object> annotations;
+                uint64_t snapshot_version = 0;
+                {
+                        std::lock_guard<std::mutex> guard(mutex);
+                        auto cache_it = cpp_cache.find(key);
+                        if (cache_it != cpp_cache.end()) {
+                                return cache_it->second;
+                        }
+
+                        auto annotation_it = annotation_refs.find(key);
+                        if (annotation_it == annotation_refs.end()) {
+                                return {};
+                        }
+                        annotations = annotation_it->second;
+                        snapshot_version = annotation_version;
+                }
+
+                std::vector<InstanceAnnotation> parsed_annotations;
+                parsed_annotations.reserve(annotations.size());
+                for (const auto& annotation : annotations) {
+                        parsed_annotations.emplace_back(
+                            parse_py_annotation(annotation));
+                }
+
+                // Conversion can run arbitrary Python hooks. Only publish its
+                // result when no writer has replaced its source annotations.
+                std::lock_guard<std::mutex> guard(mutex);
+                auto cache_it = cpp_cache.find(key);
+                if (cache_it != cpp_cache.end()) {
+                        return cache_it->second;
+                }
+                if (snapshot_version == annotation_version) {
+                        auto inserted = cpp_cache.emplace(
+                            key, std::move(parsed_annotations));
+                        return inserted.first->second;
+                }
+        }
 }
 
 // Clear cache entry for specific (img_id, cat_id) to free memory
@@ -275,11 +272,6 @@ LightweightDataset::get_cpp_instances(const std::vector<double>& img_ids,
         std::vector<std::vector<std::vector<InstanceAnnotation>>> result;
         result.reserve(img_ids.size());  // Reserve space for image indices
 
-        // One lock for the whole sweep rather than one per pair: this runs once
-        // per evaluation over every image/category combination, so per-pair
-        // locking would add hundreds of thousands of uncontended acquisitions.
-        std::lock_guard<std::mutex> guard(mutex);
-
         for (size_t i = 0; i < img_ids.size(); ++i) {
                 int64_t img_id = static_cast<int64_t>(img_ids[i]);
                 if (useCats) {
@@ -292,8 +284,7 @@ LightweightDataset::get_cpp_instances(const std::vector<double>& img_ids,
                                 int64_t cat_id =
                                     static_cast<int64_t>(cat_ids[j]);
                                 cat_results.emplace_back(
-                                    get_cpp_annotations_locked(
-                                        {img_id, cat_id}));
+                                    get_cpp_annotations(img_id, cat_id));
                         }
                         result.emplace_back(std::move(cat_results));
                 } else {
@@ -302,9 +293,8 @@ LightweightDataset::get_cpp_instances(const std::vector<double>& img_ids,
                         for (size_t j = 0; j < cat_ids.size(); ++j) {
                                 int64_t cat_id =
                                     static_cast<int64_t>(cat_ids[j]);
-                                const std::vector<InstanceAnnotation>& anns =
-                                    get_cpp_annotations_locked(
-                                        {img_id, cat_id});
+                                const std::vector<InstanceAnnotation> anns =
+                                    get_cpp_annotations(img_id, cat_id);
                                 merged.insert(merged.end(), anns.begin(),
                                               anns.end());
                         }
