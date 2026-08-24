@@ -625,3 +625,78 @@ class TestGetAnns:
 
         assert coco.getAnns(imgIds=[999], catIds=[1]) == []
         assert set(coco.img_ann_map) == before
+
+
+class TestDatasetAppendBatch:
+    """Batched annotation ingress used by COCOeval._prepare."""
+
+    @staticmethod
+    def _ann(drop=..., image_id: int = 1, category_id: int = 1) -> dict:
+        """One annotation, optionally carrying a ``drop`` marker."""
+        ann = {"image_id": image_id, "category_id": category_id, "id": 1}
+        if drop is not ...:
+            ann["drop"] = drop
+        return ann
+
+    @pytest.mark.parametrize(
+        "drop",
+        [
+            pytest.param(..., id="key-absent"),
+            pytest.param(False, id="false"),
+            pytest.param(True, id="true"),
+            pytest.param(0, id="int-zero"),
+            pytest.param(1, id="int-one"),
+            pytest.param(None, id="none"),
+            pytest.param("", id="empty-string"),
+            pytest.param("yes", id="non-empty-string"),
+            pytest.param([], id="empty-list"),
+            pytest.param([0], id="non-empty-list"),
+        ],
+    )
+    def test_skip_dropped_follows_python_truthiness(self, drop):
+        """A dropped annotation is decided by truthiness, not a bool cast.
+
+        _prepare replaced `if not dt.get("drop", False)` with this native call.
+        Annotations come from user-supplied data, so "drop" can hold any object;
+        a bool cast raises on a string where the original loop just evaluated
+        it, silently turning valid input into a crash.
+        """
+        from faster_coco_eval.faster_eval_api_cpp import Dataset
+
+        ann = self._ann(drop)
+        expected_kept = not ann.get("drop", False)
+
+        dataset = Dataset()
+        dataset.append_batch([ann], True)
+
+        assert (len(dataset) > 0) == expected_kept
+
+    def test_returns_encountered_image_category_pairs(self):
+        """The returned set replaces the caller's own pair-collecting loop.
+
+        _prepare intersects the ground-truth and detection pair sets to decide
+        which IoU pairs are non-empty, so a wrong set silently changes which
+        image/category combinations get evaluated at all.
+        """
+        from faster_coco_eval.faster_eval_api_cpp import Dataset
+
+        anns = [self._ann(image_id=1, category_id=1), self._ann(image_id=2, category_id=3)]
+
+        pairs = Dataset().append_batch(anns, False)
+
+        assert pairs == {(1, 1), (2, 3)}
+
+    def test_dropped_annotations_are_absent_from_returned_pairs(self):
+        """A dropped annotation contributes neither storage nor a pair.
+
+        If a dropped detection still registered its pair, _prepare would treat
+        that image/category as non-empty and evaluate a bucket with no
+        detections in it.
+        """
+        from faster_coco_eval.faster_eval_api_cpp import Dataset
+
+        anns = [self._ann(image_id=1, category_id=1), self._ann(True, image_id=2, category_id=3)]
+
+        pairs = Dataset().append_batch(anns, True)
+
+        assert pairs == {(1, 1)}

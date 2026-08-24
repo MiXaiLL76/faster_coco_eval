@@ -23,6 +23,61 @@ void LightweightDataset::append_ref(double img_id, double cat_id,
         annotation_refs[key].emplace_back(ann_ref);
 }
 
+// Store a whole annotation sequence in one call.
+//
+// The per-annotation append_ref binding costs roughly 287ns of pybind dispatch
+// per call, which dominates ingest for detection-sized inputs. Looping here
+// instead pays that cost once. The returned set of (image_id, category_id)
+// tuples is what the caller would otherwise rebuild in a second Python loop.
+py::set LightweightDataset::append_batch(const py::sequence& annotations,
+                                         bool skip_dropped) {
+        py::set pairs;
+
+        const py::str image_key("image_id");
+        const py::str category_key("category_id");
+        const py::str drop_key("drop");
+
+        for (const py::handle& item : annotations) {
+                const py::dict ann = py::reinterpret_borrow<py::dict>(item);
+
+                if (skip_dropped) {
+                        // Mirror Python's ``not ann.get("drop", False)``:
+                        // truthiness, not a bool cast. Annotations come from
+                        // user data, so "drop" may hold any object; casting
+                        // would raise where the original loop simply evaluated
+                        // it.
+                        const py::object drop_obj =
+                            ann.contains(drop_key)
+                                ? py::reinterpret_borrow<py::object>(
+                                      ann[drop_key])
+                                : py::none();
+                        const int is_true = PyObject_IsTrue(drop_obj.ptr());
+                        if (is_true == -1) {
+                                throw py::error_already_set();
+                        }
+                        if (is_true == 1) {
+                                continue;
+                        }
+                }
+
+                const py::object img_obj = ann[image_key];
+                const py::object cat_obj = ann[category_key];
+
+                const std::pair<int64_t, int64_t> key{
+                    static_cast<int64_t>(img_obj.cast<double>()),
+                    static_cast<int64_t>(cat_obj.cast<double>())};
+                annotation_refs[key].emplace_back(
+                    py::reinterpret_borrow<py::object>(item));
+
+                // Carry the original id objects, not the narrowed int64 copies,
+                // so the caller's pair set stays identical to the Python
+                // loop's.
+                pairs.add(py::make_tuple(img_obj, cat_obj));
+        }
+
+        return pairs;
+}
+
 // Remove all stored references and clear cache
 void LightweightDataset::clean() {
         annotation_refs.clear();

@@ -38,6 +38,12 @@ class LightweightDataset {
         // Store reference to annotation instead of copying data
         void append_ref(double img_id, double cat_id, py::object ann_ref);
 
+        // Store a whole annotation sequence in one call, returning the set of
+        // (image_id, category_id) tuples encountered. Set skip_dropped to skip
+        // annotations carrying a truthy "drop" key.
+        py::set append_batch(const py::sequence& annotations,
+                             bool skip_dropped);
+
         // Remove all stored references and clear cache
         void clean();
 
