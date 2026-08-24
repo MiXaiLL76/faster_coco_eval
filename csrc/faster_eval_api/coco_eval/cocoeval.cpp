@@ -674,122 +674,128 @@ py::dict Accumulate(const py::object& params,
         if (!max_detections.empty()) {
                 const int maximum_detections = *std::max_element(
                     max_detections.begin(), max_detections.end());
-                std::vector<uint64_t> evaluation_indices;
-                std::vector<double> detection_scores;
-                std::vector<uint64_t> all_detection_sorted_indices;
-                std::vector<uint64_t> filtered_detection_sorted_indices;
-                std::vector<uint64_t> image_detection_indices;
-                std::vector<double> precisions, recalls;
 
-                for (auto c = 0; c < num_categories; ++c) {
-                        for (auto a = 0; a < num_area_ranges; ++a) {
-                                // The COCO PythonAPI stores images contiguously
-                                // within each category/area combination.
-                                const int64_t evaluations_index =
-                                    c * num_area_ranges * num_images +
-                                    a * num_images;
-                                const int num_valid_ground_truth =
-                                    BuildSortedDetectionList(
-                                        evaluations, evaluations_index,
-                                        num_images, maximum_detections,
-                                        &evaluation_indices, &detection_scores,
-                                        &all_detection_sorted_indices,
-                                        &image_detection_indices);
+                const std::size_t task_count =
+                    static_cast<std::size_t>(num_categories * num_area_ranges);
+                const std::size_t worker_count = std::min<std::size_t>(
+                    task_count, std::max(1u, std::thread::hardware_concurrency()));
 
-                                if (num_valid_ground_truth == 0) {
-                                        continue;
+                auto accumulate_category_area = [&](const std::size_t task_index) {
+                        const auto c = static_cast<int>(task_index / num_area_ranges);
+                        const auto a = static_cast<int>(task_index % num_area_ranges);
+                        // The COCO PythonAPI stores images contiguously
+                        // within each category/area combination.
+                        const int64_t evaluations_index =
+                            c * num_area_ranges * num_images + a * num_images;
+
+                        // Every task owns these temporary buffers and disjoint output
+                        // slices, so workers cannot race on evaluator state.
+                        std::vector<uint64_t> evaluation_indices;
+                        std::vector<double> detection_scores;
+                        std::vector<uint64_t> all_detection_sorted_indices;
+                        std::vector<uint64_t> filtered_detection_sorted_indices;
+                        std::vector<uint64_t> image_detection_indices;
+                        std::vector<double> precisions, recalls;
+
+                        const int num_valid_ground_truth = BuildSortedDetectionList(
+                            evaluations, evaluations_index, num_images, maximum_detections,
+                            &evaluation_indices, &detection_scores,
+                            &all_detection_sorted_indices, &image_detection_indices);
+
+                        if (num_valid_ground_truth == 0) {
+                                return;
+                        }
+
+                        for (auto m = 0; m < num_max_detections; ++m) {
+                                const std::vector<uint64_t>* detection_sorted_indices =
+                                    &all_detection_sorted_indices;
+                                if (max_detections[m] != maximum_detections) {
+                                        filtered_detection_sorted_indices.clear();
+                                        filtered_detection_sorted_indices.reserve(
+                                            all_detection_sorted_indices.size());
+                                        for (const auto index : all_detection_sorted_indices) {
+                                                if (image_detection_indices[index] <
+                                                    static_cast<uint64_t>(max_detections[m])) {
+                                                        filtered_detection_sorted_indices.push_back(index);
+                                                }
+                                        }
+                                        detection_sorted_indices = &filtered_detection_sorted_indices;
                                 }
 
-                                for (auto m = 0; m < num_max_detections; ++m) {
-                                        const std::vector<uint64_t>*
-                                            detection_sorted_indices =
-                                                &all_detection_sorted_indices;
-                                        if (max_detections[m] !=
-                                            maximum_detections) {
-                                                filtered_detection_sorted_indices
-                                                    .clear();
-                                                filtered_detection_sorted_indices
-                                                    .reserve(
-                                                        all_detection_sorted_indices
-                                                            .size());
-                                                for (
-                                                    const auto index :
-                                                    all_detection_sorted_indices) {
-                                                        if (image_detection_indices
-                                                                [index] <
-                                                            static_cast<
-                                                                uint64_t>(
-                                                                max_detections
-                                                                    [m])) {
-                                                                filtered_detection_sorted_indices
-                                                                    .push_back(
-                                                                        index);
-                                                        }
-                                                }
-                                                detection_sorted_indices =
-                                                    &filtered_detection_sorted_indices;
+                                for (auto t = 0; t < num_iou_thresholds; ++t) {
+                                        // recalls_out is a flattened vectors representing a
+                                        // num_iou_thresholds X num_categories X num_area_ranges X
+                                        // num_max_detections matrix
+                                        const int64_t recalls_out_index =
+                                            t * num_categories * num_area_ranges * num_max_detections +
+                                            c * num_area_ranges * num_max_detections +
+                                            a * num_max_detections + m;
+
+                                        // precisions_out and scores_out are flattened vectors
+                                        // representing a num_iou_thresholds X num_recall_thresholds X
+                                        // num_categories X num_area_ranges X num_max_detections matrix
+                                        const int64_t precisions_out_stride =
+                                            num_categories * num_area_ranges * num_max_detections;
+                                        const int64_t precisions_out_index =
+                                            t * num_recall_thresholds * num_categories *
+                                                num_area_ranges * num_max_detections +
+                                            c * num_area_ranges * num_max_detections +
+                                            a * num_max_detections + m;
+
+                                        ComputePrecisionRecallCurve(
+                                            precisions_out_index, precisions_out_stride, recalls_out_index,
+                                            recall_thresholds, t, num_iou_thresholds, num_valid_ground_truth,
+                                            evaluations, evaluation_indices, detection_scores,
+                                            *detection_sorted_indices, image_detection_indices, &precisions,
+                                            &recalls, &precisions_out, &scores_out, &recalls_out);
+                                }
+                        }
+                };
+
+                std::exception_ptr first_exception;
+                {
+                        py::gil_scoped_release release;
+                        if (worker_count == 1) {
+                                try {
+                                        for (std::size_t task_index = 0; task_index < task_count;
+                                             ++task_index) {
+                                                accumulate_category_area(task_index);
                                         }
+                                } catch (...) {
+                                        first_exception = std::current_exception();
+                                }
+                        } else {
+                                std::atomic<std::size_t> next_task{0};
+                                auto accumulate_tasks = [&]() {
+                                        while (true) {
+                                                const std::size_t task_index = next_task.fetch_add(1);
+                                                if (task_index >= task_count) {
+                                                        return;
+                                                }
+                                                accumulate_category_area(task_index);
+                                        }
+                                };
 
-                                        for (auto t = 0; t < num_iou_thresholds;
-                                             ++t) {
-                                                // recalls_out is a flattened
-                                                // vectors representing a
-                                                // num_iou_thresholds X
-                                                // num_categories X
-                                                // num_area_ranges X
-                                                // num_max_detections matrix
-                                                const int64_t
-                                                    recalls_out_index =
-                                                        t * num_categories *
-                                                            num_area_ranges *
-                                                            num_max_detections +
-                                                        c * num_area_ranges *
-                                                            num_max_detections +
-                                                        a * num_max_detections +
-                                                        m;
+                                std::vector<std::future<void>> futures;
+                                futures.reserve(worker_count);
+                                for (std::size_t worker = 0; worker < worker_count; ++worker) {
+                                        futures.emplace_back(
+                                            std::async(std::launch::async, accumulate_tasks));
+                                }
 
-                                                // precisions_out and scores_out
-                                                // are flattened vectors
-                                                // representing a
-                                                // num_iou_thresholds X
-                                                // num_recall_thresholds X
-                                                // num_categories X
-                                                // num_area_ranges X
-                                                // num_max_detections matrix
-                                                const int64_t
-                                                    precisions_out_stride =
-                                                        num_categories *
-                                                        num_area_ranges *
-                                                        num_max_detections;
-                                                const int64_t
-                                                    precisions_out_index =
-                                                        t * num_recall_thresholds *
-                                                            num_categories *
-                                                            num_area_ranges *
-                                                            num_max_detections +
-                                                        c * num_area_ranges *
-                                                            num_max_detections +
-                                                        a * num_max_detections +
-                                                        m;
-
-                                                ComputePrecisionRecallCurve(
-                                                    precisions_out_index,
-                                                    precisions_out_stride,
-                                                    recalls_out_index,
-                                                    recall_thresholds, t,
-                                                    num_iou_thresholds,
-                                                    num_valid_ground_truth,
-                                                    evaluations,
-                                                    evaluation_indices,
-                                                    detection_scores,
-                                                    *detection_sorted_indices,
-                                                    image_detection_indices,
-                                                    &precisions, &recalls,
-                                                    &precisions_out,
-                                                    &scores_out, &recalls_out);
+                                for (auto& future : futures) {
+                                        try {
+                                                future.get();
+                                        } catch (...) {
+                                                if (!first_exception) {
+                                                        first_exception = std::current_exception();
+                                                }
                                         }
                                 }
                         }
+                }
+                if (first_exception) {
+                        std::rethrow_exception(first_exception);
                 }
         }
 
