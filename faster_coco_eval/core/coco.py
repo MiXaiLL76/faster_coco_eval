@@ -760,8 +760,8 @@ class COCO:
         Returns:
             dict: Standard python dictionary containing the COCO data.
         """
-        cats = copy.deepcopy(list(self.cats.values()))
-        anns = copy.deepcopy(list(self.anns.values()))
+        cats = [dict(category) for category in self.cats.values()]
+        anns = [dict(annotation) for annotation in self.anns.values()]
 
         if separate_fn:
             max_category_id = max(cats, key=lambda x: x["id"])["id"]
@@ -784,7 +784,7 @@ class COCO:
 
         return {
             "info": {"description": "Created from faster-coco-eval"},
-            "images": copy.deepcopy(list(self.imgs.values())),
+            "images": list(self.imgs.values()),
             "annotations": anns,
             "categories": cats,
         }

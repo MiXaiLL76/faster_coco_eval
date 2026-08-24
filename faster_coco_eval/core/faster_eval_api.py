@@ -219,7 +219,7 @@ class COCOeval_faster(COCOevalBase):
         """
         matched = self.eval.get("matched")
         if matched is None:
-            raise RuntimeError("Matching data is unavailable; enable extra_calc and call accumulate() first")
+            raise RuntimeError("Matching data is unavailable; run the evaluation and accumulation pipeline first")
         if not matched:
             return 0.0
         return sum(matched.values()) / len(matched)
@@ -549,9 +549,9 @@ class COCOeval(COCOeval_faster):
         Returns:
             Callable: The built-in print function.
         """
-        return print
+        return getattr(self, "_compat_print_function", print)
 
     @print_function.setter
     def print_function(self, value: Callable):
         """Store a compatibility print function for temporary reassignment."""
-        self._print_function = value
+        self._compat_print_function = value

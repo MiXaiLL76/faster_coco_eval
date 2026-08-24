@@ -102,4 +102,4 @@ def test_compatibility_evaluator_keeps_a_writable_print_function() -> None:
 
     evaluator.print_function = sink
 
-    assert evaluator._print_function is sink
+    assert evaluator.print_function is sink
