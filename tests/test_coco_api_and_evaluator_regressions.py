@@ -373,6 +373,36 @@ def test_load_res_accepts_empty_results():
     assert empty.loadAnns([]) == []
 
 
+def test_load_res_rejects_unsupported_result_types():
+    """Unsupported result inputs must fail with the documented TypeError."""
+    evaluator = _make_eval()
+
+    with pytest.raises(TypeError, match="is not supported"):
+        evaluator.cocoGt.loadRes(1)
+
+
+def test_show_anns_rejects_unsupported_annotation_types():
+    """Annotations without an instance or caption payload must be rejected."""
+    coco = COCO()
+
+    with pytest.raises(Exception, match="datasetType not supported"):
+        coco.showAnns([{"id": 1}])
+
+
+def test_dump_round_trips_indexed_dataset(tmp_path):
+    """Dumped datasets must load with the same indexed COCO content."""
+    evaluator = _make_eval()
+    output_file = tmp_path / "dataset.json"
+
+    evaluator.cocoGt.dump(output_file)
+    loaded = COCO(output_file)
+
+    assert loaded.dataset == evaluator.cocoGt.to_dict()
+    assert loaded.getImgIds() == [1]
+    assert loaded.getAnnIds() == [1]
+    assert loaded.getCatIds() == [1]
+
+
 def test_core_collection_defaults_are_not_shared_mutable_objects():
     """Core public collection parameters use None sentinels instead of mutable
     defaults."""

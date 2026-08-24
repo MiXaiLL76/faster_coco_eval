@@ -245,7 +245,9 @@ class TestCocoMetric(TestCase):
             coco_eval.summarize()
 
             for i in range(len(target[iou_type])):
-                self.assertAlmostEqual(coco_eval.stats[i], target[iou_type][i], 12)
+                # Detectron2's canonical metrics are stable to eight decimal places;
+                # tighter comparisons vary across supported architectures.
+                self.assertAlmostEqual(coco_eval.stats[i], target[iou_type][i], places=8)
 
 
 if __name__ == "__main__":
