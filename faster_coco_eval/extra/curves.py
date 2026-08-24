@@ -190,7 +190,7 @@ class Curves(ExtraEval):
                     "y": [0],
                 }
 
-                curve_limit = _median + _q3
+                curve_limit = min(_median + _q3, x.max())
                 if x.min() < curve_limit:
                     for val in np.linspace(x.min(), curve_limit, count):
                         _mask = x < val

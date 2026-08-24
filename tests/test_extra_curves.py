@@ -43,11 +43,12 @@ def _build_ced_curves(mae_values):
     return curves.build_ced_curve(mae_count=3)
 
 
-def test_build_ced_curve_uses_third_quartile_for_curve_limit():
-    """Sample CED points through the median plus third-quartile limit."""
+def test_build_ced_curve_keeps_x_values_nondecreasing():
+    """Keep CED sample points ordered through the final endpoint."""
     curves = _build_ced_curves([0.0, 1.0, 2.0, 3.0])
 
-    assert curves[0]["mae"]["MEAN"]["x"][-2] == 3.75
+    x_values = curves[0]["mae"]["MEAN"]["x"]
+    assert np.all(np.diff(x_values) >= 0)
 
 
 def test_build_ced_curve_avoids_repeating_zero_error_points():
