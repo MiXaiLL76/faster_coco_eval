@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cmath>
 #include <cstdint>
 #include <exception>
 #include <future>
@@ -30,6 +31,13 @@ int64_t v_index(const std::vector<T>& v, const T& key) {
         }
 }
 
+void ValidateDetectionScore(const double score) {
+        if (std::isnan(score)) {
+                throw std::invalid_argument(
+                    "Detection scores must not be NaN.");
+        }
+}
+
 // Sort detections from highest score to lowest, such that
 // detection_instances[detection_sorted_indices[t]] >=
 // detection_instances[detection_sorted_indices[t+1]].  Use stable_sort to match
@@ -37,6 +45,9 @@ int64_t v_index(const std::vector<T>& v, const T& key) {
 void SortInstancesByDetectionScore(
     const std::vector<InstanceAnnotation>& detection_instances,
     std::vector<uint64_t>* detection_sorted_indices) {
+        for (const auto& detection : detection_instances) {
+                ValidateDetectionScore(detection.score);
+        }
         detection_sorted_indices->resize(detection_instances.size());
         std::iota(detection_sorted_indices->begin(),
                   detection_sorted_indices->end(), 0);
@@ -78,7 +89,8 @@ void SortInstancesByIgnore(
 }
 
 // For each IOU threshold, greedily match each detected instance to a ground
-// truth instance (if possible) and store the results
+// truth instance (if possible) and store the results. Annotation id 0 remains
+// reserved as the unmatched sentinel in the match buffers.
 void MatchDetectionsToGroundTruth(
     const std::vector<InstanceAnnotation>& detection_instances,
     const std::vector<uint64_t>& detection_sorted_indices,
@@ -266,6 +278,8 @@ std::vector<ImageEvaluation> EvaluateImages(
                         detection_sorted_indices.resize(max_detections);
                 }
 
+                // IoU rows must follow detection_sorted_indices, because the
+                // matcher indexes each row by its score-sorted detection slot.
                 const auto& category_ious = image_category_ious[i][c];
                 const std::size_t expected_ground_truth =
                     ground_truth_instances.size();
@@ -418,7 +432,13 @@ int BuildSortedDetectionList(const std::vector<ImageEvaluation>& evaluations,
                              std::vector<double>* detection_scores,
                              std::vector<uint64_t>* detection_sorted_indices,
                              std::vector<uint64_t>* image_detection_indices) {
-        assert(evaluations.size() >= evaluation_index + num_images);
+        if (evaluation_index < 0 || num_images < 0 || max_detections < 0 ||
+            static_cast<uint64_t>(evaluation_index) > evaluations.size() ||
+            static_cast<uint64_t>(num_images) >
+                evaluations.size() - static_cast<uint64_t>(evaluation_index)) {
+                throw std::runtime_error(
+                    "Evaluation slice is outside the available evaluations.");
+        }
 
         // Extract a list of object instances of the applicable category, area
         // range, and max detections requirements such that they can be sorted
@@ -454,6 +474,9 @@ int BuildSortedDetectionList(const std::vector<ImageEvaluation>& evaluations,
         detection_sorted_indices->resize(detection_scores->size());
         std::iota(detection_sorted_indices->begin(),
                   detection_sorted_indices->end(), 0);
+        for (const auto detection_score : *detection_scores) {
+                ValidateDetectionScore(detection_score);
+        }
         std::stable_sort(
             detection_sorted_indices->begin(), detection_sorted_indices->end(),
             [&detection_scores](size_t j1, size_t j2) {
@@ -485,7 +508,11 @@ void ComputePrecisionRecallCurve(
     std::vector<double>* precisions, std::vector<double>* recalls,
     std::vector<double>* precisions_out, std::vector<double>* scores_out,
     std::vector<double>* recalls_out) {
-        assert(recalls_out->size() > recalls_out_index);
+        if (recalls_out_index < 0 ||
+            static_cast<uint64_t>(recalls_out_index) >= recalls_out->size()) {
+                throw std::runtime_error(
+                    "Recall output index is outside the output buffer.");
+        }
 
         // Compute precision/recall for each instance in the sorted list of
         // detections
@@ -494,17 +521,52 @@ void ComputePrecisionRecallCurve(
         recalls->clear();
         precisions->reserve(detection_sorted_indices.size());
         recalls->reserve(detection_sorted_indices.size());
-        assert(!evaluations.empty() || detection_sorted_indices.empty());
+        if (evaluations.empty() && !detection_sorted_indices.empty()) {
+                throw std::runtime_error(
+                    "Detection indices require at least one evaluation.");
+        }
         for (auto detection_sorted_index : detection_sorted_indices) {
+                if (detection_sorted_index >= evaluation_indices.size() ||
+                    detection_sorted_index >= image_detection_indices.size()) {
+                        throw std::runtime_error(
+                            "Detection index is outside the accumulated "
+                            "evaluation inputs.");
+                }
+                const uint64_t evaluation_index =
+                    evaluation_indices[detection_sorted_index];
+                if (evaluation_index >= evaluations.size()) {
+                        throw std::runtime_error(
+                            "Evaluation index is outside the available "
+                            "evaluations.");
+                }
                 const ImageEvaluation& evaluation =
-                    evaluations[evaluation_indices[detection_sorted_index]];
+                    evaluations[evaluation_index];
+                if (evaluation.detection_matches.size() % num_iou_thresholds !=
+                        0 ||
+                    evaluation.detection_ignores.size() !=
+                        evaluation.detection_matches.size()) {
+                        throw std::runtime_error(
+                            "Detection result buffers must be rectangular and "
+                            "aligned.");
+                }
                 const auto num_detections =
                     evaluation.detection_matches.size() / num_iou_thresholds;
+                if (evaluation.detection_scores.size() != num_detections ||
+                    image_detection_indices[detection_sorted_index] >=
+                        num_detections) {
+                        throw std::runtime_error(
+                            "Detection result buffers must be rectangular and "
+                            "aligned.");
+                }
                 const auto detection_index =
                     iou_threshold_index * num_detections +
                     image_detection_indices[detection_sorted_index];
-                assert(evaluation.detection_matches.size() > detection_index);
-                assert(evaluation.detection_ignores.size() > detection_index);
+                if (detection_index >= evaluation.detection_matches.size() ||
+                    detection_index >= evaluation.detection_ignores.size()) {
+                        throw std::runtime_error(
+                            "Detection result index is outside its evaluation "
+                            "buffers.");
+                }
                 const int64_t detection_match =
                     evaluation.detection_matches[detection_index];
                 const bool detection_ignores =
@@ -553,8 +615,14 @@ void ComputePrecisionRecallCurve(
 
                 const auto results_ind =
                     precisions_out_index + r * precisions_out_stride;
-                assert(results_ind < precisions_out->size());
-                assert(results_ind < scores_out->size());
+                if (results_ind < 0 ||
+                    static_cast<uint64_t>(results_ind) >=
+                        precisions_out->size() ||
+                    static_cast<uint64_t>(results_ind) >= scores_out->size()) {
+                        throw std::runtime_error(
+                            "Precision or score output index is outside its "
+                            "output buffer.");
+                }
                 if (precisions_index < precisions->size()) {
                         (*precisions_out)[results_ind] =
                             (*precisions)[precisions_index];
@@ -699,7 +767,7 @@ py::dict Accumulate(const py::object& params,
 #else
         localtime_r(&rawtime, &local_time);
 #endif
-        strftime(buffer, 200, "%Y-%m-%d %H:%S", &local_time);
+        strftime(buffer, 200, "%Y-%m-%d %H:%M:%S", &local_time);
 
         int evaluations_size = static_cast<int>(evaluations.size());
 
