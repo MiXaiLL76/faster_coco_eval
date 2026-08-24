@@ -13,7 +13,8 @@ from faster_coco_eval import COCO, COCOeval_faster
 
 
 class SerializedImageEvaluation(_eval.ImageEvaluation):
-    """Create a native evaluation through its supported pickle state boundary."""
+    """Create a native evaluation through its supported pickle state
+    boundary."""
 
     def __init__(self, state):
         super().__init__()
@@ -69,7 +70,8 @@ def test_evaluator_rejects_nan_detection_score_before_sorting():
     ],
 )
 def test_accumulate_rejects_misaligned_result_buffers(detection_matches, detection_scores, detection_ignores):
-    """Accumulation rejects result buffers that do not share one detection shape."""
+    """Accumulation rejects result buffers that do not share one detection
+    shape."""
     params = SimpleNamespace(
         recThrs=[0.0],
         maxDets=[1],

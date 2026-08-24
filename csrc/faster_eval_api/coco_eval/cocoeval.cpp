@@ -33,7 +33,8 @@ int64_t v_index(const std::vector<T>& v, const T& key) {
 
 void ValidateDetectionScore(const double score) {
         if (std::isnan(score)) {
-                throw std::invalid_argument("Detection scores must not be NaN.");
+                throw std::invalid_argument(
+                    "Detection scores must not be NaN.");
         }
 }
 
