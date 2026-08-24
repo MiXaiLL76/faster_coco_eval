@@ -119,6 +119,59 @@ std::vector<py::dict> LightweightDataset::get(double img_id, double cat_id) {
         }
 }
 
+namespace {
+
+// Annotation field names, interned once for the process lifetime.
+//
+// Passing a C string literal to dict::contains or operator[] makes pybind11
+// build a fresh Python str for every lookup: allocate, decode UTF-8, hash with
+// siphash24 because a new str has no cached hash, then free. That repeated for
+// seven fields on every annotation dominated annotation parsing. An interned
+// str is built once and carries its hash, so lookups become a plain
+// PyDict_GetItem probe.
+struct AnnotationKeys {
+        PyObject* id;
+        PyObject* score;
+        PyObject* area;
+        PyObject* is_crowd;
+        PyObject* iscrowd;
+        PyObject* ignore;
+        PyObject* lvis_mark;
+
+        AnnotationKeys()
+            : id(PyUnicode_InternFromString("id")),
+              score(PyUnicode_InternFromString("score")),
+              area(PyUnicode_InternFromString("area")),
+              is_crowd(PyUnicode_InternFromString("is_crowd")),
+              iscrowd(PyUnicode_InternFromString("iscrowd")),
+              ignore(PyUnicode_InternFromString("ignore")),
+              lvis_mark(PyUnicode_InternFromString("lvis_mark")) {}
+};
+
+// Deliberately leaked: interpreter teardown may run static destructors without
+// the GIL, and releasing Python objects there is undefined behaviour. The keys
+// are needed for as long as the module is usable, so never freeing them costs
+// seven small strings and removes the shutdown hazard.
+const AnnotationKeys& annotation_keys() {
+        static const AnnotationKeys* keys = new AnnotationKeys();
+        return *keys;
+}
+
+// Borrowed lookup, or nullptr when the key is absent.
+//
+// A failing lookup is swallowed to match the surrounding behaviour, where every
+// field is best-effort and a malformed annotation yields defaults rather than
+// an exception.
+inline PyObject* dict_get(const py::dict& mapping, PyObject* key) {
+        PyObject* value = PyDict_GetItemWithError(mapping.ptr(), key);
+        if (value == nullptr && PyErr_Occurred()) {
+                PyErr_Clear();
+        }
+        return value;
+}
+
+}  // namespace
+
 // Helper method to convert py::object to InstanceAnnotation
 InstanceAnnotation LightweightDataset::parse_py_annotation(
     const py::object& ann) const {
@@ -131,49 +184,56 @@ InstanceAnnotation LightweightDataset::parse_py_annotation(
 
         // Extract values from Python dict with safe type handling
         py::dict ann_dict = ann.cast<py::dict>();
+        const AnnotationKeys& keys = annotation_keys();
 
-        try {
-                if (ann_dict.contains("id")) {
-                        id = ann_dict["id"].cast<uint64_t>();
+        // Each field keeps its own try/catch so that one unconvertible value
+        // leaves that field at its default without discarding the others.
+        if (PyObject* value = dict_get(ann_dict, keys.id)) {
+                try {
+                        id = py::handle(value).cast<uint64_t>();
+                } catch (const std::exception&) {
                 }
-        } catch (const std::exception&) {
         }
 
-        try {
-                if (ann_dict.contains("score")) {
-                        score = ann_dict["score"].cast<double>();
+        if (PyObject* value = dict_get(ann_dict, keys.score)) {
+                try {
+                        score = py::handle(value).cast<double>();
+                } catch (const std::exception&) {
                 }
-        } catch (const std::exception&) {
         }
 
-        try {
-                if (ann_dict.contains("area")) {
-                        area = ann_dict["area"].cast<double>();
+        if (PyObject* value = dict_get(ann_dict, keys.area)) {
+                try {
+                        area = py::handle(value).cast<double>();
+                } catch (const std::exception&) {
                 }
-        } catch (const std::exception&) {
         }
 
-        try {
-                if (ann_dict.contains("is_crowd")) {
-                        is_crowd = ann_dict["is_crowd"].cast<bool>();
-                } else if (ann_dict.contains("iscrowd")) {
-                        is_crowd = ann_dict["iscrowd"].cast<bool>();
+        // "is_crowd" wins when present; "iscrowd" is only consulted if the
+        // preferred spelling is absent, matching the original else-if.
+        PyObject* crowd_value = dict_get(ann_dict, keys.is_crowd);
+        if (crowd_value == nullptr) {
+                crowd_value = dict_get(ann_dict, keys.iscrowd);
+        }
+        if (crowd_value != nullptr) {
+                try {
+                        is_crowd = py::handle(crowd_value).cast<bool>();
+                } catch (const std::exception&) {
                 }
-        } catch (const std::exception&) {
         }
 
-        try {
-                if (ann_dict.contains("ignore")) {
-                        ignore = ann_dict["ignore"].cast<bool>();
+        if (PyObject* value = dict_get(ann_dict, keys.ignore)) {
+                try {
+                        ignore = py::handle(value).cast<bool>();
+                } catch (const std::exception&) {
                 }
-        } catch (const std::exception&) {
         }
 
-        try {
-                if (ann_dict.contains("lvis_mark")) {
-                        lvis_mark = ann_dict["lvis_mark"].cast<bool>();
+        if (PyObject* value = dict_get(ann_dict, keys.lvis_mark)) {
+                try {
+                        lvis_mark = py::handle(value).cast<bool>();
+                } catch (const std::exception&) {
                 }
-        } catch (const std::exception&) {
         }
 
         // Construct and return the annotation.
