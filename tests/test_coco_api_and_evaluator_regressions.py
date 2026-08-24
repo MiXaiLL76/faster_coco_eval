@@ -180,6 +180,7 @@ def test_sparse_iou_dispatch_preserves_empty_public_pairs(
     assert evaluator.iou_calls == expected_calls
     assert evaluator.ious[(2, 1 if use_categories else -1)] == []
 
+
 def test_accumulation_is_deterministic_across_category_area_tasks():
     """Repeated native accumulation must preserve every result tensor."""
     evaluator = _make_eval(include_second_pair=True)
