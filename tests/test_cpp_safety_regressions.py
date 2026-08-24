@@ -108,65 +108,76 @@ def test_accumulate_rejects_nan_detection_score_before_sorting():
         _eval.COCOevalAccumulate(params, [evaluation])
 
 
-def _evaluate_with_ground_truth(annotation: dict) -> list[float]:
-    """Run a one-image bbox evaluation over a single ground-truth
-    annotation."""
-    images = [{"id": 1, "width": 100, "height": 100}]
-    categories = [{"id": 1, "name": "a"}]
-    base = {"id": 1, "image_id": 1, "category_id": 1, "bbox": [0.0, 0.0, 10.0, 10.0], "area": 100.0}
-    coco_gt = COCO({"images": images, "categories": categories, "annotations": [{**base, **annotation}]})
-    coco_dt = coco_gt.loadRes([{"image_id": 1, "category_id": 1, "bbox": [0.0, 0.0, 10.0, 10.0], "score": 0.9}])
+def _evaluate_native_annotation(annotation: dict, detection_ids: tuple[int, ...] = (100,)) -> tuple:
+    """Serialize the native result for one parsed ground truth annotation."""
+    ground_truth = _eval.Dataset()
+    detections = _eval.Dataset()
+    ground_truth.append_ref(1.0, 1.0, {"id": 1, "area": 100.0, **annotation})
 
-    evaluator = COCOeval_faster(coco_gt, coco_dt, iouType="bbox")
-    evaluator.params.maxDets = [10]
-    evaluator.evaluate()
-    evaluator.accumulate()
-    evaluator.summarize()
-    return list(evaluator.stats)
+    for index, detection_id in enumerate(detection_ids):
+        detections.append_ref(
+            1.0,
+            1.0,
+            {"id": detection_id, "score": 1.0 - index / 10.0, "area": 100.0},
+        )
+
+    return _eval.COCOevalEvaluateImages(
+        [[0.0, 100000.0]],
+        10,
+        [0.5],
+        [[[[1.0] for _ in detection_ids]]],
+        ground_truth,
+        detections,
+        [1.0],
+        [1.0],
+        True,
+    )[0].__getstate__()
 
 
 class TestAnnotationFieldParsing:
     """Field lookup in the native annotation parser."""
 
     @pytest.mark.parametrize(
-        ("annotation", "expected_ap"),
+        ("annotation", "expected_matches"),
         [
-            pytest.param({"is_crowd": 1}, 1.0, id="is-crowd-only"),
-            pytest.param({"iscrowd": 1}, -1.0, id="iscrowd-only"),
-            pytest.param({"is_crowd": 0, "iscrowd": 1}, -1.0, id="both-spellings"),
-            pytest.param({"is_crowd": 0}, 1.0, id="is-crowd-zero"),
-            pytest.param({}, 1.0, id="neither"),
+            pytest.param({"is_crowd": 1, "iscrowd": 0}, [1, 1], id="preferred-crowd-key-wins"),
+            pytest.param({"is_crowd": 0, "iscrowd": 1}, [1, 0], id="preferred-non-crowd-key-wins"),
+            pytest.param({"iscrowd": 1}, [1, 1], id="legacy-crowd-key-fallback"),
         ],
     )
-    def test_crowd_spelling_outcomes_are_pinned(self, annotation, expected_ap):
-        """Pin the observed outcome for every crowd-key spelling.
+    def test_preferred_crowd_key_controls_repeated_matches(self, annotation, expected_matches):
+        """The native parser honors ``is_crowd`` before ``iscrowd``.
 
-        The parser reads "is_crowd" and falls back to "iscrowd", but
-        _prepare derives the ignore flag from "iscrowd" alone, so the
-        two spellings are not interchangeable end to end. This
-        characterizes that existing asymmetry so a change to how the
-        parser looks keys up cannot shift it unnoticed; it is not an
-        endorsement of the asymmetry.
+        Two detections make the parsed crowd flag observable: a crowd ground
+        truth can match both detections, while a regular ground truth cannot.
         """
-        assert _evaluate_with_ground_truth(annotation)[0] == pytest.approx(expected_ap)
+        state = _evaluate_native_annotation(annotation, (100, 101))
 
-    @pytest.mark.parametrize(
-        "annotation",
-        [
-            pytest.param({"lvis_mark": "bad"}, id="unconvertible-lvis-mark"),
-            pytest.param({"area": "bad"}, id="unconvertible-area"),
-            pytest.param({"ignore": object()}, id="unconvertible-ignore"),
-        ],
-    )
-    def test_unconvertible_field_falls_back_to_default(self, annotation):
-        """A field that cannot be converted leaves its default and does not
-        raise.
+        assert state[0] == expected_matches
 
-        Annotations come from user data, so the parser is deliberately
-        best-effort per field. Propagating instead would turn a
-        tolerated oddity in one optional field into a failed evaluation.
+    def test_raw_unconvertible_ignore_falls_back_to_default(self):
+        """An unconvertible raw ``ignore`` value remains non-ignored.
+
+        This bypasses Python evaluator preparation, which otherwise
+        overwrites the annotation before the native parser sees it.
         """
-        assert _evaluate_with_ground_truth(annotation) == _evaluate_with_ground_truth({})
+        state = _evaluate_native_annotation({"ignore": object()})
+
+        assert state[3] == [False]
+
+    def test_failed_crowd_lookup_keeps_default_without_falling_back(self):
+        """A failed preferred-key lookup is not treated as absent."""
+
+        class ErrorKey(str):
+            def __hash__(self):
+                return hash("is_crowd")
+
+            def __eq__(self, other):
+                raise RuntimeError("crowd lookup failed")
+
+        state = _evaluate_native_annotation({ErrorKey("is_crowd"): 1, "iscrowd": 1}, (100, 101))
+
+        assert state[0] == [1, 0]
 
     def test_absent_optional_fields_are_tolerated(self):
         """Omitting every optional field still evaluates.
@@ -175,4 +186,4 @@ class TestAnnotationFieldParsing:
         "lvis_mark"; each must read as its default rather than as a
         missing-key error.
         """
-        assert _evaluate_with_ground_truth({})[0] == pytest.approx(1.0)
+        assert _evaluate_native_annotation({})[0] == [1]
