@@ -589,11 +589,12 @@ class TestGetAnns:
         ],
     )
     def test_matches_load_anns_of_get_ann_ids(self, img_ids, cat_ids):
-        """getAnns returns exactly what loadAnns(getAnnIds(...)) returns.
+        """GetAnns returns exactly what loadAnns(getAnnIds(...)) returns.
 
-        _prepare swapped the id round trip for this call, so any divergence in
-        selection or ordering would silently change which detections land in
-        each image/category bucket and shift the evaluation result.
+        _prepare swapped the id round trip for this call, so any
+        divergence in selection or ordering would silently change which
+        detections land in each image/category bucket and shift the
+        evaluation result.
         """
         coco = self._dataset()
 
@@ -617,8 +618,9 @@ class TestGetAnns:
     def test_unknown_image_id_does_not_grow_the_index(self):
         """Querying a missing image id leaves img_ann_map untouched.
 
-        img_ann_map is a defaultdict, so a bare subscript would insert an empty
-        list for every unknown id and slowly leak entries across evaluations.
+        img_ann_map is a defaultdict, so a bare subscript would insert
+        an empty list for every unknown id and slowly leak entries
+        across evaluations.
         """
         coco = self._dataset()
         before = set(coco.img_ann_map)
@@ -656,10 +658,11 @@ class TestDatasetAppendBatch:
     def test_skip_dropped_follows_python_truthiness(self, drop):
         """A dropped annotation is decided by truthiness, not a bool cast.
 
-        _prepare replaced `if not dt.get("drop", False)` with this native call.
-        Annotations come from user-supplied data, so "drop" can hold any object;
-        a bool cast raises on a string where the original loop just evaluated
-        it, silently turning valid input into a crash.
+        _prepare replaced `if not dt.get("drop", False)` with this
+        native call. Annotations come from user-supplied data, so "drop"
+        can hold any object; a bool cast raises on a string where the
+        original loop just evaluated it, silently turning valid input
+        into a crash.
         """
         from faster_coco_eval.faster_eval_api_cpp import Dataset
 
@@ -674,9 +677,9 @@ class TestDatasetAppendBatch:
     def test_returns_encountered_image_category_pairs(self):
         """The returned set replaces the caller's own pair-collecting loop.
 
-        _prepare intersects the ground-truth and detection pair sets to decide
-        which IoU pairs are non-empty, so a wrong set silently changes which
-        image/category combinations get evaluated at all.
+        _prepare intersects the ground-truth and detection pair sets to
+        decide which IoU pairs are non-empty, so a wrong set silently
+        changes which image/category combinations get evaluated at all.
         """
         from faster_coco_eval.faster_eval_api_cpp import Dataset
 
@@ -689,9 +692,9 @@ class TestDatasetAppendBatch:
     def test_dropped_annotations_are_absent_from_returned_pairs(self):
         """A dropped annotation contributes neither storage nor a pair.
 
-        If a dropped detection still registered its pair, _prepare would treat
-        that image/category as non-empty and evaluate a bucket with no
-        detections in it.
+        If a dropped detection still registered its pair, _prepare would
+        treat that image/category as non-empty and evaluate a bucket
+        with no detections in it.
         """
         from faster_coco_eval.faster_eval_api_cpp import Dataset
 
