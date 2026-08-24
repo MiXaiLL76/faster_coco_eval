@@ -96,17 +96,17 @@ val.summarize()
 
 ## ⚡ Blazing Fast Performance
 
-Faster-COCO-Eval uses a native C++ implementation. The measured result below is a reproducible reference point; real-world speedup varies with dataset size, metric, and hardware.
+Faster-COCO-Eval uses a native C++ implementation. The measured result below is one local reference point; real-world speedup varies with dataset size, metric, and hardware.
 
 ### Real-World Performance Benchmark
 
-Local reference benchmark: 100 synthetic images, 15 ground-truth boxes and 100 detections per image, five categories, bbox evaluation, seven timed samples after two warmups. The benchmark was run on 2026-08-23 on macOS 26.6.1 arm64, Python 3.10.11, and NumPy 2.2.6. Both implementations produced identical `eval["precision"]` arrays.
+Local reference measurement: 100 synthetic images, 15 ground-truth boxes and 100 detections per image, five categories, bbox evaluation, seven timed samples after two warmups. The measurement was run on 2026-08-23 on macOS 26.6.1 arm64, Python 3.10.11, and NumPy 2.2.6. The implementations' `eval["precision"]` arrays matched within the comparison tolerance.
 
 | Evaluation Type | Faster-COCO-Eval (sec)  | pycocotools (sec)       | Speedup   |
 | --------------- | ----------------------- | ----------------------- | --------- |
 | Bounding Boxes  | 0.053977 (MAD 0.001883) | 0.296960 (MAD 0.001667) | **5.50x** |
 
-Run it with `python scripts/benchmark_evaluation.py`; results are hardware- and workload-dependent.
+This local measurement is hardware- and workload-dependent; it is not a universal performance guarantee.
 
 ### Colab Examples
 
@@ -162,7 +162,7 @@ Faster-COCO-Eval prioritizes **correctness and reliability** through extensive t
 
 ### Extensive PyCocoTools Comparison
 
-New comprehensive tests validate **exact numerical equality** with pycocotools:
+New comprehensive tests validate **numerical parity within a strict tolerance** with pycocotools:
 
 - **Object Detection**: Tests with 10-100 images, hundreds to thousands of annotations
 - **Instance Segmentation**: RLE mask encoding and pixel-level IoU validation
