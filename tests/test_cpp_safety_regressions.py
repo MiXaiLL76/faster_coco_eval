@@ -124,9 +124,9 @@ class TestDatasetConcurrency:
     def test_concurrent_readers_complete(self):
         """Many threads reading the cache finish and agree on the contents.
 
-        get_cpp_annotations populates a shared cache on miss, so the read path
-        mutates. A recursive or mis-ordered lock here would deadlock and hang
-        the suite rather than fail an assertion.
+        get_cpp_annotations populates a shared cache on miss, so the
+        read path mutates. A recursive or mis-ordered lock here would
+        deadlock and hang the suite rather than fail an assertion.
         """
         dataset = self._populated_dataset()
         results = []
@@ -144,8 +144,8 @@ class TestDatasetConcurrency:
         """Reads racing cache eviction return whole annotation lists.
 
         clear_cache_entry erases entries that get_cpp_annotations may be
-        populating. Returning by value keeps callers safe from an entry being
-        dropped mid-use; a reference would dangle instead.
+        populating. Returning by value keeps callers safe from an entry
+        being dropped mid-use; a reference would dangle instead.
         """
         dataset = self._populated_dataset()
         observed = []
