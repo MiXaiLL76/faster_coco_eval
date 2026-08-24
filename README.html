@@ -8,15 +8,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Faster-COCO-Eval &mdash; faster-coco-eval 1.7.2 1.7.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/custom_nbsphinx.css?v=ce1cc334" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=908dc885"></script>
-      <script src="_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -107,7 +107,7 @@
 </tr>
 <tr class="row-even"><td><p><strong>Performance</strong></p></td>
 <td><p>Significantly slower, especially on large datasets or distributed workloads.</p></td>
-<td><p><strong>3-4x faster</strong> due to C++ optimizations and modern algorithms.</p></td>
+<td><p>Native C++ implementation with measured speedups that depend on the workload and hardware.</p></td>
 </tr>
 <tr class="row-odd"><td><p><strong>Functionality</strong></p></td>
 <td><p>Limited to basic COCO format evaluation.</p></td>
@@ -115,7 +115,7 @@
 </tr>
 <tr class="row-even"><td><p><strong>Ease of Use</strong></p></td>
 <td><p>Requires manual installation, often with compilation issues.</p></td>
-<td><p>Simple <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code>, no compilation required, and drop-in replacement API.</p></td>
+<td><p>Simple <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code> with pre-built wheels for common CPython/glibc Linux, macOS, and Windows platforms; source builds may be needed elsewhere.</p></td>
 </tr>
 <tr class="row-odd"><td><p><strong>Visualization</strong></p></td>
 <td><p>Basic plotting capabilities.</p></td>
@@ -169,6 +169,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pycocotools.cocoeval</span><span class="w"> </span><span class="kn">import</span> <span class="n">COCOeval</span>
 
 <span class="c1"># Load annotations and predictions</span>
+<span class="n">anno_json</span> <span class="o">=</span> <span class="s2">"path/to/annotations.json"</span>
+<span class="n">pred_json</span> <span class="o">=</span> <span class="s2">"path/to/predictions.json"</span>
 <span class="n">anno</span> <span class="o">=</span> <span class="n">COCO</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">anno_json</span><span class="p">))</span>  <span class="c1"># Annotations file</span>
 <span class="n">pred</span> <span class="o">=</span> <span class="n">anno</span><span class="o">.</span><span class="n">loadRes</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">pred_json</span><span class="p">))</span>  <span class="c1"># Predictions file</span>
 
@@ -185,14 +187,14 @@
 <span class="n">val</span><span class="o">.</span><span class="n">summarize</span><span class="p">()</span>
 </pre></div>
 </div>
-<p><strong>That’s it! Your existing code will run 3-4x faster with no changes.</strong></p>
+<p><strong>That’s it! Your existing code runs through the native evaluator with no API changes.</strong></p>
 </section>
 <section id="blazing-fast-performance">
 <h2>⚡ Blazing Fast Performance<a class="headerlink" href="#blazing-fast-performance" title="Link to this heading"></a></h2>
-<p>Faster-COCO-Eval is built on top of a highly optimized C++ implementation, providing <strong>3-4x faster evaluation</strong> than the standard pycocotools.</p>
+<p>Faster-COCO-Eval uses a native C++ implementation. The measured result below is one local reference point; real-world speedup varies with dataset size, metric, and hardware.</p>
 <section id="real-world-performance-benchmark">
 <h3>Real-World Performance Benchmark<a class="headerlink" href="#real-world-performance-benchmark" title="Link to this heading"></a></h3>
-<p>Tested on 5000 images from the COCO validation dataset using mmdetection framework:</p>
+<p>Local reference measurement: 100 synthetic images, 15 ground-truth boxes and 100 detections per image, five categories, bbox evaluation, seven timed samples after two warmups. The measurement was run on 2026-08-23 on macOS 26.6.1 arm64, Python 3.10.11, and NumPy 2.2.6. The implementations’ <code class="docutils literal notranslate"><span class="pre">eval[&quot;precision&quot;]</span></code> arrays matched within the comparison tolerance.</p>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>Evaluation Type</p></th>
@@ -203,18 +205,13 @@
 </thead>
 <tbody>
 <tr class="row-even"><td><p>Bounding Boxes</p></td>
-<td><p>5.812</p></td>
-<td><p>22.72</p></td>
-<td><p><strong>3.9x</strong></p></td>
-</tr>
-<tr class="row-odd"><td><p>Segmentation</p></td>
-<td><p>7.413</p></td>
-<td><p>24.434</p></td>
-<td><p><strong>3.3x</strong></p></td>
+<td><p>0.053977 (MAD 0.001883)</p></td>
+<td><p>0.296960 (MAD 0.001667)</p></td>
+<td><p><strong>5.50x</strong></p></td>
 </tr>
 </tbody>
 </table>
-<p><strong>For large datasets, this means hours saved on evaluation time!</strong></p>
+<p>This local measurement is hardware- and workload-dependent; it is not a universal performance guarantee.</p>
 </section>
 <section id="colab-examples">
 <h3>Colab Examples<a class="headerlink" href="#colab-examples" title="Link to this heading"></a></h3>
@@ -252,7 +249,7 @@
 <h3>Modern Integrations<a class="headerlink" href="#modern-integrations" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>PyTorch/TorchVision compatibility</strong></p></li>
-<li><p><strong>Seamless integration with mmdetection, Detectron2, and YOLO frameworks</strong></p></li>
+<li><p><strong>Seamless integration with mmdetection and YOLO frameworks</strong></p></li>
 <li><p><strong>Distributed evaluation support</strong></p></li>
 <li><p><strong>Memory optimized for large datasets</strong></p></li>
 </ul>
@@ -274,14 +271,14 @@
 <h3>Comprehensive Test Suite<a class="headerlink" href="#comprehensive-test-suite" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>90+ automated tests</strong> covering all functionality</p></li>
-<li><p><strong>Exact equality validation</strong> against pycocotools across all metrics</p></li>
+<li><p><strong>Numerical parity checks</strong> against pycocotools across the supported metrics</p></li>
 <li><p><strong>Continuous integration</strong> on Python 3.10-3.13</p></li>
 <li><p><strong>Edge case coverage</strong> including boundary conditions and error handling</p></li>
 </ul>
 </section>
 <section id="extensive-pycocotools-comparison">
 <h3>Extensive PyCocoTools Comparison<a class="headerlink" href="#extensive-pycocotools-comparison" title="Link to this heading"></a></h3>
-<p>New comprehensive tests validate <strong>exact numerical equality</strong> with pycocotools:</p>
+<p>New comprehensive tests validate <strong>numerical parity within a strict tolerance</strong> with pycocotools:</p>
 <ul class="simple">
 <li><p><strong>Object Detection</strong>: Tests with 10-100 images, hundreds to thousands of annotations</p></li>
 <li><p><strong>Instance Segmentation</strong>: RLE mask encoding and pixel-level IoU validation</p></li>
@@ -289,7 +286,7 @@
 <li><p><strong>Multiple Scenarios</strong>: Small/medium/large objects, various confidence distributions</p></li>
 <li><p><strong>Edge Cases</strong>: Perfect predictions, low-confidence detections, mixed object sizes</p></li>
 </ul>
-<p>All tests confirm <strong>bit-for-bit identical results</strong> between faster_coco_eval and pycocotools, giving you confidence to use this library as a drop-in replacement while gaining 3-4x performance improvements.</p>
+<p>The comparison suite checks numerical parity between faster_coco_eval and pycocotools, giving you confidence to use this library as a drop-in replacement. See the benchmark above for one measured bbox workload; it is not a universal performance guarantee.</p>
 <p>See <a class="reference internal" href="#tests/README.md"><span class="xref myst">tests/README.md</span></a> for detailed test documentation.</p>
 </section>
 </section>
@@ -318,7 +315,7 @@
 </section>
 <section id="star-history">
 <h2>⭐ Star History<a class="headerlink" href="#star-history" title="Link to this heading"></a></h2>
-<p><a class="reference external" href="https://star-history.com/#MiXaiLL76/faster_coco_eval&amp;Date"><img alt="Star History Chart" src="https://api.star-history.com/svg?repos=MiXaiLL76/faster_coco_eval&amp;type=Date" /></a></p>
+<p><a class="reference external" href="https://star-history.com/#MiXaiLL76/faster_coco_eval&amp;amp;Date"><img alt="Star History Chart" src="https://api.star-history.com/svg?repos=MiXaiLL76/faster_coco_eval&amp;type=Date" /></a></p>
 </section>
 <section id="license">
 <h2>📄 License<a class="headerlink" href="#license" title="Link to this heading"></a></h2>

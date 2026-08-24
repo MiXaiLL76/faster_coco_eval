@@ -8,15 +8,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Extra API &mdash; faster-coco-eval 1.7.2 1.7.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/custom_nbsphinx.css?v=ce1cc334" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=908dc885"></script>
-      <script src="_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -135,7 +135,7 @@
 <span id="extra-api"></span><h1>Extra API<a class="headerlink" href="#module-faster_coco_eval.extra" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="faster_coco_eval.extra.Curves">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">faster_coco_eval.extra.</span></span><span class="sig-name descname"><span class="pre">Curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cocoGt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cocoDt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iouType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bbox'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_tresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recall_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useCats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kpt_oks_sigmas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.extra.Curves" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">faster_coco_eval.extra.</span></span><span class="sig-name descname"><span class="pre">Curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cocoGt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cocoDt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iouType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bbox'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_tresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recall_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useCats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kpt_oks_sigmas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.extra.Curves" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#faster_coco_eval.extra.extra.ExtraEval" title="faster_coco_eval.extra.extra.ExtraEval"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExtraEval</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="faster_coco_eval.extra.Curves.build_ced_curve">
@@ -144,13 +144,13 @@
 categories.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>mae_count</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of points to use for the CED curve. Defaults to 1000.</p>
+<dd class="field-odd"><p><strong>mae_count</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of points to use for the CED curve. Defaults to 1000.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>List of dictionaries containing CED curve data for each category.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>]</span></p>
+<dd class="field-odd"><p>List[dict]</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
@@ -167,7 +167,7 @@ categories.</p>
 <dd><p>Build the curve for a given label.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>label</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – The label to build the curve for.</p>
+<dd class="field-odd"><p><strong>label</strong> (<em>str</em>) – The label to build the curve for.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><dl class="simple">
@@ -177,7 +177,7 @@ categories.</p>
 </p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>]</span></p>
+<dd class="field-odd"><p>List[dict]</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>AssertionError</strong> – If self.eval is None (evaluate() was not called).</p>
@@ -192,10 +192,10 @@ categories.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>curves</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>] | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – List of curves to plot.
+<li><p><strong>curves</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>dict</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – List of curves to plot.
 If None, will build the curves. Defaults to None.</p></li>
-<li><p><strong>normalize</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Whether to normalize the curve. Defaults to True.</p></li>
-<li><p><strong>return_fig</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Return the figure object. Defaults to False.</p></li>
+<li><p><strong>normalize</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em><em>, </em><em>optional</em>) – Whether to normalize the curve. Defaults to True.</p></li>
+<li><p><strong>return_fig</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em><em>, </em><em>optional</em>) – Return the figure object. Defaults to False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -214,10 +214,10 @@ If None, will build the curves. Defaults to None.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>curves</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>] | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – List of curves to plot.
+<li><p><strong>curves</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>dict</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – List of curves to plot.
 If None, it will build the curves. Defaults to None.</p></li>
-<li><p><strong>label</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Label for the curves. Defaults to “category_id”.</p></li>
-<li><p><strong>return_fig</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Return the figure object. Defaults to False.</p></li>
+<li><p><strong>label</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – Label for the curves. Defaults to “category_id”.</p></li>
+<li><p><strong>return_fig</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em><em>, </em><em>optional</em>) – Return the figure object. Defaults to False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -236,10 +236,10 @@ If None, it will build the curves. Defaults to None.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>curves</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>] | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – List of curves to plot.
+<li><p><strong>curves</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>dict</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – List of curves to plot.
 If None, it will build the curves. Defaults to None.</p></li>
-<li><p><strong>label</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Label for the curves. Defaults to “category_id”.</p></li>
-<li><p><strong>return_fig</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Return the figure object. Defaults to False.</p></li>
+<li><p><strong>label</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – Label for the curves. Defaults to “category_id”.</p></li>
+<li><p><strong>return_fig</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em><em>, </em><em>optional</em>) – Return the figure object. Defaults to False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -255,7 +255,7 @@ If None, it will build the curves. Defaults to None.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="faster_coco_eval.extra.PreviewResults">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">faster_coco_eval.extra.</span></span><span class="sig-name descname"><span class="pre">PreviewResults</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cocoGt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cocoDt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iouType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bbox'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_tresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recall_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useCats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kpt_oks_sigmas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.extra.PreviewResults" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">faster_coco_eval.extra.</span></span><span class="sig-name descname"><span class="pre">PreviewResults</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cocoGt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cocoDt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iouType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bbox'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_tresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recall_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useCats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kpt_oks_sigmas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.extra.PreviewResults" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#faster_coco_eval.extra.extra.ExtraEval" title="faster_coco_eval.extra.extra.ExtraEval"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExtraEval</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="faster_coco_eval.extra.PreviewResults.compute_confusion_matrix">
@@ -266,7 +266,7 @@ If None, it will build the curves. Defaults to None.</p></li>
 <dd class="field-odd"><p>The confusion matrix.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+<dd class="field-even"><p>np.ndarray</p>
 </dd>
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>AssertionError</strong> – If self.eval is None (evaluate() was not run).</p>
@@ -281,17 +281,17 @@ If None, it will build the curves. Defaults to None.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>image_id</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Image id.</p></li>
-<li><p><strong>display_fp</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Display false positives.</p></li>
-<li><p><strong>display_fn</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Display false negatives.</p></li>
-<li><p><strong>display_tp</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Display true positives.</p></li>
-<li><p><strong>display_gt</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Display ground truth.</p></li>
-<li><p><strong>show_false_only</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, only display images that contains false positives or false negatives.</p></li>
-<li><p><strong>data_folder</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Data folder.</p></li>
-<li><p><strong>categories</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Categories to display.</p></li>
-<li><p><strong>gt_ann_ids</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">set</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Ground truth annotation ids.</p></li>
-<li><p><strong>dt_ann_ids</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">set</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Detected annotation ids.</p></li>
-<li><p><strong>return_fig</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Return the figure.</p></li>
+<li><p><strong>image_id</strong> (<em>int</em>) – Image id.</p></li>
+<li><p><strong>display_fp</strong> (<em>bool</em>) – Display false positives.</p></li>
+<li><p><strong>display_fn</strong> (<em>bool</em>) – Display false negatives.</p></li>
+<li><p><strong>display_tp</strong> (<em>bool</em>) – Display true positives.</p></li>
+<li><p><strong>display_gt</strong> (<em>bool</em>) – Display ground truth.</p></li>
+<li><p><strong>show_false_only</strong> (<em>bool</em>) – If True, only display images that contains false positives or false negatives.</p></li>
+<li><p><strong>data_folder</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Data folder.</p></li>
+<li><p><strong>categories</strong> (<em>Optional</em><em>[</em><em>list</em><em>]</em>) – Categories to display.</p></li>
+<li><p><strong>gt_ann_ids</strong> (<em>Optional</em><em>[</em><em>set</em><em>]</em>) – Ground truth annotation ids.</p></li>
+<li><p><strong>dt_ann_ids</strong> (<em>Optional</em><em>[</em><em>set</em><em>]</em>) – Detected annotation ids.</p></li>
+<li><p><strong>return_fig</strong> (<em>bool</em>) – Return the figure.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -310,9 +310,9 @@ If None, it will build the curves. Defaults to None.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>normalize</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Normalize the matrix.</p></li>
-<li><p><strong>conf_matrix</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Confusion matrix to display. If None, compute it.</p></li>
-<li><p><strong>return_fig</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Return the figure.</p></li>
+<li><p><strong>normalize</strong> (<em>bool</em>) – Normalize the matrix.</p></li>
+<li><p><strong>conf_matrix</strong> (<em>Optional</em><em>[</em><em>np.ndarray</em><em>]</em>) – Confusion matrix to display. If None, compute it.</p></li>
+<li><p><strong>return_fig</strong> (<em>bool</em>) – Return the figure.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -332,14 +332,14 @@ given images.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>image_ids</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>] | <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – List of image ids or [“all”] to display all images.</p></li>
-<li><p><strong>display_fp</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Display false positives.</p></li>
-<li><p><strong>display_fn</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Display false negatives.</p></li>
-<li><p><strong>display_tp</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Display true positives.</p></li>
-<li><p><strong>display_gt</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Display ground truth.</p></li>
-<li><p><strong>show_false_only</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, only display images that contains false positives or false negatives.</p></li>
-<li><p><strong>data_folder</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Data folder.</p></li>
-<li><p><strong>categories</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Categories to display.</p></li>
+<li><p><strong>image_ids</strong> (<em>Union</em><em>[</em><em>List</em><em>[</em><em>int</em><em>]</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – List of image ids or [“all”] to display all images.</p></li>
+<li><p><strong>display_fp</strong> (<em>bool</em>) – Display false positives.</p></li>
+<li><p><strong>display_fn</strong> (<em>bool</em>) – Display false negatives.</p></li>
+<li><p><strong>display_tp</strong> (<em>bool</em>) – Display true positives.</p></li>
+<li><p><strong>display_gt</strong> (<em>bool</em>) – Display ground truth.</p></li>
+<li><p><strong>show_false_only</strong> (<em>bool</em>) – If True, only display images that contains false positives or false negatives.</p></li>
+<li><p><strong>data_folder</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Data folder.</p></li>
+<li><p><strong>categories</strong> (<em>Optional</em><em>[</em><em>list</em><em>]</em>) – Categories to display.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -354,7 +354,7 @@ given images.</p>
 <span id="implementation-modules"></span><h2>Implementation modules<a class="headerlink" href="#module-faster_coco_eval.extra.curves" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="faster_coco_eval.extra.curves.Curves">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">faster_coco_eval.extra.curves.</span></span><span class="sig-name descname"><span class="pre">Curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cocoGt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cocoDt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iouType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bbox'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_tresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recall_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useCats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kpt_oks_sigmas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.extra.curves.Curves" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">faster_coco_eval.extra.curves.</span></span><span class="sig-name descname"><span class="pre">Curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cocoGt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cocoDt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iouType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bbox'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_tresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recall_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useCats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kpt_oks_sigmas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.extra.curves.Curves" title="Link to this definition"></a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="faster_coco_eval.extra.curves.Curves.build_ced_curve">
 <span class="sig-name descname"><span class="pre">build_ced_curve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mae_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.extra.curves.Curves.build_ced_curve" title="Link to this definition"></a></dt>
@@ -362,13 +362,13 @@ given images.</p>
 categories.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>mae_count</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of points to use for the CED curve. Defaults to 1000.</p>
+<dd class="field-odd"><p><strong>mae_count</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of points to use for the CED curve. Defaults to 1000.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>List of dictionaries containing CED curve data for each category.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>]</span></p>
+<dd class="field-odd"><p>List[dict]</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
@@ -385,7 +385,7 @@ categories.</p>
 <dd><p>Build the curve for a given label.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>label</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – The label to build the curve for.</p>
+<dd class="field-odd"><p><strong>label</strong> (<em>str</em>) – The label to build the curve for.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><dl class="simple">
@@ -395,7 +395,7 @@ categories.</p>
 </p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>]</span></p>
+<dd class="field-odd"><p>List[dict]</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>AssertionError</strong> – If self.eval is None (evaluate() was not called).</p>
@@ -410,10 +410,10 @@ categories.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>curves</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>] | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – List of curves to plot.
+<li><p><strong>curves</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>dict</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – List of curves to plot.
 If None, will build the curves. Defaults to None.</p></li>
-<li><p><strong>normalize</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Whether to normalize the curve. Defaults to True.</p></li>
-<li><p><strong>return_fig</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Return the figure object. Defaults to False.</p></li>
+<li><p><strong>normalize</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em><em>, </em><em>optional</em>) – Whether to normalize the curve. Defaults to True.</p></li>
+<li><p><strong>return_fig</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em><em>, </em><em>optional</em>) – Return the figure object. Defaults to False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -432,10 +432,10 @@ If None, will build the curves. Defaults to None.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>curves</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>] | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – List of curves to plot.
+<li><p><strong>curves</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>dict</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – List of curves to plot.
 If None, it will build the curves. Defaults to None.</p></li>
-<li><p><strong>label</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Label for the curves. Defaults to “category_id”.</p></li>
-<li><p><strong>return_fig</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Return the figure object. Defaults to False.</p></li>
+<li><p><strong>label</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – Label for the curves. Defaults to “category_id”.</p></li>
+<li><p><strong>return_fig</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em><em>, </em><em>optional</em>) – Return the figure object. Defaults to False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -454,10 +454,10 @@ If None, it will build the curves. Defaults to None.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>curves</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>] | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – List of curves to plot.
+<li><p><strong>curves</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>dict</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – List of curves to plot.
 If None, it will build the curves. Defaults to None.</p></li>
-<li><p><strong>label</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Label for the curves. Defaults to “category_id”.</p></li>
-<li><p><strong>return_fig</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Return the figure object. Defaults to False.</p></li>
+<li><p><strong>label</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – Label for the curves. Defaults to “category_id”.</p></li>
+<li><p><strong>return_fig</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em><em>, </em><em>optional</em>) – Return the figure object. Defaults to False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -473,7 +473,7 @@ If None, it will build the curves. Defaults to None.</p></li>
 
 <dl class="py class" id="module-faster_coco_eval.extra.display">
 <dt class="sig sig-object py" id="faster_coco_eval.extra.display.PreviewResults">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">faster_coco_eval.extra.display.</span></span><span class="sig-name descname"><span class="pre">PreviewResults</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cocoGt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cocoDt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iouType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bbox'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_tresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recall_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useCats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kpt_oks_sigmas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.extra.display.PreviewResults" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">faster_coco_eval.extra.display.</span></span><span class="sig-name descname"><span class="pre">PreviewResults</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cocoGt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cocoDt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iouType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bbox'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_tresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recall_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useCats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kpt_oks_sigmas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.extra.display.PreviewResults" title="Link to this definition"></a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="faster_coco_eval.extra.display.PreviewResults.compute_confusion_matrix">
 <span class="sig-name descname"><span class="pre">compute_confusion_matrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.extra.display.PreviewResults.compute_confusion_matrix" title="Link to this definition"></a></dt>
@@ -483,7 +483,7 @@ If None, it will build the curves. Defaults to None.</p></li>
 <dd class="field-odd"><p>The confusion matrix.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+<dd class="field-even"><p>np.ndarray</p>
 </dd>
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>AssertionError</strong> – If self.eval is None (evaluate() was not run).</p>
@@ -498,17 +498,17 @@ If None, it will build the curves. Defaults to None.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>image_id</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Image id.</p></li>
-<li><p><strong>display_fp</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Display false positives.</p></li>
-<li><p><strong>display_fn</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Display false negatives.</p></li>
-<li><p><strong>display_tp</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Display true positives.</p></li>
-<li><p><strong>display_gt</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Display ground truth.</p></li>
-<li><p><strong>show_false_only</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, only display images that contains false positives or false negatives.</p></li>
-<li><p><strong>data_folder</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Data folder.</p></li>
-<li><p><strong>categories</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Categories to display.</p></li>
-<li><p><strong>gt_ann_ids</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">set</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Ground truth annotation ids.</p></li>
-<li><p><strong>dt_ann_ids</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">set</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Detected annotation ids.</p></li>
-<li><p><strong>return_fig</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Return the figure.</p></li>
+<li><p><strong>image_id</strong> (<em>int</em>) – Image id.</p></li>
+<li><p><strong>display_fp</strong> (<em>bool</em>) – Display false positives.</p></li>
+<li><p><strong>display_fn</strong> (<em>bool</em>) – Display false negatives.</p></li>
+<li><p><strong>display_tp</strong> (<em>bool</em>) – Display true positives.</p></li>
+<li><p><strong>display_gt</strong> (<em>bool</em>) – Display ground truth.</p></li>
+<li><p><strong>show_false_only</strong> (<em>bool</em>) – If True, only display images that contains false positives or false negatives.</p></li>
+<li><p><strong>data_folder</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Data folder.</p></li>
+<li><p><strong>categories</strong> (<em>Optional</em><em>[</em><em>list</em><em>]</em>) – Categories to display.</p></li>
+<li><p><strong>gt_ann_ids</strong> (<em>Optional</em><em>[</em><em>set</em><em>]</em>) – Ground truth annotation ids.</p></li>
+<li><p><strong>dt_ann_ids</strong> (<em>Optional</em><em>[</em><em>set</em><em>]</em>) – Detected annotation ids.</p></li>
+<li><p><strong>return_fig</strong> (<em>bool</em>) – Return the figure.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -527,9 +527,9 @@ If None, it will build the curves. Defaults to None.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>normalize</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Normalize the matrix.</p></li>
-<li><p><strong>conf_matrix</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Confusion matrix to display. If None, compute it.</p></li>
-<li><p><strong>return_fig</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Return the figure.</p></li>
+<li><p><strong>normalize</strong> (<em>bool</em>) – Normalize the matrix.</p></li>
+<li><p><strong>conf_matrix</strong> (<em>Optional</em><em>[</em><em>np.ndarray</em><em>]</em>) – Confusion matrix to display. If None, compute it.</p></li>
+<li><p><strong>return_fig</strong> (<em>bool</em>) – Return the figure.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -549,14 +549,14 @@ given images.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>image_ids</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>] | <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – List of image ids or [“all”] to display all images.</p></li>
-<li><p><strong>display_fp</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Display false positives.</p></li>
-<li><p><strong>display_fn</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Display false negatives.</p></li>
-<li><p><strong>display_tp</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Display true positives.</p></li>
-<li><p><strong>display_gt</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Display ground truth.</p></li>
-<li><p><strong>show_false_only</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, only display images that contains false positives or false negatives.</p></li>
-<li><p><strong>data_folder</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Data folder.</p></li>
-<li><p><strong>categories</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Categories to display.</p></li>
+<li><p><strong>image_ids</strong> (<em>Union</em><em>[</em><em>List</em><em>[</em><em>int</em><em>]</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – List of image ids or [“all”] to display all images.</p></li>
+<li><p><strong>display_fp</strong> (<em>bool</em>) – Display false positives.</p></li>
+<li><p><strong>display_fn</strong> (<em>bool</em>) – Display false negatives.</p></li>
+<li><p><strong>display_tp</strong> (<em>bool</em>) – Display true positives.</p></li>
+<li><p><strong>display_gt</strong> (<em>bool</em>) – Display ground truth.</p></li>
+<li><p><strong>show_false_only</strong> (<em>bool</em>) – If True, only display images that contains false positives or false negatives.</p></li>
+<li><p><strong>data_folder</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Data folder.</p></li>
+<li><p><strong>categories</strong> (<em>Optional</em><em>[</em><em>list</em><em>]</em>) – Categories to display.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -654,8 +654,8 @@ percentages. Rows with a zero total remain zero. Default is False.</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>curves</strong> (<em>list</em>) – List of ced curves to plot. Each dict must have keys: ‘mae’ (dict), ‘category’ (dict), optionally ‘label’.</p></li>
-<li><p><strong>normalize</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, normalize values to percent. Default is False.</p></li>
-<li><p><strong>return_fig</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, return the figure object. Default is False.</p></li>
+<li><p><strong>normalize</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, normalize values to percent. Default is False.</p></li>
+<li><p><strong>return_fig</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, return the figure object. Default is False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -675,7 +675,7 @@ percentages. Rows with a zero total remain zero. Default is False.</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>curves</strong> (<em>list</em>) – List of curves to plot. Each element is a dict with keys: ‘recall_list’, ‘precision_list’, ‘scores’, ‘label’.</p></li>
-<li><p><strong>return_fig</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, return the figure object. Default is False.</p></li>
+<li><p><strong>return_fig</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, return the figure object. Default is False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -695,7 +695,7 @@ percentages. Rows with a zero total remain zero. Default is False.</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>curves</strong> (<em>list</em>) – List of curves to plot. Each element is a dict with keys: ‘recall_list’, ‘precision_list’, ‘scores’, ‘name’.</p></li>
-<li><p><strong>return_fig</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, return the figure object. Default is False.</p></li>
+<li><p><strong>return_fig</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, return the figure object. Default is False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -714,12 +714,12 @@ percentages. Rows with a zero total remain zero. Default is False.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cocoGt</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="coco.html#faster_coco_eval.core.COCO" title="faster_coco_eval.core.coco.COCO"><code class="xref py py-class docutils literal notranslate"><span class="pre">COCO</span></code></a></span>) – COCO object containing ground truth data.</p></li>
-<li><p><strong>image_id</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Image id to display.</p></li>
-<li><p><strong>ann_ids</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>] | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – List of annotation ids to show. Default is None (show all).</p></li>
-<li><p><strong>iouType</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Literal</span></code>[<code class="docutils literal notranslate"><span class="pre">'segm'</span></code>, <code class="docutils literal notranslate"><span class="pre">'bbox'</span></code>]</span>) – Type of the annotation, one of ‘bbox’ or ‘segm’. Default is “bbox”.</p></li>
-<li><p><strong>data_folder</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span>) – Folder containing the images. Default is None.</p></li>
-<li><p><strong>return_fig</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Return the figure object instead of displaying it. Default is False.</p></li>
+<li><p><strong>cocoGt</strong> (<a class="reference internal" href="coco.html#faster_coco_eval.core.COCO" title="faster_coco_eval.core.COCO"><em>COCO</em></a>) – COCO object containing ground truth data.</p></li>
+<li><p><strong>image_id</strong> (<em>int</em>) – Image id to display.</p></li>
+<li><p><strong>ann_ids</strong> (<em>List</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – List of annotation ids to show. Default is None (show all).</p></li>
+<li><p><strong>iouType</strong> (<em>str</em><em>, </em><em>optional</em>) – Type of the annotation, one of ‘bbox’ or ‘segm’. Default is “bbox”.</p></li>
+<li><p><strong>data_folder</strong> (<em>str</em><em>, </em><em>optional</em>) – Folder containing the images. Default is None.</p></li>
+<li><p><strong>return_fig</strong> (<em>bool</em><em>, </em><em>optional</em>) – Return the figure object instead of displaying it. Default is False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -733,7 +733,7 @@ percentages. Rows with a zero total remain zero. Default is False.</p></li>
 
 <dl class="py class" id="module-faster_coco_eval.extra.extra">
 <dt class="sig sig-object py" id="faster_coco_eval.extra.extra.ExtraEval">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">faster_coco_eval.extra.extra.</span></span><span class="sig-name descname"><span class="pre">ExtraEval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cocoGt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cocoDt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iouType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bbox'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_tresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recall_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useCats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kpt_oks_sigmas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.extra.extra.ExtraEval" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">faster_coco_eval.extra.extra.</span></span><span class="sig-name descname"><span class="pre">ExtraEval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cocoGt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cocoDt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iouType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bbox'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_tresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recall_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useCats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kpt_oks_sigmas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.extra.extra.ExtraEval" title="Link to this definition"></a></dt>
 <dd><p>Evaluate COCO results with eager construction-time execution.</p>
 <p><code class="docutils literal notranslate"><span class="pre">iou_tresh</span></code> retains its historical misspelling for API compatibility.
 When both datasets are supplied, construction filters detections and runs
@@ -745,7 +745,7 @@ evaluation immediately; otherwise callers can invoke <a class="reference interna
 cocoDt.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>min_score</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Minimum score threshold for detections.</p>
+<dd class="field-odd"><p><strong>min_score</strong> (<em>float</em>) – Minimum score threshold for detections.</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>AssertionError</strong> – If cocoDt is None.</p>
@@ -766,7 +766,7 @@ cocoDt.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="faster_coco_eval.extra.extra.ExtraEval.fn_image_ann_map">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fn_image_ann_map</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#faster_coco_eval.extra.extra.ExtraEval.fn_image_ann_map" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fn_image_ann_map</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#faster_coco_eval.extra.extra.ExtraEval.fn_image_ann_map" title="Link to this definition"></a></dt>
 <dd><p>Gets a mapping from image IDs to sets of annotation IDs for false
 negatives.</p>
 <dl class="field-list simple">
@@ -781,7 +781,7 @@ negatives.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="faster_coco_eval.extra.extra.ExtraEval.fp_image_ann_map">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fp_image_ann_map</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#faster_coco_eval.extra.extra.ExtraEval.fp_image_ann_map" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fp_image_ann_map</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#faster_coco_eval.extra.extra.ExtraEval.fp_image_ann_map" title="Link to this definition"></a></dt>
 <dd><p>Gets a mapping from image IDs to sets of annotation IDs for false
 positives.</p>
 <dl class="field-list simple">
@@ -805,16 +805,16 @@ valid COCO polygon.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mask</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span>) – The mask image as a numpy array.</p></li>
-<li><p><strong>bbox</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></span>) – Bounding box of the annotation in the format [x, y, w, h].</p></li>
-<li><p><strong>boxes_margin</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Margin factor to increase the bounding box size. Defaults to 0.1.</p></li>
+<li><p><strong>mask</strong> (<em>np.ndarray</em>) – The mask image as a numpy array.</p></li>
+<li><p><strong>bbox</strong> (<em>list</em>) – Bounding box of the annotation in the format [x, y, w, h].</p></li>
+<li><p><strong>boxes_margin</strong> (<em>float</em><em>, </em><em>optional</em>) – Margin factor to increase the bounding box size. Defaults to 0.1.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>List of polygons in COCO format (list of lists of coordinates).</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></span></p>
+<dd class="field-odd"><p>list</p>
 </dd>
 </dl>
 </dd></dl>
@@ -826,13 +826,13 @@ valid COCO polygon.</p>
 in the ‘counts’ variable.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ann</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span>) – Annotation dictionary with at least ‘segmentation’ (RLE) and ‘bbox’ fields.</p>
+<dd class="field-odd"><p><strong>ann</strong> (<em>dict</em>) – Annotation dictionary with at least ‘segmentation’ (RLE) and ‘bbox’ fields.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Annotation dictionary with ‘segmentation’ converted to polygons and original RLE stored in ‘counts’.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span></p>
+<dd class="field-odd"><p>dict</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>Exception</strong> – If OpenCV is not available and conversion is required.</p>
@@ -847,15 +847,15 @@ in the ‘counts’ variable.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>rle</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span>) – RLE of the mask image (COCO format).</p></li>
-<li><p><strong>bbox</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></span>) – Bounding box of the annotation in the format [x, y, w, h].</p></li>
+<li><p><strong>rle</strong> (<em>dict</em>) – RLE of the mask image (COCO format).</p></li>
+<li><p><strong>bbox</strong> (<em>list</em>) – Bounding box of the annotation in the format [x, y, w, h].</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>List of polygons in COCO format (list of lists of coordinates).</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></span></p>
+<dd class="field-odd"><p>list</p>
 </dd>
 </dl>
 </dd></dl>
