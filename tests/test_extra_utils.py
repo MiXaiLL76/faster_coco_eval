@@ -39,7 +39,8 @@ def test_conver_mask_to_poly_basic():
 
 
 def test_conver_mask_to_poly_keeps_four_vertex_contour(monkeypatch):
-    """Keep a valid rectangle when contour approximation returns four vertices."""
+    """Keep a valid rectangle when contour approximation returns four
+    vertices."""
     contour = np.array([[[12, 10]], [[12, 49]], [[71, 49]], [[71, 10]]], dtype=np.int32)
     fake_cv2 = SimpleNamespace(
         RETR_TREE=1,
