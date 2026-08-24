@@ -111,6 +111,48 @@ def test_accumulate_rejects_nan_detection_score_before_sorting():
         _eval.COCOevalAccumulate(params, [evaluation])
 
 
+def _exercise_concurrent_evaluator_and_mask_operations():
+    """Run independent evaluator and mask calls from one synchronized start."""
+    barrier = threading.Barrier(4)
+
+    def evaluate_bbox():
+        coco_gt = COCO({
+            "images": [{"id": 1, "height": 2, "width": 2}],
+            "categories": [{"id": 1, "name": "object"}],
+            "annotations": [
+                {
+                    "id": 1,
+                    "image_id": 1,
+                    "category_id": 1,
+                    "bbox": [0, 0, 1, 1],
+                    "area": 1,
+                    "iscrowd": 0,
+                }
+            ],
+        })
+        coco_dt = coco_gt.loadRes([{"image_id": 1, "category_id": 1, "bbox": [0, 0, 1, 1], "score": 1.0}])
+        evaluator = COCOeval_faster(coco_gt, coco_dt, iouType="bbox", print_function=lambda _: None)
+
+        barrier.wait()
+        evaluator.evaluate()
+        evaluator.accumulate()
+        return evaluator.eval["precision"].shape
+
+    def evaluate_mask():
+        rle = _mask.frUncompressedRLE([{"size": [2, 2], "counts": [1, 3]}])
+
+        barrier.wait()
+        return _mask.toBbox(rle).tolist()
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = [pool.submit(evaluate_bbox) for _ in range(2)]
+        futures.extend(pool.submit(evaluate_mask) for _ in range(2))
+        results = [future.result() for future in futures]
+
+    assert results[:2] == [(10, 101, 1, 4, 3)] * 2
+    assert results[2:] == [[[0.0, 0.0, 2.0, 2.0]]] * 2
+
+
 def _populated_dataset(pairs: int = 64):
     """Build a dataset spanning several image/category pairs."""
     dataset = _eval.Dataset()
@@ -254,6 +296,10 @@ class TestDatasetConcurrency:
     def test_concurrent_readers_complete(self):
         """Synchronized cache readers finish within an external timeout."""
         _assert_completes_in_subprocess(_exercise_concurrent_readers)
+
+    def test_concurrent_evaluator_and_mask_operations(self):
+        """Independent evaluator and mask calls cannot deadlock the process."""
+        _assert_completes_in_subprocess(_exercise_concurrent_evaluator_and_mask_operations)
 
     def test_reads_interleaved_with_cache_eviction_complete(self):
         """Synchronized readers and evictors return whole cache entries."""
