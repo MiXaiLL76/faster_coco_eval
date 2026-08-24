@@ -6,15 +6,16 @@ from pathlib import Path
 from unittest import mock
 
 from faster_coco_eval import COCO
-from tests.conftest import TESTS_DIR
 
 try:
     import torch
     import torch.distributed as dist
+
+    from faster_coco_eval.utils.pytorch import FasterCocoEvaluator
 except ImportError:
     raise unittest.SkipTest("Skipping all tests for World COCO Evaluator.")
 
-from faster_coco_eval.utils.pytorch import FasterCocoEvaluator
+TESTS_DIR = Path(__file__).parent
 
 
 class TestWorldCoco(unittest.TestCase):

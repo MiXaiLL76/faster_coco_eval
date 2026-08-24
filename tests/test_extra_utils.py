@@ -1,8 +1,10 @@
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import numpy as np
 import pytest
 
+import faster_coco_eval.extra.utils as extra_utils
 from faster_coco_eval.extra.utils import (
     _check_opencv,
     conver_mask_to_poly,
@@ -32,6 +34,22 @@ def test_conver_mask_to_poly_basic():
     bbox = [15, 25, 70, 50]
 
     polygons = conver_mask_to_poly(mask, bbox)
+
+    assert polygons == [[20, 30, 20, 69, 79, 69, 79, 30]]
+
+
+def test_conver_mask_to_poly_keeps_four_vertex_contour(monkeypatch):
+    """Keep a valid rectangle when contour approximation returns four vertices."""
+    contour = np.array([[[12, 10]], [[12, 49]], [[71, 49]], [[71, 10]]], dtype=np.int32)
+    fake_cv2 = SimpleNamespace(
+        RETR_TREE=1,
+        CHAIN_APPROX_SIMPLE=2,
+        findContours=lambda *_: ([contour], None),
+    )
+    monkeypatch.setattr(extra_utils, "opencv_available", True)
+    monkeypatch.setattr(extra_utils, "cv2", fake_cv2)
+
+    polygons = conver_mask_to_poly(np.zeros((100, 100), dtype=np.uint8), [15, 25, 70, 50])
 
     assert polygons == [[20, 30, 20, 69, 79, 69, 79, 30]]
 
