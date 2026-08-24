@@ -30,9 +30,14 @@ jobs:
           - os: windows-latest
             cibw_archs: AMD64
             cibw_skip: "pp*"
+            cibw_repair_command: "delvewheel repair -w {dest_dir} -v {wheel}"
           - os: windows-latest
             cibw_archs: ARM64
             cibw_skip: "pp*"
+            # cross-compiled on an x86_64 runner: delvewheel can't locate the
+            # ARM64 msvcp140.dll (only the x64 copy is on PATH), so exclude it
+            # from bundling instead of failing the repair step.
+            cibw_repair_command: "delvewheel repair --exclude msvcp140.dll -w {dest_dir} -v {wheel}"
           - os: macos-14
             cibw_archs: arm64
             cibw_skip: "pp*"
@@ -67,6 +72,7 @@ jobs:
           CIBW_TEST_REQUIRES: "pytest parameterized"
           CIBW_TEST_COMMAND: "pytest {project}/tests"
           CIBW_TEST_SKIP: "*-win_arm64"
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: ${{ matrix.cibw_repair_command }}
         with:
           package-dir: ./
 
