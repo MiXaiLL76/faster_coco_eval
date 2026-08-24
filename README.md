@@ -16,9 +16,9 @@
 | ------------------------------ | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Support & Development**      | Outdated and not actively maintained. Issues and incompatibilities arise with new releases. | Actively maintained, continuously evolving, and regularly updated with new features and bug fixes.                                                                                        |
 | **Transparency & Reliability** | Lacks comprehensive testing, making updates risky and results less predictable.             | Emphasizes extensive test coverage and code quality, ensuring trustworthy and reliable results.                                                                                           |
-| **Performance**                | Significantly slower, especially on large datasets or distributed workloads.                | **3-4x faster** due to C++ optimizations and modern algorithms.                                                                                                                           |
+| **Performance**                | Significantly slower, especially on large datasets or distributed workloads.                | Native C++ implementation with measured speedups that depend on the workload and hardware.                                                                                                |
 | **Functionality**              | Limited to basic COCO format evaluation.                                                    | Offers extended metrics, support for new IoU types, compatibility with more datasets (e.g., CrowdPose, LVIS), advanced visualizations, and seamless integration with PyTorch/TorchVision. |
-| **Ease of Use**                | Requires manual installation, often with compilation issues.                                | Simple `pip install`, no compilation required, and drop-in replacement API.                                                                                                               |
+| **Ease of Use**                | Requires manual installation, often with compilation issues.                                | Simple `pip install` with pre-built wheels for common CPython/glibc Linux, macOS, and Windows platforms; source builds may be needed elsewhere.                                           |
 | **Visualization**              | Basic plotting capabilities.                                                                | Advanced error visualization, annotation display, and comprehensive metric analysis tools.                                                                                                |
 
 ______________________________________________________________________
@@ -74,6 +74,8 @@ from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
 # Load annotations and predictions
+anno_json = "path/to/annotations.json"
+pred_json = "path/to/predictions.json"
 anno = COCO(str(anno_json))  # Annotations file
 pred = anno.loadRes(str(pred_json))  # Predictions file
 
@@ -90,22 +92,21 @@ val.accumulate()
 val.summarize()
 ```
 
-**That's it! Your existing code will run 3-4x faster with no changes.**
+**That's it! Your existing code runs through the native evaluator with no API changes.**
 
 ## ⚡ Blazing Fast Performance
 
-Faster-COCO-Eval is built on top of a highly optimized C++ implementation, providing **3-4x faster evaluation** than the standard pycocotools.
+Faster-COCO-Eval uses a native C++ implementation. The measured result below is one local reference point; real-world speedup varies with dataset size, metric, and hardware.
 
 ### Real-World Performance Benchmark
 
-Tested on 5000 images from the COCO validation dataset using mmdetection framework:
+Local reference measurement: 100 synthetic images, 15 ground-truth boxes and 100 detections per image, five categories, bbox evaluation, seven timed samples after two warmups. The measurement was run on 2026-08-23 on macOS 26.6.1 arm64, Python 3.10.11, and NumPy 2.2.6. The implementations' `eval["precision"]` arrays matched within the comparison tolerance.
 
-| Evaluation Type | Faster-COCO-Eval (sec) | pycocotools (sec) | Speedup  |
-| --------------- | ---------------------- | ----------------- | -------- |
-| Bounding Boxes  | 5.812                  | 22.72             | **3.9x** |
-| Segmentation    | 7.413                  | 24.434            | **3.3x** |
+| Evaluation Type | Faster-COCO-Eval (sec)  | pycocotools (sec)       | Speedup   |
+| --------------- | ----------------------- | ----------------------- | --------- |
+| Bounding Boxes  | 0.053977 (MAD 0.001883) | 0.296960 (MAD 0.001667) | **5.50x** |
 
-**For large datasets, this means hours saved on evaluation time!**
+This local measurement is hardware- and workload-dependent; it is not a universal performance guarantee.
 
 ### Colab Examples
 
@@ -137,7 +138,7 @@ Faster-COCO-Eval goes beyond basic evaluation with these advanced capabilities:
 ### Modern Integrations
 
 - **PyTorch/TorchVision compatibility**
-- **Seamless integration with mmdetection, Detectron2, and YOLO frameworks**
+- **Seamless integration with mmdetection and YOLO frameworks**
 - **Distributed evaluation support**
 - **Memory optimized for large datasets**
 
@@ -155,13 +156,13 @@ Faster-COCO-Eval prioritizes **correctness and reliability** through extensive t
 ### Comprehensive Test Suite
 
 - **90+ automated tests** covering all functionality
-- **Exact equality validation** against pycocotools across all metrics
+- **Numerical parity checks** against pycocotools across the supported metrics
 - **Continuous integration** on Python 3.10-3.13
 - **Edge case coverage** including boundary conditions and error handling
 
 ### Extensive PyCocoTools Comparison
 
-New comprehensive tests validate **exact numerical equality** with pycocotools:
+New comprehensive tests validate **numerical parity within a strict tolerance** with pycocotools:
 
 - **Object Detection**: Tests with 10-100 images, hundreds to thousands of annotations
 - **Instance Segmentation**: RLE mask encoding and pixel-level IoU validation
@@ -169,7 +170,7 @@ New comprehensive tests validate **exact numerical equality** with pycocotools:
 - **Multiple Scenarios**: Small/medium/large objects, various confidence distributions
 - **Edge Cases**: Perfect predictions, low-confidence detections, mixed object sizes
 
-All tests confirm **bit-for-bit identical results** between faster_coco_eval and pycocotools, giving you confidence to use this library as a drop-in replacement while gaining 3-4x performance improvements.
+The comparison suite checks numerical parity between faster_coco_eval and pycocotools, giving you confidence to use this library as a drop-in replacement. See the benchmark above for one measured bbox workload; it is not a universal performance guarantee.
 
 See [tests/README.md](tests/README.md) for detailed test documentation.
 

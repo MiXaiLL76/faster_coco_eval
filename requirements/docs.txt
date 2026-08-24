@@ -1,8 +1,6 @@
-sphinx
-sphinx-autodoc-typehints
-sphinxcontrib-napoleon
-nbsphinx
-ipykernel
-pandoc
-sphinx_rtd_theme
-myst-parser
+sphinx==8.1.3
+sphinx-autodoc-typehints==2.3.0
+nbsphinx==0.9.6
+ipykernel==6.29.5
+sphinx-rtd-theme==3.0.2
+myst-parser==4.0.1

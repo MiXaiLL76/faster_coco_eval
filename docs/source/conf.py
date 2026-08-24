@@ -1,10 +1,6 @@
-import os
-import sys
 from datetime import datetime
 
 from faster_coco_eval import __author__, __version__
-
-sys.path.insert(0, os.path.abspath(".."))
 
 project = f"faster-coco-eval {__version__}"
 current_year = datetime.now().year
