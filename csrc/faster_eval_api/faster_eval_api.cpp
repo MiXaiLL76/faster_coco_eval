@@ -35,7 +35,9 @@ std::string get_compiler_version() {
         return ss.str();
 }
 
-PYBIND11_MODULE(faster_eval_api_cpp, m) {
+// Dataset state is mutex-protected, and evaluator calls own their working data.
+// Declare no-GIL safety so CPython does not re-enable the GIL at import.
+PYBIND11_MODULE(faster_eval_api_cpp, m, pybind11::mod_gil_not_used()) {
         // Expose utility and COCOeval functions to Python
         m.def("get_compiler_version", &get_compiler_version,
               "Returns the compiler version used for compilation.");
