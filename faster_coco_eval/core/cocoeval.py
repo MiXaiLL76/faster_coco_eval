@@ -158,6 +158,8 @@ class COCOeval:
             self.freq_groups = self._prepare_freq_group()
 
         img_sizes = defaultdict(tuple)
+        gt_pairs: set[tuple[int, int]] = set()
+        dt_pairs: set[tuple[int, int]] = set()
 
         def get_img_size_by_id(image_id: int, dataset: COCO) -> tuple:
             """Get image size by image id.
@@ -188,6 +190,7 @@ class COCOeval:
 
         for gt in gts:
             self.gt_dataset.append_ref(gt["image_id"], gt["category_id"], gt)
+            gt_pairs.add((gt["image_id"], gt["category_id"]))
 
         for dt in dts:
             img_id, cat_id = dt["image_id"], dt["category_id"]
@@ -213,6 +216,14 @@ class COCOeval:
         for dt in dts:
             if not dt.get("drop", False):
                 self.dt_dataset.append_ref(dt["image_id"], dt["category_id"], dt)
+                dt_pairs.add((dt["image_id"], dt["category_id"]))
+
+        if p.useCats:
+            self._nonempty_iou_pairs = gt_pairs & dt_pairs
+        else:
+            gt_image_ids = {image_id for image_id, _ in gt_pairs}
+            dt_image_ids = {image_id for image_id, _ in dt_pairs}
+            self._nonempty_iou_pairs = {(image_id, -1) for image_id in gt_image_ids & dt_image_ids}
 
     def _prepare_freq_group(self) -> list:
         """Prepare frequency group for LVIS evaluation.
