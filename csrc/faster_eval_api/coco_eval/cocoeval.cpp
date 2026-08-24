@@ -31,6 +31,12 @@ int64_t v_index(const std::vector<T>& v, const T& key) {
         }
 }
 
+void ValidateDetectionScore(const double score) {
+        if (std::isnan(score)) {
+                throw std::invalid_argument("Detection scores must not be NaN.");
+        }
+}
+
 // Sort detections from highest score to lowest, such that
 // detection_instances[detection_sorted_indices[t]] >=
 // detection_instances[detection_sorted_indices[t+1]].  Use stable_sort to match
@@ -39,10 +45,7 @@ void SortInstancesByDetectionScore(
     const std::vector<InstanceAnnotation>& detection_instances,
     std::vector<uint64_t>* detection_sorted_indices) {
         for (const auto& detection : detection_instances) {
-                if (std::isnan(detection.score)) {
-                        throw std::invalid_argument(
-                            "Detection scores must not be NaN.");
-                }
+                ValidateDetectionScore(detection.score);
         }
         detection_sorted_indices->resize(detection_instances.size());
         std::iota(detection_sorted_indices->begin(),
@@ -470,6 +473,9 @@ int BuildSortedDetectionList(const std::vector<ImageEvaluation>& evaluations,
         detection_sorted_indices->resize(detection_scores->size());
         std::iota(detection_sorted_indices->begin(),
                   detection_sorted_indices->end(), 0);
+        for (const auto detection_score : *detection_scores) {
+                ValidateDetectionScore(detection_score);
+        }
         std::stable_sort(
             detection_sorted_indices->begin(), detection_sorted_indices->end(),
             [&detection_scores](size_t j1, size_t j2) {
@@ -534,8 +540,23 @@ void ComputePrecisionRecallCurve(
                 }
                 const ImageEvaluation& evaluation =
                     evaluations[evaluation_index];
+                if (evaluation.detection_matches.size() % num_iou_thresholds !=
+                        0 ||
+                    evaluation.detection_ignores.size() !=
+                        evaluation.detection_matches.size()) {
+                        throw std::runtime_error(
+                            "Detection result buffers must be rectangular and "
+                            "aligned.");
+                }
                 const auto num_detections =
                     evaluation.detection_matches.size() / num_iou_thresholds;
+                if (evaluation.detection_scores.size() != num_detections ||
+                    image_detection_indices[detection_sorted_index] >=
+                        num_detections) {
+                        throw std::runtime_error(
+                            "Detection result buffers must be rectangular and "
+                            "aligned.");
+                }
                 const auto detection_index =
                     iou_threshold_index * num_detections +
                     image_detection_indices[detection_sorted_index];
