@@ -180,6 +180,24 @@ def test_sparse_iou_dispatch_preserves_empty_public_pairs(
     assert evaluator.iou_calls == expected_calls
     assert evaluator.ious[(2, 1 if use_categories else -1)] == []
 
+def test_accumulation_is_deterministic_across_category_area_tasks():
+    """Repeated native accumulation must preserve every result tensor."""
+    evaluator = _make_eval(include_second_pair=True)
+
+    evaluator.evaluate()
+    evaluator.accumulate()
+    first_result = {key: np.array(evaluator.eval[key], copy=True) for key in ("precision", "recall", "scores")}
+    first_counts = list(evaluator.eval["counts"])
+    first_matches = dict(evaluator.eval["matched"])
+
+    evaluator.evaluate()
+    evaluator.accumulate()
+
+    for key, expected in first_result.items():
+        np.testing.assert_array_equal(evaluator.eval[key], expected)
+    assert evaluator.eval["counts"] == first_counts
+    assert evaluator.eval["matched"] == first_matches
+
 
 def test_evaluate_rle_iou_worker_cap_two_overlaps_real_iou_results(monkeypatch: pytest.MonkeyPatch):
     """Two RLE IoUs should overlap and retain the serial evaluator's values."""
@@ -434,6 +452,36 @@ def test_load_res_accepts_empty_results():
     assert empty.dataset["categories"] == evaluator.cocoGt.dataset["categories"]
     assert empty.getAnnIds() == []
     assert empty.loadAnns([]) == []
+
+
+def test_load_res_rejects_unsupported_result_types():
+    """Unsupported result inputs must fail with the documented TypeError."""
+    evaluator = _make_eval()
+
+    with pytest.raises(TypeError, match="is not supported"):
+        evaluator.cocoGt.loadRes(1)
+
+
+def test_show_anns_rejects_unsupported_annotation_types():
+    """Annotations without an instance or caption payload must be rejected."""
+    coco = COCO()
+
+    with pytest.raises(Exception, match="datasetType not supported"):
+        coco.showAnns([{"id": 1}])
+
+
+def test_dump_round_trips_indexed_dataset(tmp_path):
+    """Dumped datasets must load with the same indexed COCO content."""
+    evaluator = _make_eval()
+    output_file = tmp_path / "dataset.json"
+
+    evaluator.cocoGt.dump(output_file)
+    loaded = COCO(output_file)
+
+    assert loaded.dataset == evaluator.cocoGt.to_dict()
+    assert loaded.getImgIds() == [1]
+    assert loaded.getAnnIds() == [1]
+    assert loaded.getCatIds() == [1]
 
 
 def test_core_collection_defaults_are_not_shared_mutable_objects():

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cmath>
 #include <cstdint>
 #include <exception>
 #include <future>
@@ -30,6 +31,13 @@ int64_t v_index(const std::vector<T>& v, const T& key) {
         }
 }
 
+void ValidateDetectionScore(const double score) {
+        if (std::isnan(score)) {
+                throw std::invalid_argument(
+                    "Detection scores must not be NaN.");
+        }
+}
+
 // Sort detections from highest score to lowest, such that
 // detection_instances[detection_sorted_indices[t]] >=
 // detection_instances[detection_sorted_indices[t+1]].  Use stable_sort to match
@@ -37,6 +45,9 @@ int64_t v_index(const std::vector<T>& v, const T& key) {
 void SortInstancesByDetectionScore(
     const std::vector<InstanceAnnotation>& detection_instances,
     std::vector<uint64_t>* detection_sorted_indices) {
+        for (const auto& detection : detection_instances) {
+                ValidateDetectionScore(detection.score);
+        }
         detection_sorted_indices->resize(detection_instances.size());
         std::iota(detection_sorted_indices->begin(),
                   detection_sorted_indices->end(), 0);
@@ -78,7 +89,8 @@ void SortInstancesByIgnore(
 }
 
 // For each IOU threshold, greedily match each detected instance to a ground
-// truth instance (if possible) and store the results
+// truth instance (if possible) and store the results. Annotation id 0 remains
+// reserved as the unmatched sentinel in the match buffers.
 void MatchDetectionsToGroundTruth(
     const std::vector<InstanceAnnotation>& detection_instances,
     const std::vector<uint64_t>& detection_sorted_indices,
@@ -266,6 +278,8 @@ std::vector<ImageEvaluation> EvaluateImages(
                         detection_sorted_indices.resize(max_detections);
                 }
 
+                // IoU rows must follow detection_sorted_indices, because the
+                // matcher indexes each row by its score-sorted detection slot.
                 const auto& category_ious = image_category_ious[i][c];
                 const std::size_t expected_ground_truth =
                     ground_truth_instances.size();
@@ -418,7 +432,13 @@ int BuildSortedDetectionList(const std::vector<ImageEvaluation>& evaluations,
                              std::vector<double>* detection_scores,
                              std::vector<uint64_t>* detection_sorted_indices,
                              std::vector<uint64_t>* image_detection_indices) {
-        assert(evaluations.size() >= evaluation_index + num_images);
+        if (evaluation_index < 0 || num_images < 0 || max_detections < 0 ||
+            static_cast<uint64_t>(evaluation_index) > evaluations.size() ||
+            static_cast<uint64_t>(num_images) >
+                evaluations.size() - static_cast<uint64_t>(evaluation_index)) {
+                throw std::runtime_error(
+                    "Evaluation slice is outside the available evaluations.");
+        }
 
         // Extract a list of object instances of the applicable category, area
         // range, and max detections requirements such that they can be sorted
@@ -454,6 +474,9 @@ int BuildSortedDetectionList(const std::vector<ImageEvaluation>& evaluations,
         detection_sorted_indices->resize(detection_scores->size());
         std::iota(detection_sorted_indices->begin(),
                   detection_sorted_indices->end(), 0);
+        for (const auto detection_score : *detection_scores) {
+                ValidateDetectionScore(detection_score);
+        }
         std::stable_sort(
             detection_sorted_indices->begin(), detection_sorted_indices->end(),
             [&detection_scores](size_t j1, size_t j2) {
@@ -485,7 +508,11 @@ void ComputePrecisionRecallCurve(
     std::vector<double>* precisions, std::vector<double>* recalls,
     std::vector<double>* precisions_out, std::vector<double>* scores_out,
     std::vector<double>* recalls_out) {
-        assert(recalls_out->size() > recalls_out_index);
+        if (recalls_out_index < 0 ||
+            static_cast<uint64_t>(recalls_out_index) >= recalls_out->size()) {
+                throw std::runtime_error(
+                    "Recall output index is outside the output buffer.");
+        }
 
         // Compute precision/recall for each instance in the sorted list of
         // detections
@@ -494,17 +521,52 @@ void ComputePrecisionRecallCurve(
         recalls->clear();
         precisions->reserve(detection_sorted_indices.size());
         recalls->reserve(detection_sorted_indices.size());
-        assert(!evaluations.empty() || detection_sorted_indices.empty());
+        if (evaluations.empty() && !detection_sorted_indices.empty()) {
+                throw std::runtime_error(
+                    "Detection indices require at least one evaluation.");
+        }
         for (auto detection_sorted_index : detection_sorted_indices) {
+                if (detection_sorted_index >= evaluation_indices.size() ||
+                    detection_sorted_index >= image_detection_indices.size()) {
+                        throw std::runtime_error(
+                            "Detection index is outside the accumulated "
+                            "evaluation inputs.");
+                }
+                const uint64_t evaluation_index =
+                    evaluation_indices[detection_sorted_index];
+                if (evaluation_index >= evaluations.size()) {
+                        throw std::runtime_error(
+                            "Evaluation index is outside the available "
+                            "evaluations.");
+                }
                 const ImageEvaluation& evaluation =
-                    evaluations[evaluation_indices[detection_sorted_index]];
+                    evaluations[evaluation_index];
+                if (evaluation.detection_matches.size() % num_iou_thresholds !=
+                        0 ||
+                    evaluation.detection_ignores.size() !=
+                        evaluation.detection_matches.size()) {
+                        throw std::runtime_error(
+                            "Detection result buffers must be rectangular and "
+                            "aligned.");
+                }
                 const auto num_detections =
                     evaluation.detection_matches.size() / num_iou_thresholds;
+                if (evaluation.detection_scores.size() != num_detections ||
+                    image_detection_indices[detection_sorted_index] >=
+                        num_detections) {
+                        throw std::runtime_error(
+                            "Detection result buffers must be rectangular and "
+                            "aligned.");
+                }
                 const auto detection_index =
                     iou_threshold_index * num_detections +
                     image_detection_indices[detection_sorted_index];
-                assert(evaluation.detection_matches.size() > detection_index);
-                assert(evaluation.detection_ignores.size() > detection_index);
+                if (detection_index >= evaluation.detection_matches.size() ||
+                    detection_index >= evaluation.detection_ignores.size()) {
+                        throw std::runtime_error(
+                            "Detection result index is outside its evaluation "
+                            "buffers.");
+                }
                 const int64_t detection_match =
                     evaluation.detection_matches[detection_index];
                 const bool detection_ignores =
@@ -553,8 +615,14 @@ void ComputePrecisionRecallCurve(
 
                 const auto results_ind =
                     precisions_out_index + r * precisions_out_stride;
-                assert(results_ind < precisions_out->size());
-                assert(results_ind < scores_out->size());
+                if (results_ind < 0 ||
+                    static_cast<uint64_t>(results_ind) >=
+                        precisions_out->size() ||
+                    static_cast<uint64_t>(results_ind) >= scores_out->size()) {
+                        throw std::runtime_error(
+                            "Precision or score output index is outside its "
+                            "output buffer.");
+                }
                 if (precisions_index < precisions->size()) {
                         (*precisions_out)[results_ind] =
                             (*precisions)[precisions_index];
@@ -603,40 +671,72 @@ py::dict Accumulate(const py::object& params,
         // image_detection_indices, and detection_sorted_indices all have the
         // same length as this list, such that each entry corresponds to one
         // detected instance
-        std::vector<uint64_t> evaluation_indices;  // indices into evaluations[]
-        std::vector<double>
-            detection_scores;  // detection scores of each instance
-        std::vector<uint64_t>
-            detection_sorted_indices;  // sorted indices of all
-                                       // instances in the dataset
-        std::vector<uint64_t>
-            image_detection_indices;  // indices into the list of detected
-                                      // instances in the same image as each
-                                      // instance
-        std::vector<double> precisions, recalls;
+        if (!max_detections.empty()) {
+                const int maximum_detections = *std::max_element(
+                    max_detections.begin(), max_detections.end());
 
-        for (auto c = 0; c < num_categories; ++c) {
-                for (auto a = 0; a < num_area_ranges; ++a) {
+                const std::size_t task_count =
+                    static_cast<std::size_t>(num_categories * num_area_ranges);
+                const std::size_t worker_count = std::min<std::size_t>(
+                    task_count,
+                    std::max(1u, std::thread::hardware_concurrency()));
+
+                auto accumulate_category_area = [&](const std::size_t
+                                                        task_index) {
+                        const auto c =
+                            static_cast<int>(task_index / num_area_ranges);
+                        const auto a =
+                            static_cast<int>(task_index % num_area_ranges);
+                        // The COCO PythonAPI stores images contiguously
+                        // within each category/area combination.
+                        const int64_t evaluations_index =
+                            c * num_area_ranges * num_images + a * num_images;
+
+                        // Every task owns these temporary buffers and disjoint
+                        // output slices, so workers cannot race on evaluator
+                        // state.
+                        std::vector<uint64_t> evaluation_indices;
+                        std::vector<double> detection_scores;
+                        std::vector<uint64_t> all_detection_sorted_indices;
+                        std::vector<uint64_t> filtered_detection_sorted_indices;
+                        std::vector<uint64_t> image_detection_indices;
+                        std::vector<double> precisions, recalls;
+
+                        const int num_valid_ground_truth =
+                            BuildSortedDetectionList(
+                                evaluations, evaluations_index, num_images,
+                                maximum_detections, &evaluation_indices,
+                                &detection_scores,
+                                &all_detection_sorted_indices,
+                                &image_detection_indices);
+
+                        if (num_valid_ground_truth == 0) {
+                                return;
+                        }
+
                         for (auto m = 0; m < num_max_detections; ++m) {
-                                // The COCO PythonAPI assumes evaluations[] (the
-                                // return value of COCOeval::EvaluateImages() is
-                                // one long list storing results for each
-                                // combination of category, area range, and
-                                // image id, with categories in the outermost
-                                // loop and images in the innermost loop.
-                                const int64_t evaluations_index =
-                                    c * num_area_ranges * num_images +
-                                    a * num_images;
-                                int num_valid_ground_truth =
-                                    BuildSortedDetectionList(
-                                        evaluations, evaluations_index,
-                                        num_images, max_detections[m],
-                                        &evaluation_indices, &detection_scores,
-                                        &detection_sorted_indices,
-                                        &image_detection_indices);
-
-                                if (num_valid_ground_truth == 0) {
-                                        continue;
+                                const std::vector<uint64_t>*
+                                    detection_sorted_indices =
+                                        &all_detection_sorted_indices;
+                                if (max_detections[m] != maximum_detections) {
+                                        filtered_detection_sorted_indices
+                                            .clear();
+                                        filtered_detection_sorted_indices
+                                            .reserve(
+                                                all_detection_sorted_indices
+                                                    .size());
+                                        for (const auto index :
+                                             all_detection_sorted_indices) {
+                                                if (image_detection_indices
+                                                        [index] <
+                                                    static_cast<uint64_t>(
+                                                        max_detections[m])) {
+                                                        filtered_detection_sorted_indices
+                                                            .push_back(index);
+                                                }
+                                        }
+                                        detection_sorted_indices =
+                                            &filtered_detection_sorted_indices;
                                 }
 
                                 for (auto t = 0; t < num_iou_thresholds; ++t) {
@@ -679,13 +779,67 @@ py::dict Accumulate(const py::object& params,
                                             num_valid_ground_truth, evaluations,
                                             evaluation_indices,
                                             detection_scores,
-                                            detection_sorted_indices,
+                                            *detection_sorted_indices,
                                             image_detection_indices,
                                             &precisions, &recalls,
                                             &precisions_out, &scores_out,
                                             &recalls_out);
                                 }
                         }
+                };
+
+                std::exception_ptr first_exception;
+                {
+                        py::gil_scoped_release release;
+                        if (worker_count == 1) {
+                                try {
+                                        for (std::size_t task_index = 0;
+                                             task_index < task_count;
+                                             ++task_index) {
+                                                accumulate_category_area(
+                                                    task_index);
+                                        }
+                                } catch (...) {
+                                        first_exception =
+                                            std::current_exception();
+                                }
+                        } else {
+                                std::atomic<std::size_t> next_task{0};
+                                auto accumulate_tasks = [&]() {
+                                        while (true) {
+                                                const std::size_t task_index =
+                                                    next_task.fetch_add(1);
+                                                if (task_index >= task_count) {
+                                                        return;
+                                                }
+                                                accumulate_category_area(
+                                                    task_index);
+                                        }
+                                };
+
+                                std::vector<std::future<void>> futures;
+                                futures.reserve(worker_count);
+                                for (std::size_t worker = 0;
+                                     worker < worker_count; ++worker) {
+                                        futures.emplace_back(
+                                            std::async(std::launch::async,
+                                                       accumulate_tasks));
+                                }
+
+                                for (auto& future : futures) {
+                                        try {
+                                                future.get();
+                                        } catch (...) {
+                                                if (!first_exception) {
+                                                        first_exception = std::
+                                                            current_exception();
+                                                }
+                                        }
+                                }
+                        }
+                }
+                if (first_exception) {
+                        std::rethrow_exception(first_exception);
                 }
         }
 
@@ -699,7 +853,7 @@ py::dict Accumulate(const py::object& params,
 #else
         localtime_r(&rawtime, &local_time);
 #endif
-        strftime(buffer, 200, "%Y-%m-%d %H:%S", &local_time);
+        strftime(buffer, 200, "%Y-%m-%d %H:%M:%S", &local_time);
 
         int evaluations_size = static_cast<int>(evaluations.size());
 

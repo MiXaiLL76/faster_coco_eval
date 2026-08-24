@@ -563,7 +563,9 @@ def plot_ced_metric(curves, normalize: bool = False, return_fig: bool = False):
     for ced_curve in curves:
         for key, val in ced_curve["mae"].items():
             if normalize:
-                y = (np.array(val["y"]) / max(val["y"])) * 100
+                y_values = np.asarray(val["y"])
+                maximum = y_values.max()
+                y = y_values / maximum * 100 if maximum else y_values
             else:
                 y = val["y"]
 

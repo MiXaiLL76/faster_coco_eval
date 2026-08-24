@@ -25,6 +25,10 @@ class FakeFigure:
         """Append one plotted trace."""
         self.data.append(trace)
 
+    def add_traces(self, traces):
+        """Append the plotted traces."""
+        self.data.extend(traces)
+
     def update_layout(self, _layout):
         """Accept layout updates for compatibility with Plotly."""
         return None
@@ -75,3 +79,14 @@ def test_plot_curves_filter_invalid_precision(monkeypatch):
     np.testing.assert_array_equal(precision_recall.data[0].text, [0.9, 0.1])
     np.testing.assert_allclose(f1_confidence.data[0].x, [0.9, 0.1])
     np.testing.assert_allclose(f1_confidence.data[0].y, [0.0, 2 * 0.5 / 1.5])
+
+
+def test_plot_ced_metric_normalizes_all_zero_curve_without_nan(monkeypatch):
+    """Keep an empty CED series finite when normalization is requested."""
+    monkeypatch.setattr(draw, "go", SimpleNamespace(Figure=FakeFigure, Scatter=FakeScatter))
+    monkeypatch.setattr(draw, "plotly_available", True)
+    curves = [{"mae": {"MEAN": {"x": [0.0, 1.0], "y": [0, 0]}}, "category": {"name": "cat"}}]
+
+    figure = draw.plot_ced_metric(curves, normalize=True, return_fig=True)
+
+    np.testing.assert_array_equal(figure.data[0].y, [0.0, 0.0])

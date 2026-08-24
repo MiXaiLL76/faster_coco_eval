@@ -58,11 +58,11 @@ jobs:
         working-directory: ./tests
         run: |
           set -euo pipefail
-          for test_file in test_torchmetrics.py test_world_evalutor.py test_extra_draw.py; do
+          for test_file in test_torchmetrics.py test_world_evaluator.py test_extra_draw.py; do
             python -c "import runpy; runpy.run_path('${test_file}')"
           done
 
       - name: Run optional dependency tests
         working-directory: ./tests
         run: |
-          python -m pytest -q test_torchmetrics.py test_world_evalutor.py test_extra_draw.py
+          python -m pytest -q test_torchmetrics.py test_world_evaluator.py test_extra_draw.py

@@ -22,6 +22,9 @@ def _check_opencv():
 def conver_mask_to_poly(mask: np.ndarray, bbox: list, boxes_margin: float = 0.1) -> list:
     """Convert a mask (uint8) to a list of polygons in COCO style.
 
+    Retains contours with at least three vertices, the minimum required for a
+    valid COCO polygon.
+
     Args:
         mask (np.ndarray): The mask image as a numpy array.
         bbox (list): Bounding box of the annotation in the format [x, y, w, h].
@@ -67,7 +70,7 @@ def conver_mask_to_poly(mask: np.ndarray, bbox: list, boxes_margin: float = 0.1)
         for cnt_idx, cnt in enumerate(coords):
             coords[cnt_idx] = cnt + [x1, y1]
 
-        coords = [_cnt.ravel().tolist() for _cnt in coords if _cnt.shape[0] >= 6]
+        coords = [_cnt.ravel().tolist() for _cnt in coords if _cnt.shape[0] >= 3]
 
     return coords
 
