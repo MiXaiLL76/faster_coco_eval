@@ -63,7 +63,10 @@ std::string get_compiler_version() {
         return ss.str();
 }
 
-PYBIND11_MODULE(mask_api_new_cpp, m) {
+// See the note in faster_eval_api.cpp. The only process-wide mutable state
+// here is ParallelPermitPool, which is already mutex and condition-variable
+// guarded because these APIs release the GIL and are entered concurrently.
+PYBIND11_MODULE(mask_api_new_cpp, m, pybind11::mod_gil_not_used()) {
         // Exposes the RLE (Run-Length Encoding) class for binary masks.
         pybind11::class_<Mask::RLE>(m, "RLE")
             .def(pybind11::init<uint64_t, uint64_t, uint64_t,

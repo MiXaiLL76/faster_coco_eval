@@ -35,7 +35,12 @@ std::string get_compiler_version() {
         return ss.str();
 }
 
-PYBIND11_MODULE(faster_eval_api_cpp, m) {
+// mod_gil_not_used declares this module safe on a free-threaded interpreter.
+// Without it CPython re-enables the GIL process-wide when the module is
+// imported, silently disabling free-threading for everything in the process.
+// LightweightDataset guards its own state with a mutex; the evaluator functions
+// own their working data and share nothing across calls.
+PYBIND11_MODULE(faster_eval_api_cpp, m, pybind11::mod_gil_not_used()) {
         // Expose utility and COCOeval functions to Python
         m.def("get_compiler_version", &get_compiler_version,
               "Returns the compiler version used for compilation.");

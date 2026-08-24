@@ -2,6 +2,7 @@
 
 import math
 import pickle
+from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 
 import faster_coco_eval.faster_eval_api_cpp as _eval
@@ -106,3 +107,59 @@ def test_accumulate_rejects_nan_detection_score_before_sorting():
 
     with pytest.raises(ValueError, match="Detection scores must not be NaN"):
         _eval.COCOevalAccumulate(params, [evaluation])
+
+
+class TestDatasetConcurrency:
+    """Locking behaviour of the native dataset cache."""
+
+    @staticmethod
+    def _populated_dataset(pairs: int = 64):
+        """Build a dataset spanning several image/category pairs."""
+        dataset = _eval.Dataset()
+        for index in range(pairs):
+            dataset.append_ref(index, 1, {"id": index, "area": 10.0, "iscrowd": 0})
+            dataset.append_ref(index, 1, {"id": index + 1000, "area": 20.0, "iscrowd": 1})
+        return dataset
+
+    def test_concurrent_readers_complete(self):
+        """Many threads reading the cache finish and agree on the contents.
+
+        get_cpp_annotations populates a shared cache on miss, so the read path
+        mutates. A recursive or mis-ordered lock here would deadlock and hang
+        the suite rather than fail an assertion.
+        """
+        dataset = self._populated_dataset()
+        results = []
+
+        def read_all():
+            results.append([len(dataset.get_cpp_annotations(i, 1)) for i in range(64)])
+
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            for future in [pool.submit(read_all) for _ in range(8)]:
+                future.result(timeout=60)
+
+        assert results == [[2] * 64] * 8
+
+    def test_reads_interleaved_with_cache_eviction_complete(self):
+        """Reads racing cache eviction return whole annotation lists.
+
+        clear_cache_entry erases entries that get_cpp_annotations may be
+        populating. Returning by value keeps callers safe from an entry being
+        dropped mid-use; a reference would dangle instead.
+        """
+        dataset = self._populated_dataset()
+        observed = []
+
+        def read():
+            observed.extend(len(dataset.get_cpp_annotations(i, 1)) for i in range(64))
+
+        def evict():
+            for i in range(64):
+                dataset.clear_cache_entry(i, 1)
+
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            futures = [pool.submit(read if n % 2 == 0 else evict) for n in range(6)]
+            for future in futures:
+                future.result(timeout=60)
+
+        assert set(observed) == {2}

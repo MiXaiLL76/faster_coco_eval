@@ -7,7 +7,8 @@ requires = [
     # with both numpy 1 and 2.
     "numpy>=2.0.0rc1",
     "Cython",
-    "pybind11>=2.12.0, <3",
+    # 2.13.0 is the first release exposing pybind11::mod_gil_not_used.
+    "pybind11>=2.13.0, <3",
 ]
 build-backend = "setuptools.build_meta"
 
