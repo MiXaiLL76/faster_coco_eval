@@ -800,6 +800,8 @@ positives.</p>
 <dt class="sig sig-object py" id="faster_coco_eval.extra.utils.conver_mask_to_poly">
 <span class="sig-prename descclassname"><span class="pre">faster_coco_eval.extra.utils.</span></span><span class="sig-name descname"><span class="pre">conver_mask_to_poly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bbox</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxes_margin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.extra.utils.conver_mask_to_poly" title="Link to this definition"></a></dt>
 <dd><p>Convert a mask (uint8) to a list of polygons in COCO style.</p>
+<p>Retains contours with at least three vertices, the minimum required for a
+valid COCO polygon.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
