@@ -31,6 +31,27 @@ def _isArrayLike(obj):
     return hasattr(obj, "__iter__") and hasattr(obj, "__len__")
 
 
+def _normalize_ids(ids: list[int] | int | None) -> list[int]:
+    """Return integer IDs as a list and reject unsupported ID values.
+
+    Args:
+        ids: One ID, an iterable of IDs, or no IDs.
+
+    Returns:
+        Integer IDs in input order.
+
+    Raises:
+        TypeError: If an ID is not an integer.
+    """
+    if ids is None:
+        return []
+
+    values = list(ids) if _isArrayLike(ids) and not isinstance(ids, (str, bytes)) else [ids]
+    if any(isinstance(value, bool) or not isinstance(value, (int, np.integer)) for value in values):
+        raise TypeError("ids must be an int or an iterable of ints")
+    return values
+
+
 class COCO:
     def __init__(
         self,
@@ -60,7 +81,7 @@ class COCO:
         if annotation_file is not None:
             self._print_function("loading annotations into memory...")
             tic = time.time()
-            if type(annotation_file) in [str, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath, dict, list]:
+            if isinstance(annotation_file, (str, os.PathLike, dict, list)):
                 self.dataset = COCO.load_json(annotation_file, self.use_deepcopy)
             else:
                 raise TypeError(f"type {type(annotation_file)} is not supported")
@@ -296,11 +317,7 @@ class COCO:
         Returns:
             List[dict]: Loaded annotation objects.
         """
-        ids = [] if ids is None else ids
-        if _isArrayLike(ids):
-            return [self.anns[i] for i in ids]
-        elif type(ids) is int:
-            return [self.anns[ids]]
+        return [self.anns[i] for i in _normalize_ids(ids)]
 
     def loadCats(self, ids: list[int] | int | None = None) -> list[dict]:
         """Load categories with the specified ids.
@@ -311,11 +328,7 @@ class COCO:
         Returns:
             List[dict]: Loaded category objects.
         """
-        ids = [] if ids is None else ids
-        if _isArrayLike(ids):
-            return [self.cats[i] for i in ids]
-        elif type(ids) is int:
-            return [self.cats[ids]]
+        return [self.cats[i] for i in _normalize_ids(ids)]
 
     def loadImgs(self, ids: list[int] | int | None = None) -> list[dict]:
         """Load images with the specified ids.
@@ -326,11 +339,7 @@ class COCO:
         Returns:
             List[dict]: Loaded image objects.
         """
-        ids = [] if ids is None else ids
-        if _isArrayLike(ids):
-            return [self.imgs[i] for i in ids]
-        elif type(ids) is int:
-            return [self.imgs[ids]]
+        return [self.imgs[i] for i in _normalize_ids(ids)]
 
     @staticmethod
     def load_json(
@@ -346,7 +355,7 @@ class COCO:
         Returns:
             dict: Loaded json data.
         """  # noqa: E501
-        if type(json_file) in [str, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath]:
+        if isinstance(json_file, (str, os.PathLike)):
             with open(json_file) as io:
                 _data = json.load(io)
         else:
@@ -376,7 +385,7 @@ class COCO:
 
         self.print_function("Loading and preparing results...")
         tic = time.time()
-        if type(resFile) in [str, os.PathLike, pathlib.PosixPath, pathlib.WindowsPath, dict, list]:
+        if isinstance(resFile, (str, os.PathLike, dict, list)):
             anns = COCO.load_json(resFile, getattr(self, "use_deepcopy", False))
         elif type(resFile) is np.ndarray:
             anns = self.loadNumpyAnnotations(resFile)
@@ -534,14 +543,14 @@ class COCO:
                 print(ann["caption"])
 
     def download(self, tarDir=None, imgIds: list[int] | None = None):
-        """Deprecated: Download images (no longer supported).
+        """Warn that image downloading is no longer supported.
 
         Args:
             tarDir (Any, optional): Target directory. Not used.
             imgIds (list, optional): Image ids. Not used.
 
-        Raises:
-            DeprecationWarning: Always raised, function is deprecated.
+        Warns:
+            DeprecationWarning: The method is deprecated and does not download images.
         """
         warnings.warn("download deprecated in 1.3.0", DeprecationWarning)
 
@@ -751,8 +760,8 @@ class COCO:
         Returns:
             dict: Standard python dictionary containing the COCO data.
         """
-        cats = list(self.cats.values())
-        anns = list(self.anns.values())
+        cats = [dict(category) for category in self.cats.values()]
+        anns = [dict(annotation) for annotation in self.anns.values()]
 
         if separate_fn:
             max_category_id = max(cats, key=lambda x: x["id"])["id"]
