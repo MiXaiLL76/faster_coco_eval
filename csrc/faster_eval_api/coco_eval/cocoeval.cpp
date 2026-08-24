@@ -603,87 +603,123 @@ py::dict Accumulate(const py::object& params,
         // image_detection_indices, and detection_sorted_indices all have the
         // same length as this list, such that each entry corresponds to one
         // detected instance
-        std::vector<uint64_t> evaluation_indices;  // indices into evaluations[]
-        std::vector<double>
-            detection_scores;  // detection scores of each instance
-        std::vector<uint64_t>
-            detection_sorted_indices;  // sorted indices of all
-                                       // instances in the dataset
-        std::vector<uint64_t>
-            image_detection_indices;  // indices into the list of detected
-                                      // instances in the same image as each
-                                      // instance
-        std::vector<double> precisions, recalls;
+        if (!max_detections.empty()) {
+                const int maximum_detections = *std::max_element(
+                    max_detections.begin(), max_detections.end());
+                std::vector<uint64_t> evaluation_indices;
+                std::vector<double> detection_scores;
+                std::vector<uint64_t> all_detection_sorted_indices;
+                std::vector<uint64_t> filtered_detection_sorted_indices;
+                std::vector<uint64_t> image_detection_indices;
+                std::vector<double> precisions, recalls;
 
-        for (auto c = 0; c < num_categories; ++c) {
-                for (auto a = 0; a < num_area_ranges; ++a) {
-                        for (auto m = 0; m < num_max_detections; ++m) {
-                                // The COCO PythonAPI assumes evaluations[] (the
-                                // return value of COCOeval::EvaluateImages() is
-                                // one long list storing results for each
-                                // combination of category, area range, and
-                                // image id, with categories in the outermost
-                                // loop and images in the innermost loop.
+                for (auto c = 0; c < num_categories; ++c) {
+                        for (auto a = 0; a < num_area_ranges; ++a) {
+                                // The COCO PythonAPI stores images contiguously
+                                // within each category/area combination.
                                 const int64_t evaluations_index =
                                     c * num_area_ranges * num_images +
                                     a * num_images;
-                                int num_valid_ground_truth =
+                                const int num_valid_ground_truth =
                                     BuildSortedDetectionList(
                                         evaluations, evaluations_index,
-                                        num_images, max_detections[m],
+                                        num_images, maximum_detections,
                                         &evaluation_indices, &detection_scores,
-                                        &detection_sorted_indices,
+                                        &all_detection_sorted_indices,
                                         &image_detection_indices);
 
                                 if (num_valid_ground_truth == 0) {
                                         continue;
                                 }
 
-                                for (auto t = 0; t < num_iou_thresholds; ++t) {
-                                        // recalls_out is a flattened vectors
-                                        // representing a num_iou_thresholds X
-                                        // num_categories X num_area_ranges X
-                                        // num_max_detections matrix
-                                        const int64_t recalls_out_index =
-                                            t * num_categories *
-                                                num_area_ranges *
-                                                num_max_detections +
-                                            c * num_area_ranges *
-                                                num_max_detections +
-                                            a * num_max_detections + m;
+                                for (auto m = 0; m < num_max_detections; ++m) {
+                                        const std::vector<uint64_t>*
+                                            detection_sorted_indices =
+                                                &all_detection_sorted_indices;
+                                        if (max_detections[m] !=
+                                            maximum_detections) {
+                                                filtered_detection_sorted_indices
+                                                    .clear();
+                                                filtered_detection_sorted_indices
+                                                    .reserve(
+                                                        all_detection_sorted_indices
+                                                            .size());
+                                                for (
+                                                    const auto index :
+                                                    all_detection_sorted_indices) {
+                                                        if (image_detection_indices
+                                                                [index] <
+                                                            static_cast<
+                                                                uint64_t>(
+                                                                max_detections
+                                                                    [m])) {
+                                                                filtered_detection_sorted_indices
+                                                                    .push_back(
+                                                                        index);
+                                                        }
+                                                }
+                                                detection_sorted_indices =
+                                                    &filtered_detection_sorted_indices;
+                                        }
 
-                                        // precisions_out and scores_out are
-                                        // flattened vectors representing a
-                                        // num_iou_thresholds X
-                                        // num_recall_thresholds X
-                                        // num_categories X num_area_ranges X
-                                        // num_max_detections matrix
-                                        const int64_t precisions_out_stride =
-                                            num_categories * num_area_ranges *
-                                            num_max_detections;
-                                        const int64_t precisions_out_index =
-                                            t * num_recall_thresholds *
-                                                num_categories *
-                                                num_area_ranges *
-                                                num_max_detections +
-                                            c * num_area_ranges *
-                                                num_max_detections +
-                                            a * num_max_detections + m;
+                                        for (auto t = 0; t < num_iou_thresholds;
+                                             ++t) {
+                                                // recalls_out is a flattened
+                                                // vectors representing a
+                                                // num_iou_thresholds X
+                                                // num_categories X
+                                                // num_area_ranges X
+                                                // num_max_detections matrix
+                                                const int64_t
+                                                    recalls_out_index =
+                                                        t * num_categories *
+                                                            num_area_ranges *
+                                                            num_max_detections +
+                                                        c * num_area_ranges *
+                                                            num_max_detections +
+                                                        a * num_max_detections +
+                                                        m;
 
-                                        ComputePrecisionRecallCurve(
-                                            precisions_out_index,
-                                            precisions_out_stride,
-                                            recalls_out_index,
-                                            recall_thresholds, t,
-                                            num_iou_thresholds,
-                                            num_valid_ground_truth, evaluations,
-                                            evaluation_indices,
-                                            detection_scores,
-                                            detection_sorted_indices,
-                                            image_detection_indices,
-                                            &precisions, &recalls,
-                                            &precisions_out, &scores_out,
-                                            &recalls_out);
+                                                // precisions_out and scores_out
+                                                // are flattened vectors
+                                                // representing a
+                                                // num_iou_thresholds X
+                                                // num_recall_thresholds X
+                                                // num_categories X
+                                                // num_area_ranges X
+                                                // num_max_detections matrix
+                                                const int64_t
+                                                    precisions_out_stride =
+                                                        num_categories *
+                                                        num_area_ranges *
+                                                        num_max_detections;
+                                                const int64_t
+                                                    precisions_out_index =
+                                                        t * num_recall_thresholds *
+                                                            num_categories *
+                                                            num_area_ranges *
+                                                            num_max_detections +
+                                                        c * num_area_ranges *
+                                                            num_max_detections +
+                                                        a * num_max_detections +
+                                                        m;
+
+                                                ComputePrecisionRecallCurve(
+                                                    precisions_out_index,
+                                                    precisions_out_stride,
+                                                    recalls_out_index,
+                                                    recall_thresholds, t,
+                                                    num_iou_thresholds,
+                                                    num_valid_ground_truth,
+                                                    evaluations,
+                                                    evaluation_indices,
+                                                    detection_scores,
+                                                    *detection_sorted_indices,
+                                                    image_detection_indices,
+                                                    &precisions, &recalls,
+                                                    &precisions_out,
+                                                    &scores_out, &recalls_out);
+                                        }
                                 }
                         }
                 }
