@@ -54,6 +54,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.core.COCO.download"><code class="docutils literal notranslate"><span class="pre">COCO.download()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.core.COCO.dump"><code class="docutils literal notranslate"><span class="pre">COCO.dump()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.core.COCO.getAnnIds"><code class="docutils literal notranslate"><span class="pre">COCO.getAnnIds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.core.COCO.getAnns"><code class="docutils literal notranslate"><span class="pre">COCO.getAnns()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.core.COCO.getCatIds"><code class="docutils literal notranslate"><span class="pre">COCO.getCatIds()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.core.COCO.getImgIds"><code class="docutils literal notranslate"><span class="pre">COCO.getImgIds()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#faster_coco_eval.core.COCO.get_ann_ids"><code class="docutils literal notranslate"><span class="pre">COCO.get_ann_ids()</span></code></a></li>
@@ -222,6 +223,39 @@ categories.</p>
 <dd class="field-odd"><p>List[int]</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="faster_coco_eval.core.COCO.getAnns">
+<span class="sig-name descname"><span class="pre">getAnns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">imgIds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">catIds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#faster_coco_eval.core.COCO.getAnns" title="Link to this definition"></a></dt>
+<dd><p>Get annotation objects directly, without a round trip through ids.</p>
+<p><code class="docutils literal notranslate"><span class="pre">loadAnns(getAnnIds(...))</span></code> collects these same dicts, maps them to
+ids, validates every id, then looks each one back up. For evaluation
+sized workloads that round trip costs more than the lookup it performs,
+so this returns the objects the index already holds.</p>
+<p>Selection matches <a class="reference internal" href="#faster_coco_eval.core.COCO.getAnnIds" title="faster_coco_eval.core.COCO.getAnnIds"><code class="xref py py-meth docutils literal notranslate"><span class="pre">getAnnIds()</span></code></a> for the same arguments, including
+its image iteration order, so callers observe the same annotation
+sequence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>imgIds</strong> (<em>List</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Get anns for given images. Defaults to None.</p></li>
+<li><p><strong>catIds</strong> (<em>List</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Get anns for given categories. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Annotation objects satisfying the criteria.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[dict]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">coco</span> <span class="o">=</span> <span class="n">COCO</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">coco</span><span class="o">.</span><span class="n">getAnns</span><span class="p">(</span><span class="n">imgIds</span><span class="o">=</span><span class="p">[],</span> <span class="n">catIds</span><span class="o">=</span><span class="p">[])</span>
+<span class="go">[]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
