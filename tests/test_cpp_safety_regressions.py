@@ -106,3 +106,109 @@ def test_accumulate_rejects_nan_detection_score_before_sorting():
 
     with pytest.raises(ValueError, match="Detection scores must not be NaN"):
         _eval.COCOevalAccumulate(params, [evaluation])
+
+
+def _evaluate_native_annotation(annotation: dict, detection_ids: tuple[int, ...] = (100,)) -> tuple:
+    """Serialize the native result for one parsed ground truth annotation."""
+    ground_truth = _eval.Dataset()
+    detections = _eval.Dataset()
+    ground_truth.append_ref(1.0, 1.0, {"id": 1, "area": 100.0, **annotation})
+
+    for index, detection_id in enumerate(detection_ids):
+        detections.append_ref(
+            1.0,
+            1.0,
+            {"id": detection_id, "score": 1.0 - index / 10.0, "area": 100.0},
+        )
+
+    return _eval.COCOevalEvaluateImages(
+        [[0.0, 100000.0]],
+        10,
+        [0.5],
+        [[[[1.0] for _ in detection_ids]]],
+        ground_truth,
+        detections,
+        [1.0],
+        [1.0],
+        True,
+    )[0].__getstate__()
+
+
+class TestAnnotationFieldParsing:
+    """Field lookup in the native annotation parser."""
+
+    @pytest.mark.parametrize(
+        ("annotation", "expected_matches"),
+        [
+            pytest.param({"is_crowd": 1, "iscrowd": 0}, [1, 1], id="preferred-crowd-key-wins"),
+            pytest.param({"is_crowd": 0, "iscrowd": 1}, [1, 0], id="preferred-non-crowd-key-wins"),
+            pytest.param({"iscrowd": 1}, [1, 1], id="legacy-crowd-key-fallback"),
+        ],
+    )
+    def test_preferred_crowd_key_controls_repeated_matches(self, annotation, expected_matches):
+        """The native parser honors ``is_crowd`` before ``iscrowd``.
+
+        Two detections make the parsed crowd flag observable: a crowd ground
+        truth can match both detections, while a regular ground truth cannot.
+        """
+        state = _evaluate_native_annotation(annotation, (100, 101))
+
+        assert state[0] == expected_matches
+
+    def test_raw_unconvertible_ignore_falls_back_to_default(self):
+        """An unconvertible raw ``ignore`` value remains non-ignored.
+
+        This bypasses Python evaluator preparation, which otherwise
+        overwrites the annotation before the native parser sees it.
+        """
+        state = _evaluate_native_annotation({"ignore": object()})
+
+        assert state[3] == [False]
+
+    def test_failed_crowd_lookup_keeps_default_without_falling_back(self):
+        """A failed preferred-key lookup is not treated as absent."""
+
+        class ErrorKey(str):
+            def __hash__(self):
+                return hash("is_crowd")
+
+            def __eq__(self, other):
+                raise RuntimeError("crowd lookup failed")
+
+        state = _evaluate_native_annotation({ErrorKey("is_crowd"): 1, "iscrowd": 1}, (100, 101))
+
+        assert state[0] == [1, 0]
+
+    def test_absent_optional_fields_are_tolerated(self):
+        """Omitting every optional field still evaluates.
+
+        The base annotation carries no "score", "ignore", or
+        "lvis_mark"; each must read as its default rather than as a
+        missing-key error.
+        """
+        assert _evaluate_native_annotation({})[0] == [1]
+
+    def test_interned_field_keys_survive_repeated_parsing(self):
+        """The process-global interned annotation keys are never freed by
+        parsing.
+
+        ``AnnotationKeys`` owns seven interned ``PyObject*`` and defines a
+        destructor. A ``static_assert`` in ``dataset.cpp`` keeps the type
+        non-copyable and non-movable so the destructor can never run twice
+        and double ``Py_XDECREF`` those keys; this is the runtime backstop.
+        A regressed build that double-freed an interned key would, after
+        enough parsing, resurrect it as a freed/garbage object and mis-read
+        or crash on every field lookup.
+
+        Parsing the same crowd annotation many times keeps the interned
+        keys under sustained lookup churn. The ``is_crowd``-before-
+        ``iscrowd`` precedence stays observable (a crowd ground truth
+        matches both detections) only while every interned key is still a
+        live string, so a stable result across the whole run means no key
+        was freed underneath the parser.
+        """
+        crowd = {"is_crowd": 1, "iscrowd": 0, "ignore": 0, "lvis_mark": 0}
+        for _ in range(300):
+            state = _evaluate_native_annotation(crowd, (100, 101))
+            assert state[0] == [1, 1]
+            assert state[3] == [False]
