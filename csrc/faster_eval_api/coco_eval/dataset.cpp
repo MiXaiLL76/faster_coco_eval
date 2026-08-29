@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <iterator>
+#include <memory>
 #include <numeric>
 
 // clang-format off
@@ -65,8 +67,8 @@ py::tuple LightweightDataset::make_tuple() const {
         // Create a list of (img_id, cat_id, annotation_list) tuples
         py::list serialized_data;
         for (const auto& kv : annotations) {
-                auto key = kv.first;
-                auto ann_list = kv.second;
+                const auto& key = kv.first;
+                const auto& ann_list = kv.second;
 
                 py::list py_ann_list;
                 for (const auto& ann : ann_list) {
@@ -218,19 +220,24 @@ std::vector<InstanceAnnotation> LightweightDataset::get_cpp_annotations(
         for (;;) {
                 std::vector<py::object> annotations;
                 uint64_t snapshot_version = 0;
+                CppCacheEntry cached;
                 {
                         std::lock_guard<std::mutex> guard(mutex);
                         auto cache_it = cpp_cache.find(key);
                         if (cache_it != cpp_cache.end()) {
-                                return cache_it->second;
+                                cached = cache_it->second;
+                        } else {
+                                auto annotation_it = annotation_refs.find(key);
+                                if (annotation_it == annotation_refs.end()) {
+                                        return {};
+                                }
+                                annotations = annotation_it->second;
+                                snapshot_version = annotation_version;
                         }
-
-                        auto annotation_it = annotation_refs.find(key);
-                        if (annotation_it == annotation_refs.end()) {
-                                return {};
-                        }
-                        annotations = annotation_it->second;
-                        snapshot_version = annotation_version;
+                }
+                if (cached) {
+                        // Clone the payload after releasing the mutex.
+                        return *cached;
                 }
 
                 std::vector<InstanceAnnotation> parsed_annotations;
@@ -242,15 +249,20 @@ std::vector<InstanceAnnotation> LightweightDataset::get_cpp_annotations(
 
                 // Conversion can run arbitrary Python hooks. Only publish its
                 // result when no writer has replaced its source annotations.
-                std::lock_guard<std::mutex> guard(mutex);
-                auto cache_it = cpp_cache.find(key);
-                if (cache_it != cpp_cache.end()) {
-                        return cache_it->second;
+                {
+                        std::lock_guard<std::mutex> guard(mutex);
+                        auto cache_it = cpp_cache.find(key);
+                        if (cache_it != cpp_cache.end()) {
+                                cached = cache_it->second;
+                        } else if (snapshot_version == annotation_version) {
+                                cached = std::make_shared<
+                                    const std::vector<InstanceAnnotation>>(
+                                    std::move(parsed_annotations));
+                                cpp_cache.emplace(key, cached);
+                        }
                 }
-                if (snapshot_version == annotation_version) {
-                        auto inserted = cpp_cache.emplace(
-                            key, std::move(parsed_annotations));
-                        return inserted.first->second;
+                if (cached) {
+                        return *cached;
                 }
         }
 }
@@ -293,10 +305,12 @@ LightweightDataset::get_cpp_instances(const std::vector<double>& img_ids,
                         for (size_t j = 0; j < cat_ids.size(); ++j) {
                                 int64_t cat_id =
                                     static_cast<int64_t>(cat_ids[j]);
-                                const std::vector<InstanceAnnotation> anns =
+                                std::vector<InstanceAnnotation> anns =
                                     get_cpp_annotations(img_id, cat_id);
-                                merged.insert(merged.end(), anns.begin(),
-                                              anns.end());
+                                merged.insert(
+                                    merged.end(),
+                                    std::make_move_iterator(anns.begin()),
+                                    std::make_move_iterator(anns.end()));
                         }
                         // Wrap merged vector in an outer vector for consistency
                         result.emplace_back(1, std::move(merged));
