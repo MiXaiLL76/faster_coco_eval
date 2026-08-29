@@ -137,8 +137,10 @@ class COCOeval:
 
         cat_ids = p.catIds if p.catIds else None
 
-        gts = self.cocoGt.loadAnns(self.cocoGt.getAnnIds(imgIds=p.imgIds, catIds=cat_ids))
-        dts = self.cocoDt.loadAnns(self.cocoDt.getAnnIds(imgIds=p.imgIds, catIds=cat_ids))
+        # getAnns avoids the annotation -> id -> annotation round trip that
+        # loadAnns(getAnnIds(...)) performs; selection and order are identical.
+        gts = self.cocoGt.getAnns(imgIds=p.imgIds, catIds=cat_ids)
+        dts = self.cocoDt.getAnns(imgIds=p.imgIds, catIds=cat_ids)
 
         # pycocotools gives iscrowd precedence over a dataset-provided ignore flag.
         for gt in gts:
@@ -158,8 +160,6 @@ class COCOeval:
             self.freq_groups = self._prepare_freq_group()
 
         img_sizes = defaultdict(tuple)
-        gt_pairs: set[tuple[int, int]] = set()
-        dt_pairs: set[tuple[int, int]] = set()
 
         def get_img_size_by_id(image_id: int, dataset: COCO) -> tuple:
             """Get image size by image id.
@@ -188,9 +188,9 @@ class COCOeval:
             self.boundary_cpu_count,
         )
 
-        for gt in gts:
-            self.gt_dataset.append_ref(gt["image_id"], gt["category_id"], gt)
-            gt_pairs.add((gt["image_id"], gt["category_id"]))
+        # One native call instead of one per annotation; the returned set is the
+        # (image_id, category_id) pairs the per-annotation loop used to collect.
+        gt_pairs = self.gt_dataset.append_batch(gts, False)
 
         for dt in dts:
             img_id, cat_id = dt["image_id"], dt["category_id"]
@@ -213,10 +213,7 @@ class COCOeval:
             self.boundary_cpu_count,
         )
 
-        for dt in dts:
-            if not dt.get("drop", False):
-                self.dt_dataset.append_ref(dt["image_id"], dt["category_id"], dt)
-                dt_pairs.add((dt["image_id"], dt["category_id"]))
+        dt_pairs = self.dt_dataset.append_batch(dts, True)
 
         if p.useCats:
             self._nonempty_iou_pairs = gt_pairs & dt_pairs

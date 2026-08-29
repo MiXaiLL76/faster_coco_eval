@@ -242,6 +242,52 @@ class COCO:
         ids = list(map(lambda ann: ann["id"], anns))
         return ids
 
+    def getAnns(
+        self,
+        imgIds: list[int] | None = None,
+        catIds: list[int] | None = None,
+    ) -> list[dict]:
+        """Get annotation objects directly, without a round trip through ids.
+
+        ``loadAnns(getAnnIds(...))`` collects these same dicts, maps them to
+        ids, validates every id, then looks each one back up. For evaluation
+        sized workloads that round trip costs more than the lookup it performs,
+        so this returns the objects the index already holds.
+
+        Selection matches :meth:`getAnnIds` for the same arguments, including
+        its image iteration order, so callers observe the same annotation
+        sequence.
+
+        Args:
+            imgIds (List[int], optional): Get anns for given images. Defaults to None.
+            catIds (List[int], optional): Get anns for given categories. Defaults to None.
+
+        Returns:
+            List[dict]: Annotation objects satisfying the criteria.
+
+        Examples:
+            >>> coco = COCO()
+            >>> coco.getAnns(imgIds=[], catIds=[])
+            []
+        """
+        imgIds = [] if imgIds is None else imgIds
+        catIds = [] if catIds is None else catIds
+        imgIds = set(imgIds if _isArrayLike(imgIds) else [imgIds])
+        catIds = set(catIds if _isArrayLike(catIds) else [catIds])
+
+        if not imgIds:
+            anns = self.dataset["annotations"]
+        else:
+            anns = []
+            for img_id in imgIds:
+                # ``.get`` rather than ``img_ann_map[...]`` so that querying an
+                # unknown image id does not grow the underlying defaultdict.
+                anns.extend(self.img_ann_map.get(img_id, ()))
+
+        if catIds:
+            return [ann for ann in anns if ann["category_id"] in catIds]
+        return list(anns)
+
     def getCatIds(
         self,
         catNms: list[str] | None = None,

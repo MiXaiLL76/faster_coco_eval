@@ -102,6 +102,9 @@ PYBIND11_MODULE(faster_eval_api_cpp, m) {
         pybind11::class_<COCOeval::LightweightDataset>(m, "Dataset")
             .def(pybind11::init<>())
             .def("append_ref", &COCOeval::LightweightDataset::append_ref)
+            .def("append_batch", &COCOeval::LightweightDataset::append_batch,
+                 pybind11::arg("annotations"),
+                 pybind11::arg("skip_dropped") = false)
             .def("append",
                  &COCOeval::LightweightDataset::append)  // Legacy compatibility
             .def("clean", &COCOeval::LightweightDataset::clean)
