@@ -187,3 +187,28 @@ class TestAnnotationFieldParsing:
         missing-key error.
         """
         assert _evaluate_native_annotation({})[0] == [1]
+
+    def test_interned_field_keys_survive_repeated_parsing(self):
+        """The process-global interned annotation keys are never freed by
+        parsing.
+
+        ``AnnotationKeys`` owns seven interned ``PyObject*`` and defines a
+        destructor. A ``static_assert`` in ``dataset.cpp`` keeps the type
+        non-copyable and non-movable so the destructor can never run twice
+        and double ``Py_XDECREF`` those keys; this is the runtime backstop.
+        A regressed build that double-freed an interned key would, after
+        enough parsing, resurrect it as a freed/garbage object and mis-read
+        or crash on every field lookup.
+
+        Parsing the same crowd annotation many times keeps the interned
+        keys under sustained lookup churn. The ``is_crowd``-before-
+        ``iscrowd`` precedence stays observable (a crowd ground truth
+        matches both detections) only while every interned key is still a
+        live string, so a stable result across the whole run means no key
+        was freed underneath the parser.
+        """
+        crowd = {"is_crowd": 1, "iscrowd": 0, "ignore": 0, "lvis_mark": 0}
+        for _ in range(300):
+            state = _evaluate_native_annotation(crowd, (100, 101))
+            assert state[0] == [1, 1]
+            assert state[3] == [False]

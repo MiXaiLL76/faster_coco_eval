@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <numeric>
+#include <type_traits>
 
 // clang-format off
 #include "cocoeval.h"
@@ -147,6 +148,15 @@ struct AnnotationKeys {
               ignore(PyUnicode_InternFromString("ignore")),
               lvis_mark(PyUnicode_InternFromString("lvis_mark")) {}
 
+        // Owns seven raw PyObject* and defines a destructor: forbid copy and
+        // move so an accidental by-value use cannot double Py_XDECREF the
+        // interned strings. The single instance is reached via
+        // annotation_keys().
+        AnnotationKeys(const AnnotationKeys&) = delete;
+        AnnotationKeys& operator=(const AnnotationKeys&) = delete;
+        AnnotationKeys(AnnotationKeys&&) = delete;
+        AnnotationKeys& operator=(AnnotationKeys&&) = delete;
+
         bool complete() const {
                 return id != nullptr && score != nullptr && area != nullptr &&
                        is_crowd != nullptr && iscrowd != nullptr &&
@@ -163,6 +173,14 @@ struct AnnotationKeys {
                 Py_XDECREF(lvis_mark);
         }
 };
+
+// A copy or move would run ~AnnotationKeys twice on the same interned
+// PyObject*, double Py_XDECREF them and corrupt interpreter refcounts.
+static_assert(!std::is_copy_constructible<AnnotationKeys>::value &&
+                  !std::is_move_constructible<AnnotationKeys>::value &&
+                  !std::is_copy_assignable<AnnotationKeys>::value &&
+                  !std::is_move_assignable<AnnotationKeys>::value,
+              "AnnotationKeys must not be copyable or movable");
 
 // Deliberately leaked: interpreter teardown may run static destructors without
 // the GIL, and releasing Python objects there is undefined behaviour. The keys
@@ -191,6 +209,11 @@ enum class DictLookupStatus { found, missing, error };
 // Annotation parsing remains best-effort, matching the previous per-field
 // exception handling. The status prevents a failed preferred crowd-key lookup
 // from being treated as absent and falling back to the legacy spelling.
+//
+// PyDict_GetItemWithError is a C-level slot read: it assumes annotations are
+// plain dicts (as produced from COCO/LVIS JSON) and does not honour a dict
+// subclass that overrides __getitem__/__missing__, unlike the previous
+// contains()+operator[] path.
 struct DictLookup {
         PyObject* value;
         DictLookupStatus status;
