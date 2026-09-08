@@ -132,4 +132,4 @@ jobs:
 
       - name: Run synchronized native stress regressions
         working-directory: ./tests
-        run: python -m pytest -q test_cpp_safety_regressions.py -k "TestDatasetConcurrency"
+        run: python -m pytest -q test_cpp_safety_regressions.py -k "TestDatasetConcurrency or test_concurrent_evaluator_and_mask_operations"
