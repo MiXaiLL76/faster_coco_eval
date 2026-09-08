@@ -3,6 +3,7 @@
 #include <pybind11/pybind11.h>
 
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
@@ -38,12 +39,14 @@ class LightweightDataset {
 
         // A std::mutex member is neither copyable nor movable, which would
         // otherwise delete these implicitly and break the pickle __setstate__
-        // factory that returns a dataset by value. Move the containers and
-        // leave each object with its own fresh mutex; the source is locked so
-        // the move cannot race a concurrent reader.
+        // factory that returns a dataset by value. Only move *construction* is
+        // supported (all pybind needs): move the containers and leave each
+        // object with its own fresh mutex; the source is locked so the move
+        // cannot race a concurrent reader. Assignment is not supported.
         LightweightDataset(LightweightDataset&& other) noexcept;
         LightweightDataset(const LightweightDataset&) = delete;
         LightweightDataset& operator=(const LightweightDataset&) = delete;
+        LightweightDataset& operator=(LightweightDataset&&) = delete;
 
         // Store reference to annotation instead of copying data
         void append_ref(double img_id, double cat_id, py::object ann_ref);
@@ -97,9 +100,14 @@ class LightweightDataset {
         using AnnotationRefs =
             std::unordered_map<AnnotationKey, std::vector<py::object>,
                                hash_pair>;
+        // Cached entries are held through a shared_ptr to an immutable vector
+        // so a reader can copy the (cheap) handle under the mutex and clone the
+        // payload only after releasing it; a concurrent clear_cache_entry then
+        // cannot leave a dangling reference either.
+        using CppCacheEntry =
+            std::shared_ptr<const std::vector<InstanceAnnotation>>;
         using CppCache =
-            std::unordered_map<AnnotationKey, std::vector<InstanceAnnotation>,
-                               hash_pair>;
+            std::unordered_map<AnnotationKey, CppCacheEntry, hash_pair>;
 
         // Lightweight storage: only references to Python objects
         AnnotationRefs annotation_refs;
