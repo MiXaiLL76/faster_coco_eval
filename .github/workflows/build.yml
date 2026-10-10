@@ -62,7 +62,7 @@ jobs:
           brew install gcc libomp
 
       - name: Build wheels for ${{ matrix.os }}
-        uses: pypa/cibuildwheel@e090b81e30c4d855ea63bf4b6e59204c09a101ae # v4.2.1
+        uses: pypa/cibuildwheel@adba99c781d3746d38b3a09b1cf797965bcb7fe6 # v4.3.0
         env:
           CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10"
           CIBW_PRERELEASE_PYTHONS: "false"
