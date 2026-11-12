@@ -1,4 +1,5 @@
 import inspect
+import json
 import os
 import subprocess
 import sys
@@ -703,3 +704,28 @@ class TestDatasetAppendBatch:
         pairs = Dataset().append_batch(anns, True)
 
         assert pairs == {(1, 1)}
+
+
+def test_json_files_are_read_and_written_as_utf8(tmp_path):
+    """Load and dump UTF-8 annotation files on any platform encoding."""
+    name = "\u0441\u043e\u0431\u0430\u043a\u0430"
+    dataset = {
+        "images": [{"id": 1, "file_name": name + ".jpg", "width": 20, "height": 20}],
+        "categories": [{"id": 1, "name": name}],
+        "annotations": [
+            {"id": 1, "image_id": 1, "category_id": 1, "bbox": [1, 1, 5, 5], "area": 25, "iscrowd": 0},
+        ],
+    }
+    annotation_file = tmp_path / "annotations.json"
+    annotation_file.write_text(json.dumps(dataset, ensure_ascii=False), encoding="utf-8")
+
+    coco = COCO(str(annotation_file))
+
+    assert coco.loadCats(1)[0]["name"] == name
+
+    dumped_file = tmp_path / "dumped.json"
+    coco.dump(dumped_file)
+
+    dumped = json.loads(dumped_file.read_text(encoding="utf-8"))
+    assert dumped["categories"][0]["name"] == name
+    assert COCO(str(dumped_file)).loadImgs(1)[0]["file_name"] == name + ".jpg"
