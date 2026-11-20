@@ -4,8 +4,44 @@ import os
 import unittest
 
 import numpy as np
+import pytest
 
 from faster_coco_eval import COCO, COCOeval_faster
+from faster_coco_eval.core import mask
+
+
+@pytest.mark.parametrize(("negative_categories", "expected_ap"), [([], 1.0), ([1], 0.5)])
+def test_lvis_segm_detections_on_image_without_annotations(negative_categories, expected_ap):
+    polygon = [10, 10, 40, 10, 40, 40, 10, 40]
+    coco_gt = COCO({
+        "images": [
+            {"id": 1, "height": 100, "width": 100},
+            {"id": 2, "height": 100, "width": 100, "neg_category_ids": negative_categories},
+        ],
+        "categories": [{"id": 1, "name": "object", "frequency": "f"}],
+        "annotations": [
+            {
+                "id": 1,
+                "image_id": 1,
+                "category_id": 1,
+                "segmentation": [polygon],
+                "bbox": [10, 10, 30, 30],
+                "area": 900,
+                "iscrowd": 0,
+            }
+        ],
+    })
+    rle = mask.frPyObjects([polygon], 100, 100)[0]
+    coco_dt = coco_gt.loadRes([
+        {"image_id": 1, "category_id": 1, "segmentation": rle, "score": 0.8},
+        {"image_id": 2, "category_id": 1, "segmentation": rle.copy(), "score": 0.9},
+    ])
+    evaluator = COCOeval_faster(coco_gt, coco_dt, "segm", lvis_style=True)
+    evaluator.evaluate()
+    evaluator.accumulate()
+    evaluator.summarize()
+
+    assert evaluator.stats_as_dict["AP_all"] == pytest.approx(expected_ap)
 
 
 class TestBaseLvis(unittest.TestCase):

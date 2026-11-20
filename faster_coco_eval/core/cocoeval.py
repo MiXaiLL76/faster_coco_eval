@@ -204,6 +204,10 @@ class COCOeval:
             if p.compute_rle:
                 get_img_size_by_id(dt["image_id"], self.cocoDt)
 
+        if self.lvis_style and p.compute_rle:
+            # Dropped detections may have no entry in img_sizes.
+            dts = [dt for dt in dts if not dt.get("drop", False)]
+
         maskUtils.calculateRleForAllAnnotations(
             dts,
             img_sizes,

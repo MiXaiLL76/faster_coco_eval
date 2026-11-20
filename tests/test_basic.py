@@ -120,9 +120,11 @@ class TestBaseCoco(unittest.TestCase):
         cocoEval.run()
 
         for imgId, catId in cocoEval.ious:
-            np.testing.assert_array_equal(
-                cocoEval.ious[(imgId, catId)], np.load(os.path.join(self.root_folder, f"{imgId}_{catId}.npy"))
-            )
+            actual_ious = np.asarray(cocoEval.ious[(imgId, catId)])
+            expected_ious = np.load(os.path.join(self.root_folder, f"{imgId}_{catId}.npy"))
+            self.assertEqual(actual_ious.shape, expected_ious.shape)
+            # Native builds can differ by a few ULPs.
+            np.testing.assert_allclose(actual_ious, expected_ious, rtol=0, atol=1e-15)
 
         for key in stats_as_dict:
             self.assertAlmostEqual(cocoEval.stats_as_dict[key], stats_as_dict[key], places=10, msg=key)
