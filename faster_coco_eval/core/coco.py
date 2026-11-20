@@ -402,7 +402,7 @@ class COCO:
             dict: Loaded json data.
         """  # noqa: E501
         if isinstance(json_file, (str, os.PathLike)):
-            with open(json_file) as io:
+            with open(json_file, encoding="utf-8") as io:
                 _data = json.load(io)
         else:
             if use_deepcopy:
@@ -850,5 +850,5 @@ class COCO:
         Args:
             output_file (Union[str, os.PathLike]): Path to the output json file.
         """
-        with open(output_file, "w") as io:
+        with open(output_file, "w", encoding="utf-8") as io:
             json.dump(dict(self), io, ensure_ascii=False, indent=4)
